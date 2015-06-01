@@ -17,8 +17,8 @@
 # 02110-1301, USA.
 #
 
-set(SRC_DIR "${HYPERTABLE_SOURCE_DIR}/src/cc/Tools/cluster/ClusterDefinition")
-set(DST_DIR "${HYPERTABLE_BINARY_DIR}/src/cc/Tools/cluster/ClusterDefinition")
+set(SRC_DIR "${HYPERTABLE_SOURCE_DIR}/src/cc/Common/ClusterDefinition")
+set(DST_DIR "${HYPERTABLE_BINARY_DIR}/src/cc/Common/ClusterDefinition")
 
 set(Translator_test_SRCS
 TokenizerTools.cc
