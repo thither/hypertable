@@ -23,6 +23,8 @@ endif ()
 
 add_custom_target(hqldoc ${CMAKE_SOURCE_DIR}/doc/bin/make-doc-tree.sh hqldoc)
 
+add_custom_target(javadoc mvn -f java/pom.xml -Dmaven.test.skip=true -Papache2 javadoc:aggregate DEPENDS java)
+
 if (DOXYGEN_FOUND)
   configure_file(${HYPERTABLE_SOURCE_DIR}/doc/Doxyfile
                  ${HYPERTABLE_BINARY_DIR}/Doxyfile)
