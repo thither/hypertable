@@ -52,7 +52,7 @@ public class MetricsCollectorGanglia implements MetricsCollector {
    * "ht." + <code>component</code> + ".".
    * @param component Hypertable component ("fsbroker", "hyperspace, "master",
    * "rangeserver", or "thriftbroker")
-   * @param port Ganglia collection port
+   * @param props Configuration properties
    */
   public MetricsCollectorGanglia(String component, Properties props) {
     mPrefix = "ht." + component + ".";

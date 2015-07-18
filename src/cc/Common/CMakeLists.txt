@@ -27,15 +27,16 @@ endif ()
 set(Common_SRCS
 Base64.cc
 Checksum.cc
-ClusterDefinition/Compiler.cc
-ClusterDefinition/ToJson.cc
-ClusterDefinition/Token.cc
-ClusterDefinition/Tokenizer.cc
-ClusterDefinition/TokenizerTools.cc
-ClusterDefinition/TranslatorCode.cc
-ClusterDefinition/TranslatorRole.cc
-ClusterDefinition/TranslatorTask.cc
-ClusterDefinition/TranslatorVariable.cc
+ClusterDefinition.cc
+ClusterDefinitionFile/Compiler.cc
+ClusterDefinitionFile/ToJson.cc
+ClusterDefinitionFile/Token.cc
+ClusterDefinitionFile/Tokenizer.cc
+ClusterDefinitionFile/TokenizerTools.cc
+ClusterDefinitionFile/TranslatorCode.cc
+ClusterDefinitionFile/TranslatorRole.cc
+ClusterDefinitionFile/TranslatorTask.cc
+ClusterDefinitionFile/TranslatorVariable.cc
 Config.cc
 ConsoleOutputSquelcher.cc
 Cronolog.cc
@@ -112,10 +113,15 @@ target_link_libraries(HostSpecification_test HyperCommon)
 configure_file(${SRC_DIR}/tests/HostSpecification_test.golden
                ${DST_DIR}/HostSpecification_test.golden)
 
+add_executable(ClusterDefinition_test tests/ClusterDefinition_test.cc)
+target_link_libraries(ClusterDefinition_test HyperCommon)
+configure_file(${SRC_DIR}/tests/ClusterDefinition_test.golden
+               ${DST_DIR}/ClusterDefinition_test.golden)
+
 add_executable(logging_test tests/logging_test.cc)
 target_link_libraries(logging_test HyperCommon)
 
-add_subdirectory(ClusterDefinition)
+add_subdirectory(ClusterDefinitionFile)
 
 # serialization tests
 add_executable(Serializable_test tests/Serializable_test.cc)
@@ -210,6 +216,7 @@ configure_file(${SRC_DIR}/tests/failure_inducer_test.golden
 add_test(Common-Exception exception_test)
 add_test(Common-Exception escaper_test)
 add_test(Common-HostSpecification HostSpecification_test)
+add_test(Common-ClusterDefinition ClusterDefinition_test)
 add_test(Common-Logging logging_test)
 add_test(Common-Serializable Serializable_test ${CMAKE_CURRENT_SOURCE_DIR}/tests/Serializable_test.golden)
 add_test(Common-Serialization sertest)

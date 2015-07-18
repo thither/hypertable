@@ -28,7 +28,7 @@
 
 #include "ClusterCommandInterpreter.h"
 
-#include <Common/ClusterDefinition/TokenizerTools.h>
+#include <Common/ClusterDefinitionFile/TokenizerTools.h>
 #include <Common/String.h>
 #include <Common/System.h>
 
@@ -47,7 +47,7 @@ extern "C" {
 }
 
 using namespace Hypertable;
-using namespace Hypertable::ClusterDefinition;
+using namespace Hypertable::ClusterDefinitionFile;
 using namespace std;
 
 namespace {

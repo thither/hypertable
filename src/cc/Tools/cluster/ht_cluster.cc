@@ -27,9 +27,9 @@
 
 #include <Hypertable/Lib/Config.h>
 
-#include <Common/ClusterDefinition/Compiler.h>
-#include <Common/ClusterDefinition/ToJson.h>
-#include <Common/ClusterDefinition/TokenizerTools.h>
+#include <Common/ClusterDefinitionFile/Compiler.h>
+#include <Common/ClusterDefinitionFile/ToJson.h>
+#include <Common/ClusterDefinitionFile/TokenizerTools.h>
 #include <Common/Config.h>
 #include <Common/FileUtils.h>
 #include <Common/Init.h>
@@ -48,7 +48,7 @@ extern "C" {
 }
 
 using namespace Hypertable;
-using namespace Hypertable::ClusterDefinition;
+using namespace Hypertable::ClusterDefinitionFile;
 using namespace Hypertable::Config;
 using namespace std;
 
