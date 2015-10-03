@@ -207,7 +207,7 @@ class ArenaAllocatorBase : public AllocatorBase<T> {
    * @param p Pointer to the object
    * @param sz Unused parameter, ignored
    */
-  void deallocate(pointer p, size_type sz) { if (!m_arenap) delete p; }
+  void deallocate(pointer p, size_type sz) { if (!m_arenap) ::operator delete(p); }
 
   /** operator == returns true if the arena pointers are equal
    *
