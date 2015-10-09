@@ -32,5 +32,10 @@ using namespace Hypertable::RangeServer::Request::Handler;
 
 void WaitForMaintenance::run() {
   ResponseCallback cb(m_comm, m_event);
-  m_range_server->wait_for_maintenance(&cb);
+  try {
+    m_range_server->wait_for_maintenance(&cb);
+  }
+  catch (Exception &e) {
+    HT_ERROR_OUT << "WaitForMaintenance " << e << HT_END;
+  }
 }

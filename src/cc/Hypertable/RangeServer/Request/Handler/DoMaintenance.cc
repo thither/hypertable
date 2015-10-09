@@ -28,5 +28,10 @@
 using namespace Hypertable::RangeServer::Request::Handler;
 
 void DoMaintenance::run() {
-  m_range_server->do_maintenance();
+  try {
+    m_range_server->do_maintenance();
+  }
+  catch (Exception &e) {
+    HT_ERROR_OUT << "DoMaintenance " << e << HT_END;
+  }
 }
