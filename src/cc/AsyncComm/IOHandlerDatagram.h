@@ -1,4 +1,4 @@
-/*
+/* -*- c++ -*-
  * Copyright (C) 2007-2015 Hypertable, Inc.
  *
  * This file is part of Hypertable.
@@ -56,7 +56,8 @@ namespace Hypertable {
      * @param sd Socket descriptor bound to an address
      * @param dhp Default dispatch handler
      */
-    IOHandlerDatagram(int sd, const DispatchHandlerPtr &dhp) : IOHandler(sd, dhp) {
+    IOHandlerDatagram(int sd, const DispatchHandlerPtr &dhp,
+                      Reactor::Priority rp) : IOHandler(sd, dhp, rp) {
       m_message = new uint8_t [65536];
       memcpy(&m_addr, &m_local_addr, sizeof(InetAddr));
     }

@@ -390,6 +390,8 @@ Comm::create_datagram_receive_socket(CommAddress &addr, int tos,
       HT_ERRORF("setsockopt(SO_RCVBUF) failed - %s", strerror(errno));
   }
 
+  Reactor::Priority reactor_priority {Reactor::Priority::NORMAL};
+
   if (tos) {
     int opt;
 #if defined(__linux__)
@@ -401,6 +403,7 @@ Comm::create_datagram_receive_socket(CommAddress &addr, int tos,
     opt = IPTOS_LOWDELAY;       /* see <netinet/in.h> */
     setsockopt(sd, IPPROTO_IP, IP_TOS, &opt, sizeof(opt));
 #endif
+    reactor_priority = Reactor::Priority::HIGH;
   }
 
   int bind_attempts = 0;
@@ -415,7 +418,7 @@ Comm::create_datagram_receive_socket(CommAddress &addr, int tos,
     bind_attempts++;
   }
 
-  handler = new IOHandlerDatagram(sd, dhp);
+  handler = new IOHandlerDatagram(sd, dhp, reactor_priority);
 
   addr.set_inet( handler->get_address() );
 

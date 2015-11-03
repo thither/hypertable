@@ -84,10 +84,11 @@ namespace Hypertable {
      * @param sd Socket descriptor
      * @param dhp Dispatch handler
      */
-    IOHandler(int sd, const DispatchHandlerPtr &dhp)
+    IOHandler(int sd, const DispatchHandlerPtr &dhp,
+              Reactor::Priority rp = Reactor::Priority::NORMAL)
       : m_reference_count(0), m_free_flag(0), m_error(Error::OK),
         m_sd(sd), m_dispatch_handler(dhp), m_decomissioned(false) {
-      ReactorFactory::get_reactor(m_reactor);
+      ReactorFactory::get_reactor(m_reactor, rp);
       m_poll_interest = 0;
       socklen_t namelen = sizeof(m_local_addr);
       getsockname(m_sd, (sockaddr *)&m_local_addr, &namelen);

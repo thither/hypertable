@@ -73,7 +73,8 @@ void ReactorFactory::initialize(uint16_t reactor_count) {
       Config::properties->get_bool("Comm.UsePoll"))
     use_poll = true;
 
-  for (uint16_t i=0; i<=reactor_count; i++) {
+  ms_reactors.reserve(reactor_count+2);
+  for (uint16_t i=0; i<reactor_count+2; i++) {
     reactor = make_shared<Reactor>();
     ms_reactors.push_back(reactor);
     rrunner.set_reactor(reactor);
