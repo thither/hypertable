@@ -70,6 +70,18 @@ if (Thrift_VERSION MATCHES "^Thrift version" AND LibEvent_LIBS
     set(Thrift_LIB_DEPENDENCIES "${Thrift_LIB_DEPENDENCIES} ${CMAKE_MATCH_1}")
   endif ()
 
+  exec_program(${CMAKE_SOURCE_DIR}/bin/src-utils/ldd.sh
+               ARGS ${Thrift_NB_LIB}
+               OUTPUT_VARIABLE LDD_OUT
+               RETURN_VALUE LDD_RETURN)
+
+  if (LDD_RETURN STREQUAL "0")
+    string(REGEX MATCH "[ \t](/[^ ]+/libssl\\.[^ \n]+)" dummy ${LDD_OUT})
+    set(Thrift_LIB_DEPENDENCIES "${Thrift_LIB_DEPENDENCIES} ${CMAKE_MATCH_1}")
+    string(REGEX MATCH "[ \t](/[^ ]+/libcrypto\\.[^ \n]+)" dummy ${LDD_OUT})
+    set(Thrift_LIB_DEPENDENCIES "${Thrift_LIB_DEPENDENCIES} ${CMAKE_MATCH_1}")
+  endif ()
+
 else ()
   set(Thrift_FOUND FALSE)
   if (NOT LibEvent_LIBS OR NOT LibEvent_INCLUDE_DIR)
