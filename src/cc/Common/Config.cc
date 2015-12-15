@@ -371,6 +371,8 @@ void DefaultPolicy::init_options() {
         "at a given time")
     ("Hypertable.Master.NotificationInterval", i32()->default_value(3600),
         "Notification interval (in seconds) of abnormal state")
+    ("Hypertable.Master.RecordGraphvizStream", boo()->default_value(false),
+     "Appends Graphviz output to run/op-graphviz-stream on each DAG change")
     ("Hypertable.Failover.GracePeriod", i32()->default_value(30000),
         "Master wait this long before trying to recover a RangeServer")
     ("Hypertable.Failover.Timeout", i32()->default_value(300000),
