@@ -27,6 +27,7 @@
 
 /* Avoid platform specific stuff in this file */
 #include <stdio.h>
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -35,6 +36,8 @@
 
 #include "bmz-internal.h"
 #include "ThirdParty/lzo/minilzo.h"
+
+#pragma GCC diagnostic ignored "-Wpedantic"
 
 /* Initial bases for computing Rabin Karp rolling hash */
 #define BM_B1 257

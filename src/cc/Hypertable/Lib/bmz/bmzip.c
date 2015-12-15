@@ -39,6 +39,8 @@ static int s_no_mmap = 1;
 
 #include "bmz-internal.h"
 
+#pragma GCC diagnostic ignored "-Wpedantic"
+
 #define BMZ_MAGIC       "BMZ"
 #define BMZIP_VER       0x0110
 /* The following line generates C90 warnings:

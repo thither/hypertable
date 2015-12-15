@@ -1701,7 +1701,7 @@ namespace Hypertable {
             if (!ci.empty())
               HT_THROW(Error::HQL_PARSE_ERROR, "Bad cell expression");
             ci.set_start(row, column, true);
-            column.append(1, 0xff);
+            column.append(1, static_cast<char>(0xff));
             ci.set_end(row, column, false);
             break;
           }

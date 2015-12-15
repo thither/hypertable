@@ -33,6 +33,8 @@ static size_t s_no_mmap = 0;
 static size_t s_no_mmap = 1;
 #endif
 
+#pragma GCC diagnostic ignored "-Wpedantic"
+
 /* To silence warnings in format strings */
 typedef long unsigned Lu;
 

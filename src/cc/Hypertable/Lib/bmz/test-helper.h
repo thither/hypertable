@@ -22,6 +22,8 @@
 
 #include <sys/time.h>
 
+#pragma GCC diagnostic ignored "-Wpedantic"
+
 #define HT_MEASURE(_t_, _code_) do { \
   double t0 = ht_time_d(); _code_; _t_ = ht_time_d() - t0; \
 } while (0)
