@@ -225,7 +225,7 @@ namespace Hypertable {
        * This method returns the name of the entity ("Recover")
        * @return Name of the entity ("Recover")
        */
-      virtual const std::string name() { return "Recover"; }
+      const std::string name() override { return "Recover"; }
 
     private:
 

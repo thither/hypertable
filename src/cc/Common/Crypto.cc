@@ -42,6 +42,9 @@ extern "C" {
 
 using namespace Hypertable;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 namespace {
 
   RSA *create_rsa(unsigned char *key, bool is_public) {
@@ -235,3 +238,5 @@ const string Crypto::rsa_signature_decrypt(const char *key, bool key_is_public,
   delete [] buf;
   return decrypted_message;
 }
+
+#pragma clang diagnostic pop

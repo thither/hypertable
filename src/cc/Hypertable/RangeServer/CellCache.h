@@ -74,11 +74,11 @@ namespace Hypertable {
      * @param key key to be inserted
      * @param value value to inserted
      */
-    virtual void add(const Key &key, const ByteString value);
+    void add(const Key &key, const ByteString value) override;
 
     virtual void add_counter(const Key &key, const ByteString value);
 
-    virtual void split_row_estimate_data(SplitRowDataMapT &split_row_data);
+    void split_row_estimate_data(SplitRowDataMapT &split_row_data) override;
 
     /** Creates a CellCacheScanner object that contains an shared pointer
      * to this CellCache.

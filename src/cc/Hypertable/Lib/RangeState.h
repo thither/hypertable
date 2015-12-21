@@ -188,7 +188,7 @@ namespace Hypertable {
     /** Destructor. */
     virtual ~RangeStateManaged() {}
 
-    virtual void clear();
+    void clear() override;
 
     /** Assignment operator.
      * Casts <code>other</code> to RangeState type and calls

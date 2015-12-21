@@ -43,6 +43,9 @@ extern "C" {
 #include <string.h>
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 using namespace Hypertable;
 
 namespace {
@@ -110,3 +113,5 @@ const string Base64::decode(const string &message, bool newlines) {
 
   return decoded_message;
 }
+
+#pragma clang diagnostic pop
