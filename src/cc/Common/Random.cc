@@ -32,10 +32,8 @@
 #include <random>
 
 #if defined(__APPLE__)
-#define THREAD_LOCAL
 #define LOCK_GLOBAL_MUTEX(m) std::lock_guard<std::mutex> lock(m)
 #else
-#define THREAD_LOCAL thread_local
 #define LOCK_GLOBAL_MUTEX(m) (void)m
 #endif
 
@@ -43,7 +41,7 @@ using namespace Hypertable;
 using namespace std;
 
 namespace {
-  THREAD_LOCAL mt19937 g_random_engine {1};
+  mt19937 g_random_engine {1};
   std::mutex g_mutex;
 }
 
