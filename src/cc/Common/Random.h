@@ -63,7 +63,7 @@ namespace Hypertable {
   private:
 
     /// Random number engine
-    static thread_local std::mt19937 ms_random_engine;
+    static std::mt19937 ms_random_engine;
   };
 
   /// @}

@@ -37,7 +37,7 @@ namespace {
 using namespace Hypertable;
 using namespace std;
 
-thread_local mt19937 Random::ms_random_engine {1};
+mt19937 Random::ms_random_engine {1};
 
 uint32_t Random::number32(uint32_t maximum) {
   if (maximum) {
