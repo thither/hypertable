@@ -74,6 +74,9 @@ class LoadClient {
     uint64_t get_all_cells();
 
   private:
+
+    void split_tablepath(const std::string &path, std::string *ns, std::string *table);
+
     bool m_thrift;
     ClientPtr m_native_client;
     NamespacePtr m_ns;
