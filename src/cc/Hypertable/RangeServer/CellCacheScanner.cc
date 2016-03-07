@@ -123,7 +123,8 @@ CellCacheScanner::CellCacheScanner(CellCachePtr cellcache,
     }
     ++m_cur_iter;
   }
-  m_eos = true;
+  if (!m_in_deletes)
+    m_eos = true;
   return;
 }
 
@@ -175,9 +176,13 @@ void CellCacheScanner::internal_forward() {
     ++m_delete_iter;
     if (m_delete_iter == m_deletes.end()) {
       m_in_deletes = false;
-      // reset current entry since its loaded with the last entry in m_deletes
-      m_cur_entry.key.load( (*m_cur_iter).first );
-      m_cur_entry.value.ptr = m_cur_entry.key.serial.ptr + (*m_cur_iter).second;
+      if (m_cur_iter != m_end_iter) {
+        // reset current entry since its loaded with the last entry in m_deletes
+        m_cur_entry.key.load( (*m_cur_iter).first );
+        m_cur_entry.value.ptr = m_cur_entry.key.serial.ptr + (*m_cur_iter).second;
+      }
+      else
+        m_eos = true;
     }
     return;
   }
