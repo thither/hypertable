@@ -1,3 +1,18 @@
+Version 0.9.8.11:
+(2016-03-14)
+
+   Added salvage
+   Added log_player
+   Added metalog_tool
+   Added htck
+   Added ht-wait-until-quiesced.sh
+   Updated copyright date
+   Fixed ssl link problem with recovery tools
+   Fixed bug in CellCacheScanner where scanned cells are only deletes
+   Fixed bug in fast_clock::to_time_t
+   Don't apply TIMESTAMP filter when scanning index tables
+   Removed thread_local storage specifier from random engine variable in Random
+
 Version 0.9.8.10:
 (2015-12-22)
 
