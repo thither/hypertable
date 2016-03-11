@@ -35,7 +35,7 @@ MetadataDumpReader::MetadataDumpReader(const String &fname,
 				       StringSet &valid_tids,
 				       FlyweightString &flyweight,
 				       MetadataRepairWriter &repair_writer)
-  : m_flyweight(flyweight), m_next_ptr(0), m_next_len(0), m_lineno(0), m_eof(false) {
+  : m_flyweight(flyweight), m_lineno(0) {
   RangeInfo rkey, *rinfo;
   char *buffer = new char [ 10*1024*1024 ];
   const char *table_id, *end_row, *column, *value;

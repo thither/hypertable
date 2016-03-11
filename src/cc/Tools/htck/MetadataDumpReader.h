@@ -47,10 +47,7 @@ namespace Hypertable {
     FILE *m_fp;
     RangeInfoSet m_riset;
     FlyweightString &m_flyweight;
-    char *m_next_ptr;
-    size_t m_next_len;
     size_t m_lineno;
-    bool m_eof;
   };
 
 }
