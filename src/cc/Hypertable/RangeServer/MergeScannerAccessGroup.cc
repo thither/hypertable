@@ -201,6 +201,26 @@ void MergeScannerAccessGroup::forward() {
           break;
       }
       else if (sstate.key.flag == FLAG_INSERT) {
+
+        // Handle revision limit
+        const uint8_t *latest_key = (const uint8_t *)sstate.key.row;
+        size_t latest_key_len = sstate.key.flag_ptr -
+                (const uint8_t *)sstate.key.row + 1;
+
+        if (m_prev_key.fill() == 0 ||
+            m_prev_key.fill() != latest_key_len ||
+            memcmp(latest_key, m_prev_key.base, latest_key_len)) {
+          m_prev_key.set(latest_key, latest_key_len);
+          m_prev_cf = sstate.key.column_family_code;
+          m_revs_count = 1;
+          m_revs_limit = cp.max_versions;
+        }
+        else {
+          ++m_revs_count;
+          if (m_revs_limit && m_revs_count > m_revs_limit && !counter)
+            continue;
+        }
+
         // this cell is not a delete and it is within the requested 
         // time interval.
         if (m_delete_present) {
@@ -257,29 +277,6 @@ void MergeScannerAccessGroup::forward() {
               && m_deleted_row.fill() == 0)
             m_delete_present = false;
         }
-
-        // keep track of revisions
-        const uint8_t *latest_key = (const uint8_t *)sstate.key.row;
-        size_t latest_key_len = sstate.key.flag_ptr -
-                (const uint8_t *)sstate.key.row + 1;
-
-        if (m_prev_key.fill()==0) {
-          m_prev_key.set(latest_key, latest_key_len);
-          m_prev_cf = sstate.key.column_family_code;
-          m_revs_count=0;
-          m_revs_limit = cp.max_versions;
-        }
-        else if (m_prev_key.fill() != latest_key_len ||
-            memcmp(latest_key, m_prev_key.base, latest_key_len)) {
-
-          m_prev_key.set(latest_key, latest_key_len);
-          m_prev_cf = sstate.key.column_family_code;
-          m_revs_count=0;
-          m_revs_limit = cp.max_versions;
-        }
-        m_revs_count++;
-        if (m_revs_limit && m_revs_count > m_revs_limit && !counter)
-          continue;
 
         // row set
         if (!m_scan_context->rowset.empty()) {
@@ -467,38 +464,36 @@ void MergeScannerAccessGroup::initialize() {
       }
     }
     else if (sstate.key.flag == FLAG_INSERT) {
-      if (sstate.key.revision > m_revision
-          || (sstate.key.timestamp >= m_end_timestamp 
-            && (!m_return_deletes || sstate.key.flag == FLAG_INSERT))) {
-        if (m_index_updater && sstate.key.flag == FLAG_INSERT)
-          purge_from_index(sstate.key, sstate.value);
-        m_queue.pop();
-        sstate.scanner->forward();
-        if (sstate.scanner->get(sstate.key, sstate.value))
-          m_queue.push(sstate);
-        continue;
-      }
 
-      // keep track of revisions
+      // Handle revision limit
       const uint8_t *latest_key = (const uint8_t *)sstate.key.row;
       size_t latest_key_len = sstate.key.flag_ptr - 
                 (const uint8_t *)sstate.key.row + 1;
 
-      if (m_prev_key.fill()==0) {
-        m_prev_key.set(latest_key, latest_key_len);
-        m_prev_cf = sstate.key.column_family_code;
-        m_revs_count=0;
-        m_revs_limit = cp.max_versions;
-      }
-      else if (m_prev_key.fill() != latest_key_len ||
+      if (m_prev_key.fill() == 0 ||
+          m_prev_key.fill() != latest_key_len ||
           memcmp(latest_key, m_prev_key.base, latest_key_len)) {
         m_prev_key.set(latest_key, latest_key_len);
         m_prev_cf = sstate.key.column_family_code;
-        m_revs_count=0;
+        m_revs_count = 1;
         m_revs_limit = cp.max_versions;
       }
-      m_revs_count++;
-      if (m_revs_limit && m_revs_count > m_revs_limit && !counter) {
+      else {
+        ++m_revs_count;
+        if (m_revs_limit && m_revs_count > m_revs_limit && !counter) {
+          if (m_index_updater && sstate.key.flag == FLAG_INSERT)
+            purge_from_index(sstate.key, sstate.value);
+          m_queue.pop();
+          sstate.scanner->forward();
+          if (sstate.scanner->get(sstate.key, sstate.value))
+            m_queue.push(sstate);
+          continue;
+        }
+      }
+
+      if (sstate.key.revision > m_revision
+          || (sstate.key.timestamp >= m_end_timestamp 
+            && (!m_return_deletes || sstate.key.flag == FLAG_INSERT))) {
         if (m_index_updater && sstate.key.flag == FLAG_INSERT)
           purge_from_index(sstate.key, sstate.value);
         m_queue.pop();

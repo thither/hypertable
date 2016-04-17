@@ -18,3 +18,7 @@ add_test(HQL-delete
 add_test(HQL-cellcache-delete-issue
          env INSTALL_DIR=${INSTALL_DIR}
          ${CMAKE_CURRENT_SOURCE_DIR}/hql-cellcache-delete-issue.sh)
+
+add_test(HQL-revision-problem
+         env INSTALL_DIR=${INSTALL_DIR}
+         ${CMAKE_CURRENT_SOURCE_DIR}/hql-revision-problem.sh)
