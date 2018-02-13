@@ -104,6 +104,11 @@ bool LocationInitializer::is_removed(const String &path, Hyperspace::SessionPtr 
   return removed;
 }
 
+bool LocationInitializer::remove_location() {
+  m_location.clear();
+  return FileUtils::unlink(m_location_file);
+}
+
 CommBuf *LocationInitializer::create_initialization_request() {
   lock_guard<mutex> lock(m_mutex);
   StatsSystem stats;

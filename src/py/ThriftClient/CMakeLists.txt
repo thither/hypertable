@@ -17,36 +17,33 @@
 # 02110-1301, USA.
 #
 
-HT_GLOB(GenPy_SRCS gen-py/*.py)
 
+add_custom_target(ThriftGenPy ALL)
 add_custom_command(
-  OUTPUT    ${GenPy_SRCS}
+  TARGET 	ThriftGenPy
   COMMAND   thrift
-  ARGS      -r --gen py:new_style -o ${CMAKE_CURRENT_SOURCE_DIR}
+  ARGS      -r --gen py:slots,no_utf8strings -o ${HYPERTABLE_BINARY_DIR}/src/py/ThriftClient/
             ${ThriftBroker_IDL_DIR}/Hql.thrift
   DEPENDS   ${ThriftBroker_IDL_DIR}/Client.thrift
             ${ThriftBroker_IDL_DIR}/Hql.thrift
   COMMENT   "thrift2py"
 )
 
-add_custom_target(ThriftGenPy ALL DEPENDS ${GenPy_SRCS})
+
 
 if (PYTHONTHRIFT_FOUND)
   add_test(ThriftClient-python env
-      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}:${CMAKE_CURRENT_SOURCE_DIR}/gen-py
+      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}:${HYPERTABLE_BINARY_DIR}/src/py/ThriftClient/gen-py
       python ${CMAKE_CURRENT_SOURCE_DIR}/client_test.py)
 endif ()
 
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
-  install(DIRECTORY gen-py hypertable DESTINATION lib/py)
+  install(DIRECTORY 
+     ${HYPERTABLE_BINARY_DIR}/src/py/ThriftClient/gen-py/hyperthrift 
+     hypertable 
+	 DESTINATION lib/py)
   install(FILES client_test.py MANIFEST.in README.rst DESTINATION lib/py)
-  configure_file(setup.py.in ${HYPERTABLE_BINARY_DIR}/setup.py @ONLY)
-  install(FILES ${HYPERTABLE_BINARY_DIR}/setup.py DESTINATION lib/py)
-  if(CMAKE_HOST_UNIX)
-    install(CODE "
-      EXECUTE_PROCESS(COMMAND ln -sf gen-py/hyperthrift hyperthrift
-         WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/lib/py
-         )
-      ")
-  endif(CMAKE_HOST_UNIX)
+  configure_file(setup.py.in ${HYPERTABLE_BINARY_DIR}/src/py/ThriftClient/setup.py @ONLY)
+  install(FILES ${HYPERTABLE_BINARY_DIR}/src/py/ThriftClient/setup.py DESTINATION lib/py)
+
 endif ()

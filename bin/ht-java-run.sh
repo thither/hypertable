@@ -18,6 +18,13 @@
 # along with Hypertable. If not, see <http://www.gnu.org/licenses/>
 #
 
+
+if [ -f /etc/profile.d/custom_env.sh ]; then
+	source /etc/profile;
+	source ~/.bashrc;
+fi
+
+
 # The installation directory
 export HYPERTABLE_HOME=$(cd `dirname "$0"`/.. && pwd)
 . $HYPERTABLE_HOME/bin/ht-env.sh

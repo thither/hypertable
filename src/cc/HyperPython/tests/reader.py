@@ -1,8 +1,12 @@
 import sys
-import time
-import libHyperPython
+import imp
+
+if sys.argv[1]=='python': ht_serialize = imp.load_dynamic('libHyperPython',sys.argv[2]) # import libHyperPython as ht_serialize
+elif sys.argv[1]=='pypy': ht_serialize = imp.load_dynamic('libHyperPyPy',sys.argv[2])
+
 from hypertable.thriftclient import *
 from hyperthrift.gen.ttypes import *
+
 
 try:
   client = ThriftClient("localhost", 15867)
@@ -31,13 +35,12 @@ try:
           "('2012-10-10', 'collapse_row', 'col:c', 'value8')")
 
   # read with SerializedCellsReader
-  scanner = client.scanner_open(namespace, "thrift_test",   \
-          ScanSpec(None, None, None, 1));
+  scanner = client.scanner_open(namespace, "thrift_test",    ScanSpec(None, None, None, 1));
   while True:
     buf = client.scanner_get_cells_serialized(scanner)
     if (len(buf) <= 5):
       break
-    scr = libHyperPython.SerializedCellsReader(buf, len(buf))
+    scr = ht_serialize.SerializedCellsReader(buf, len(buf))
     while scr.has_next():
       print scr.row(),
       print scr.column_family(),

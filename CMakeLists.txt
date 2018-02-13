@@ -24,7 +24,7 @@ set(VERSION_MAJOR "0")
 set(VERSION_MINOR "9")
 set(VERSION_MICRO "8")
 set(VERSION_PATCH "11")
-#set(VERSION_MISC_SUFFIX  "pre6")
+#set(VERSION_MISC_SUFFIX  "pre12")
 
 # cmake behavior compatibility
 cmake_minimum_required(VERSION 2.8)
@@ -45,9 +45,6 @@ if (NOT CMAKE_BUILD_TYPE)
       "Options: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif ()
 
-if (PHPTHRIFT_ROOT)
-   message(FATAL_ERROR "PHPTHRIFT_ROOT variable no longer supported.  Use THRIFT_SOURCE_DIR instead.")
-endif ()
 
 #uname -p says i386, but we know better when its x86 apple
 if (APPLE AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i386")
@@ -99,7 +96,12 @@ SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_LARGEFILE_SOURCE")
 SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_FILE_OFFSET_BITS=64")
 SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_REENTRANT")
 SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -fuse-linker-plugin -ffat-lto-objects ")
+# SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsection-anchors")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -floop-interchange")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
+ 
 # C++ flags
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
@@ -107,7 +109,11 @@ SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LARGEFILE_SOURCE")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FILE_OFFSET_BITS=64")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_REENTRANT")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fuse-linker-plugin -ffat-lto-objects")
+# SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsection-anchors")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -floop-interchange")
 
 if (ASAN)
   SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
@@ -115,10 +121,12 @@ if (ASAN)
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
 endif ()
- 
 
 # Uncomment the following to build dynamic libraries
-# set (BUILD_SHARED_LIBS ON)
+if (BUILD_SHARED_LIBS)
+	set (BUILD_SHARED_LIBS ON)
+	message(STATUS "Building shared libraries")
+endif ()
 
 # Locate required packages
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -131,15 +139,42 @@ include(VersionHelper)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/${VERSION})
 set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
 
+# Build support for all possible or only requested languages 
+if (NOT LANGS OR LANGS STREQUAL "all")
+	set(LANGS ON)
+	message(STATUS "Building for all possibly supported languages")
+else ()
+	string(TOUPPER ${LANGS} LANGS)
+	string(REPLACE "," ";" LANGS "${LANGS}")
+	foreach(lg ${LANGS})
+		SET("LANG_${lg}" ON)
+		message(STATUS "Building for language: ${lg}")
+	endforeach()
+	set(LANGS OFF)
+endif ()
+# Build support for all possible or only requested FS BROKERS 
+if (NOT FSBROKERS OR FSBROKERS STREQUAL "all")
+	set(FSBROKERS ON)
+	message(STATUS "Building for all possibly supported FS BROKERS")
+else ()
+	string(TOUPPER ${FSBROKERS} FSBROKERS)
+	string(REPLACE "," ";" FSBROKERS "${FSBROKERS}")
+	foreach(fs ${FSBROKERS})
+		SET("FSBROKER_${fs}" ON)
+		message(STATUS "Building FS BROKER: ${fs}")
+	endforeach()
+	set(FSBROKERS OFF)
+endif ()
+
 find_package(Threads REQUIRED)
-message(STATUS "Use thread library: ${CMAKE_THREAD_LIBS_INIT}")
-find_package(Nodejs)
-find_package(Python)
+message(STATUS "Using thread library: ${CMAKE_THREAD_LIBS_INIT}")
+find_package(Mallocs)
+
 find_package(Boost REQUIRED)
+find_package(SIGAR REQUIRED)
 find_package(BerkeleyDB REQUIRED)
 find_package(EXPAT REQUIRED)
 find_package(Editline REQUIRED)
-find_package(SIGAR REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(BZip2 REQUIRED)
 find_package(RE2 REQUIRED)
@@ -147,48 +182,39 @@ find_package(Snappy REQUIRED)
 find_package(RRDtool REQUIRED)
 find_package(Cronolog REQUIRED)
 find_package(Doxygen)
-find_package(Tcmalloc)
-find_package(Jemalloc)
-find_package(Hoard)
-find_package(Mapr)
-find_package(Qfs)
-find_package(Ceph)
-find_package(Maven REQUIRED)
-find_package(JNI)
 find_package(LibEvent REQUIRED)
 find_package(Libssh REQUIRED)
 find_package(Libssl REQUIRED)
-find_package(Thrift REQUIRED)
-find_package(RubyThrift)
-find_package(PHP5Thrift)
-find_package(PerlThrift)
-find_package(PythonThrift)
 
-# set malloc library (maybe)
-if (USE_JEMALLOC)
-  if (Jemalloc_FOUND)
-    set(MALLOC_LIBRARY ${Jemalloc_LIBRARIES})
-  else ()
-    message(FATAL_ERROR "Unable to use jemalloc: library not found")
-  endif ()
-elseif (USE_HOARD)
-  if (Hoard_FOUND)
-    set(MALLOC_LIBRARY ${Hoard_LIBRARIES})
-  else ()
-    message(FATAL_ERROR "Unable to use hoard malloc: library not found")
-  endif ()
-elseif (NOT USE_GLIBC_MALLOC AND Tcmalloc_FOUND)
-  if (NOT (CMAKE_BUILD_TYPE STREQUAL "Debug" OR APPLE) OR USE_TCMALLOC)
-    set(MALLOC_LIBRARY ${Tcmalloc_LIBRARIES})
-    if (USE_TCMALLOC)
-      SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTCMALLOC")
-      SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTCMALLOC")
-    else ()
-      SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTCMALLOC_MINIMAL")
-      SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTCMALLOC_MINIMAL")
-    endif ()
-  endif ()
+if (LANGS OR LANG_JS)
+	find_package(Nodejs)
 endif ()
+if (LANGS OR LANG_PY2 OR LANG_PY3 OR LANG_PYPY2 OR LANG_PYPY3)
+	find_package(Python)
+endif ()
+
+if (LANGS OR LANG_JAVA OR FSBROKERS OR FSBROKER_HDFS)
+	find_package(Maven REQUIRED)
+	find_package(JNI)
+endif ()
+
+# File Systems 
+if (FSBROKERS OR FSBROKER_MAPR)
+	find_package(Mapr)
+endif ()
+if (FSBROKERS OR FSBROKER_QFS)
+	find_package(Qfs)
+endif ()
+if (FSBROKERS OR FSBROKER_CEPH)
+	find_package(Ceph)
+endif ()
+if (FSBROKERS OR FSBROKER_HDFS)
+	find_package(Hdfs)
+endif ()
+
+# THRIFT
+find_package(Thrift REQUIRED)
+
 
 # Use llvm instead of gcc
 if (LLVM)
@@ -227,19 +253,6 @@ if (APPLE)
    SET (CMAKE_EXE_LINKER_FLAGS "-framework IOKit -framework CoreFoundation")
 endif ()
 
-# include directories
-include_directories(src/cc ${HYPERTABLE_BINARY_DIR}/src/cc
-    ${ZLIB_INCLUDE_DIR} ${Boost_INCLUDE_DIRS}
-    ${EXPAT_INCLUDE_DIRS} ${BDB_INCLUDE_DIR} ${EDITLINE_INCLUDE_DIR}
-    ${SIGAR_INCLUDE_DIR})
-
-if (Thrift_FOUND)
-  include_directories(${LibEvent_INCLUDE_DIR} ${Thrift_INCLUDE_DIR})
-  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHT_WITH_THRIFT")
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHT_WITH_THRIFT")
-  set(ThriftBroker_IDL_DIR ${HYPERTABLE_SOURCE_DIR}/src/cc/ThriftBroker)
-endif ()
-
 if (GCC_VERSION MATCHES "^([4-9]|[1-9][0-9]+)\\.")
   SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-variadic-macros")
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-variadic-macros")
@@ -252,26 +265,23 @@ elseif (GCC_VERSION MATCHES "^([4-9]|[1-9][0-9]+)\\.")
   message(STATUS "Ancient gcc detected, hope it finishes despite warnings...")
 endif ()
 
-include(HadoopHelper)
+
+# include directories
+include_directories(src/cc ${HYPERTABLE_BINARY_DIR}/src/cc
+    ${ZLIB_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} ${Libssl_INCLUDE_DIR}
+    ${EXPAT_INCLUDE_DIRS} ${BDB_INCLUDE_DIR} ${EDITLINE_INCLUDE_DIR}
+    ${SIGAR_INCLUDE_DIR})
+
+
 include(TestHelper)
 include(DocHelper)
 
 # sub-project directories
 add_subdirectory(src)
-add_subdirectory(java)
 add_subdirectory(examples)
-add_subdirectory(contrib)
+# add_subdirectory(contrib)
 add_subdirectory(tests/integration)
 
-# Maven Repository
-if (NOT MAVEN_REPOSITORY)
-   SET (MAVEN_REPOSITORY "~/.m2/repository")
-endif ()
-
-# Java stuff
-if (NOT SKIP_JAVA_BUILD)
-  include(JavaHelper)
-endif ()
 
 configure_file(bin/ht.in ht @ONLY)
 configure_file(bin/postinst.in postinst @ONLY)
@@ -280,31 +290,6 @@ configure_file(bin/prerm.in prerm @ONLY)
 file(GLOB CONFS conf/[^.]*)
 install(FILES ${CONFS} DESTINATION conf)
 install(PROGRAMS ${HYPERTABLE_BINARY_DIR}/ht DESTINATION bin)
-
-# Copy Thrift files
-if (THRIFT_SOURCE_DIR)
-  message(STATUS "Copying PHP files into installation")
-  file(GLOB PHPFILES ${HYPERTABLE_SOURCE_DIR}/src/php/*.php)
-  install(FILES ${PHPFILES} DESTINATION lib/php)
-  install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/php/lib/Thrift
-          DESTINATION lib/php USE_SOURCE_PERMISSIONS)
-  message(STATUS "Copying Perl files into installation")
-  file(GLOB PERLFILES ${THRIFT_SOURCE_DIR}/lib/perl/lib/*.pm)
-  install(FILES ${PERLFILES} DESTINATION lib/perl)
-  install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/perl/lib/Thrift
-          DESTINATION lib/perl USE_SOURCE_PERMISSIONS)
-  message(STATUS "Copying Python files into installation")
-  install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/py/src/
-          DESTINATION lib/py/thrift USE_SOURCE_PERMISSIONS)
-  message(STATUS "Copying Ruby files into installation")
-  file(GLOB RUBYFILES ${THRIFT_SOURCE_DIR}/lib/rb/lib/*.rb)
-  install(FILES ${RUBYFILES} DESTINATION lib/rb)
-  install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/rb/lib/thrift
-          DESTINATION lib/rb USE_SOURCE_PERMISSIONS)
-endif ()
-
-# Copy C++ Thrift files
-install(DIRECTORY ${Thrift_INCLUDE_DIR} DESTINATION include USE_SOURCE_PERMISSIONS)
 
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB SCRIPTS bin/*.sh)
@@ -319,6 +304,3 @@ if (NOT HT_COMPONENT_INSTALL)
 else ()
   install(PROGRAMS bin/ht-env.sh bin/fhsize.sh bin/rpm_pre_install.sh bin/rpm_post_install.sh DESTINATION bin)
 endif ()
-
-install(PROGRAMS "${CRONOLOG_DIR}/cronolog" DESTINATION sbin)
-install(PROGRAMS "${NODEJS_EXECUTABLE}" DESTINATION sbin)
