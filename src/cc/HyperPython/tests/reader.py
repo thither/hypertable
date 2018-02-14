@@ -1,56 +1,59 @@
 import sys
 import imp
 
-if sys.argv[1]=='python': ht_serialize = imp.load_dynamic('libHyperPython',sys.argv[2]) # import libHyperPython as ht_serialize
-elif sys.argv[1]=='pypy': ht_serialize = imp.load_dynamic('libHyperPyPy',sys.argv[2])
-
 from hypertable.thriftclient import *
 from hyperthrift.gen.ttypes import *
 
+if sys.argv[1] == 'python':
+    ht_serialize = imp.load_dynamic('libHyperPython', sys.argv[2])
+    # import libHyperPython as ht_serialize
+elif sys.argv[1] == 'pypy':
+    ht_serialize = imp.load_dynamic('libHyperPyPy', sys.argv[2])
 
+print ("SerializedCellsReader Test")
+
+num_cells = 1000
+value_multi = 8000
+test_input = []
+output_test = []
+
+client = ThriftClient("localhost", 15867)
 try:
-  client = ThriftClient("localhost", 15867)
-  print "SerializedCellsReader example"
+    client.create_namespace("test")
+except:
+    pass
+namespace = client.namespace_open("test")
+client.hql_query(namespace, "drop table if exists thrift_test")
+client.hql_query(namespace, "create table thrift_test (col)")
 
-  namespace = client.namespace_open("test")
-  client.hql_query(namespace, "drop table if exists thrift_test")
-  client.hql_query(namespace, "create table thrift_test (col)")
-  client.hql_query(namespace, "insert into thrift_test values " \
-          "('2012-10-10', 'row0', 'col', 'value0')")
-  client.hql_query(namespace, "insert into thrift_test values " \
-          "('2012-10-10', 'row1', 'col', 'value1')")
-  client.hql_query(namespace, "insert into thrift_test values " \
-          "('2012-10-10', 'row2', 'col', 'value2')")
-  client.hql_query(namespace, "insert into thrift_test values " \
-          "('2012-10-10', 'row3', 'col', 'value3')")
-  client.hql_query(namespace, "insert into thrift_test values " \
-          "('2012-10-10', 'row4', 'col', 'value4')")
-  client.hql_query(namespace, "insert into thrift_test values " \
-          "('2012-10-10', 'row5', 'col', 'value5')")
-  client.hql_query(namespace, "insert into thrift_test values " \
-          "('2012-10-10', 'collapse_row', 'col:a', 'value6')")
-  client.hql_query(namespace, "insert into thrift_test values " \
-          "('2012-10-10', 'collapse_row', 'col:b', 'value7')")
-  client.hql_query(namespace, "insert into thrift_test values " \
-          "('2012-10-10', 'collapse_row', 'col:c', 'value8')")
+for i in range(0, num_cells):
+    i = str(i)
+    client.hql_query(
+        namespace, "insert into thrift_test values ('2012-10-10','row"+i+"','col:qly"+i+"','"+i*value_multi+"')")
+    test_input.append('row'+i+'_col:qly'+i+'_'+i*value_multi)
 
-  # read with SerializedCellsReader
-  scanner = client.scanner_open(namespace, "thrift_test",    ScanSpec(None, None, None, 1));
-  while True:
+# read with SerializedCellsReader
+scanner = client.scanner_open(namespace, "thrift_test", ScanSpec(None, None, None, 1))
+while True:
     buf = client.scanner_get_cells_serialized(scanner)
-    if (len(buf) <= 5):
-      break
+    if len(buf) <= 5:
+        break
     scr = ht_serialize.SerializedCellsReader(buf, len(buf))
     while scr.has_next():
-      print scr.row(),
-      print scr.column_family(),
-      s = ''
-      for i in range(scr.value_len()):
-        s += scr.value()[i]
-      print s
+        output_test.append(
+            scr.row()+"_"+scr.column_family()+':'+scr.column_qualifier()+"_"+scr.value()[0:scr.value_len()])
 
-  client.scanner_close(scanner)
-  client.namespace_close(namespace)
-except:
-  print sys.exc_info()
-  raise
+client.scanner_close(scanner)
+client.namespace_close(namespace)
+client.close()
+
+if sorted(test_input) == sorted(output_test):
+    print (0)
+    exit()
+
+print (sorted(test_input))
+print (sorted(output_test))
+print (len(test_input))
+print (len(output_test))
+print (1)
+exit()

@@ -1,41 +1,55 @@
 import sys
 import imp
 
-if sys.argv[1]=='python': ht_serialize = imp.load_dynamic('libHyperPython',sys.argv[2]) # import libHyperPython as ht_serialize
-elif sys.argv[1]=='pypy': ht_serialize = imp.load_dynamic('libHyperPyPy',sys.argv[2])
-
 from hypertable.thriftclient import *
 from hyperthrift.gen.ttypes import *
 
+if sys.argv[1] == 'python':
+    ht_serialize = imp.load_dynamic('libHyperPython', sys.argv[2])
+    # import libHyperPython as ht_serialize
+elif sys.argv[1] == 'pypy':
+    ht_serialize = imp.load_dynamic('libHyperPyPy', sys.argv[2])
 
+print ("SerializedCellsWriter Test")
+
+num_cells = 50
+value_multi = 8000
+test_input = []
+output_test = []
+
+client = ThriftClient("localhost", 15867)
 try:
-  client = ThriftClient("localhost", 15867)
-  print "SerializedCellsWriter example"
-
-  namespace = client.namespace_open("test")
-  client.hql_query(namespace, "drop table if exists thrift_test")
-  client.hql_query(namespace, "create table thrift_test (col)")
-
-  # write with SerializedCellsWriter
-  scw = ht_serialize.SerializedCellsWriter(100, True)
-
-  scw.add("row0", "col", "", 0, "cell0", 6, 255)
-  scw.add("row1", "col", "", 0, "cell1", 6, 255)
-  scw.add("row2", "col", "", 0, "cell2", 6, 255)
-  scw.add("row3", "col", "", 0, "cell3", 6, 255)
-  scw.add("row4", "col", "", 0, "cell4", 6, 255)
-  scw.add("row5", "col", "", 0, "cell5", 6, 255)
-  scw.add("collapse_row", "col", "a", 0, "cell6", 6, 255)
-  scw.add("collapse_row", "col", "b", 0, "cell7", 6, 255)
-  scw.add("collapse_row", "col", "c", 0, "cell8", 6, 255)
-  scw.finalize(0)
-  client.set_cells_serialized(namespace, "thrift_test", scw.get())
-
-  res = client.hql_query(namespace, "select * from thrift_test")
-  for cell in res.cells:
-      print cell.key.row, cell.key.column_family, cell.value
-
-  client.namespace_close(namespace)
+    client.create_namespace("test")
 except:
-  print sys.exc_info()
-  raise
+    pass
+namespace = client.namespace_open("test")
+client.hql_query(namespace, "drop table if exists thrift_test")
+client.hql_query(namespace, "create table thrift_test (col)")
+
+# write with SerializedCellsWriter
+scw = ht_serialize.SerializedCellsWriter(32896, True)
+for i in range(0, num_cells):
+    i = str(i)
+    scw.add("row"+i, "col", 'qly'+i, 0, i*value_multi, 6, 255)
+    test_input.append('row'+i+'_'+'col:'+'qly'+i+'_'+i*value_multi)
+scw.finalize(0)
+client.set_cells_serialized(namespace, "thrift_test", scw.get())
+
+res = client.hql_query(namespace, "select * from thrift_test cell_limit " + str(num_cells))
+for cell in res.cells:
+    output_test.append(cell.key.row+'_'+cell.key.column_family+':'+cell.key.column_qualifier+'_'+cell.value)
+
+client.namespace_close(namespace)
+client.close()
+
+if sorted(test_input) == sorted(output_test):
+    print (0)
+    exit()
+
+print (sorted(test_input))
+print (sorted(output_test))
+print (len(test_input))
+print (len(output_test))
+print (1)
+exit()
+
