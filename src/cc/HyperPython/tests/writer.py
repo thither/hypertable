@@ -1,19 +1,26 @@
 import sys
-import imp
+
+if sys.version_info.major == 3:
+    import imp
+    # import importlib as imp
+else:
+    import imp
 
 from hypertable.thriftclient import *
 from hyperthrift.gen.ttypes import *
 
+# import libHyperPython as ht_serialize
 if sys.argv[1] == 'python':
     ht_serialize = imp.load_dynamic('libHyperPython', sys.argv[2])
-    # import libHyperPython as ht_serialize
+elif sys.argv[1] == 'python3':
+    ht_serialize = imp.load_dynamic('libHyperPython', sys.argv[2])
 elif sys.argv[1] == 'pypy':
     ht_serialize = imp.load_dynamic('libHyperPyPy', sys.argv[2])
 
 print ("SerializedCellsWriter Test")
 
-num_cells = 50
-value_multi = 8000
+num_cells = 1000000
+value_multi = 10
 test_input = []
 output_test = []
 
@@ -28,10 +35,14 @@ client.hql_query(namespace, "create table thrift_test (col)")
 
 # write with SerializedCellsWriter
 scw = ht_serialize.SerializedCellsWriter(32896, True)
+s_sz = 0
 for i in range(0, num_cells):
     i = str(i)
-    scw.add("row"+i, "col", 'qly'+i, 0, i*value_multi, 6, 255)
-    test_input.append('row'+i+'_'+'col:'+'qly'+i+'_'+i*value_multi)
+    v = i*value_multi
+    scw.add("row"+i, "col", 'qly'+i, 0, v, len(v), 255)
+    test_input.append('row'+i+'_'+'col:'+'qly'+i+'_'+v)
+    s_sz += len(test_input[-1])
+print ('est scw sz: '+str(s_sz))
 scw.finalize(0)
 client.set_cells_serialized(namespace, "thrift_test", scw.get())
 

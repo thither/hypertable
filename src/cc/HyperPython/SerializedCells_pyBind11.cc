@@ -54,26 +54,18 @@ PYBIND11_MODULE(libHyperPyPy, m) {
     ;
 
   py::class_<SerializedCellsReader, std::unique_ptr<SerializedCellsReader>> (m, "SerializedCellsReader")
-	.def(py::init<py::bytes, uint32_t>())
+	.def(py::init<String, uint32_t>())
 	.def("has_next", &SerializedCellsReader::next)
     .def("get_cell", &SerializedCellsReader::get_cell)
 	.def("row", &SerializedCellsReader::row)
 
     .def("column_family", &SerializedCellsReader::column_family)
     .def("column_qualifier", &SerializedCellsReader::column_qualifier)
-	.def("value", []( SerializedCellsReader &c) {
-		char *tmp = new char[c.value_len()];
-		memcpy(tmp, c.value(), c.value_len());
-		tmp[c.value_len()] = 0;
-		std::string ret(tmp);
-		delete[] tmp;
-		return py::bytes(ret);
-		//return py::bytes(std::string s((char *)c.value_str(), scw.value_len()));
-				// c.value();   > PyCapsule
-		//return c.value_str();
-	})
+    .def("value", &SerializedCellsReader::value_str)
     .def("value_len", &SerializedCellsReader::value_len)
-    .def("value_str", &SerializedCellsReader::value_str)
+	.def("value_str", []( SerializedCellsReader &scr) {
+		return py::bytes(String((char *)scr.value(), scr.value_len()));
+	})
     .def("timestamp", &SerializedCellsReader::timestamp)
     .def("cell_flag", &SerializedCellsReader::cell_flag)
     .def("flush", &SerializedCellsReader::flush)
@@ -88,8 +80,7 @@ PYBIND11_MODULE(libHyperPyPy, m) {
     .def("clear", &SerializedCellsWriter::clear)
     .def("__len__", lenfn)
 	.def("get", [](const SerializedCellsWriter &scw) {
-		std::string s((char *)scw.get_buffer(), scw.get_buffer_length());
-		return py::bytes(s);
+		return py::bytes(String((const char *)scw.get_buffer(), (const int32_t)scw.get_buffer_length()));
 	})
 	 
      //.def_buffer("get", &get_buffer)  // std::unique_ptr<SerializedCellsWriter>
