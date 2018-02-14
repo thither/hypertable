@@ -33,9 +33,10 @@ add_custom_command(
 
 if (PYTHONTHRIFT_FOUND)
   add_test(ThriftClient-python env
-      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}:${HYPERTABLE_BINARY_DIR}/src/py/ThriftClient/gen-py
+      PYTHONPATH=${CMAKE_INSTALL_PREFIX}/lib/py
       python ${CMAKE_CURRENT_SOURCE_DIR}/client_test.py)
 endif ()
+
 
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
   install(DIRECTORY 
