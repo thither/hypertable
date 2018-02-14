@@ -16,11 +16,15 @@ A build can be done using the  [https://github.com/kashirin-alex/environments-bu
 Configuration options with cmake:
   
   Support for libraries in the different languages can be set with the LANGS param by comman delimited languages(ext+version)
- -DLANGS=py2,py3,pypy2,js,java,php,rb,pl
-  (default is "all", for None, "none" should be used) 
+    (default is "all", for None, "none" should be used) 
+  
+         -DLANGS=py2,py3,pypy2,js,java,php,rb,pl
+ 
   
   File System Brokers can be set with the FSBROKERS param by comman delimited of hdfs,qfs,ceph,mapr
- -DFSBROKERS=hdfs,qfs,ceph,mapr
-  (default is "all", for None, "none" should be used) 
+    (default is "all", for None, "none" should be used) 
+  
+         -DFSBROKERS=hdfs,qfs,ceph,mapr
+ 
  
 for more guidence you can follow with the Hypertable repository [https://github.com/hypertable/hypertable]
