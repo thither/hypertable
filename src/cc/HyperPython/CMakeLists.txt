@@ -23,8 +23,9 @@ set(CMAKE_CXX_FLAGS "-DHAVE_NETINET_IN_H ${CMAKE_CXX_FLAGS}")
 
 
 if (PYTHON2_FOUND)
-	add_library(HyperPython2 MODULE SerializedCells.cc)
-	target_link_libraries(HyperPython2 HyperThrift ThriftGenPy HyperCommon  Hypertable ${PYTHON2_LIBRARY} ${Thrift_LIBS} ${LibEvent_LIBS})
+	add_library(HyperPython2 MODULE SerializedCells.cc DEPENDS ThriftGenPy)
+	
+	target_link_libraries(HyperPython2 HyperThrift HyperCommon  Hypertable ${PYTHON2_LIBRARY} ${Thrift_LIBS} ${LibEvent_LIBS})
 	target_include_directories(HyperPython2 PRIVATE ${PYTHON2_INCLUDE_DIR})
 	
 	install(TARGETS HyperPython2
@@ -37,8 +38,8 @@ if (PYTHON2_FOUND)
 endif ()
 
 if (PYTHON3_FOUND)
-	add_library(HyperPython3 MODULE SerializedCells.cc)
-	target_link_libraries(HyperPython3 HyperThrift ThriftGenPy HyperCommon  Hypertable ${PYTHON3_LIBRARY} ${Thrift_LIBS} ${LibEvent_LIBS})
+	add_library(HyperPython3 MODULE SerializedCells.cc DEPENDS ThriftGenPy)
+	target_link_libraries(HyperPython3 HyperThrift HyperCommon  Hypertable ${PYTHON3_LIBRARY} ${Thrift_LIBS} ${LibEvent_LIBS})
 	target_include_directories(HyperPython3 PRIVATE ${PYTHON3_INCLUDE_DIR})
 	
 	install(TARGETS HyperPython3
@@ -54,8 +55,8 @@ endif ()
 
 
 if (PYPY2_FOUND AND Pybind11_FOUND)
-	add_library(HyperPyPy2 MODULE SerializedCells_pyBind11.cc)
-	target_link_libraries(HyperPyPy2 HyperThrift ThriftGenPy HyperCommon Hypertable ${PYPY2_LIBDIR} ${Thrift_LIBS} ${LibEvent_LIBS})
+	add_library(HyperPyPy2 MODULE SerializedCells_pyBind11.cc DEPENDS ThriftGenPy)
+	target_link_libraries(HyperPyPy2 HyperThrift HyperCommon Hypertable ${PYPY2_LIBDIR} ${Thrift_LIBS} ${LibEvent_LIBS})
 	target_compile_options(HyperPyPy2 PRIVATE
 					  -flto
 					  -DPYTHON_VERSION=2
@@ -75,8 +76,8 @@ if (PYPY2_FOUND AND Pybind11_FOUND)
 endif ()
 
 if (PYPY3_FOUND AND Pybind11_FOUND)
-	add_library(HyperPyPy3 MODULE SerializedCells_pyBind11.cc)
-	target_link_libraries(HyperPyPy3 HyperThrift ThriftGenPy HyperCommon Hypertable ${PYPY3_LIBDIR} ${Thrift_LIBS} ${LibEvent_LIBS})
+	add_library(HyperPyPy3 MODULE SerializedCells_pyBind11.cc DEPENDS ThriftGenPy)
+	target_link_libraries(HyperPyPy3 HyperThrift HyperCommon Hypertable ${PYPY3_LIBDIR} ${Thrift_LIBS} ${LibEvent_LIBS})
 	target_compile_options(HyperPyPy3 PRIVATE
 					  -flto
 					  -DPYTHON_VERSION=3
