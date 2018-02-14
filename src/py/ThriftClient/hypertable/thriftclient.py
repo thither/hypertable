@@ -12,7 +12,7 @@ class ThriftClient(HqlService.Client):
         socket = TSocket.TSocket(host, port)
         socket.setTimeout(timeout_ms)
         self.transport = TTransport.TFramedTransport(socket)
-        protocol = TBinaryProtocol.TBinaryProtocolAccelerated(self.transport)  # TBinaryProtocol
+        protocol = TBinaryProtocol.TBinaryProtocol(self.transport)  # TBinaryProtocolAccelerated
         HqlService.Client.__init__(self, protocol)
         if do_open:
             self.open(timeout_ms)
