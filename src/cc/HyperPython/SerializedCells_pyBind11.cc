@@ -38,6 +38,7 @@ static addfn afn = &Hypertable::SerializedCellsWriter::add;
 static getlenfn lenfn = &Hypertable::SerializedCellsWriter::get_buffer_length;
 
 
+
 PYBIND11_MODULE(libHyperPyPy, m) {
   m.doc() = "libHyperPyPy: libHyperPython for PyPy";
 
@@ -52,7 +53,7 @@ PYBIND11_MODULE(libHyperPyPy, m) {
     .def_readwrite("flag", &Cell::flag)//.def(py::self::str(py::self))
     ;
 
-  py::class_<SerializedCellsReader> (m, "SerializedCellsReader")
+  py::class_<SerializedCellsReader, std::unique_ptr<SerializedCellsReader>> (m, "SerializedCellsReader")
 	.def(py::init<py::bytes, uint32_t>())
 	.def("has_next", &SerializedCellsReader::next)
     .def("get_cell", &SerializedCellsReader::get_cell)
@@ -60,7 +61,17 @@ PYBIND11_MODULE(libHyperPyPy, m) {
 
     .def("column_family", &SerializedCellsReader::column_family)
     .def("column_qualifier", &SerializedCellsReader::column_qualifier)
-    .def("value", &SerializedCellsReader::value_str)
+	.def("value", []( SerializedCellsReader &c) {
+		char *tmp = new char[c.value_len()];
+		memcpy(tmp, c.value(), c.value_len());
+		tmp[c.value_len()] = 0;
+		std::string ret(tmp);
+		delete[] tmp;
+		return py::bytes(ret);
+		//return py::bytes(std::string s((char *)c.value_str(), scw.value_len()));
+				// c.value();   > PyCapsule
+		//return c.value_str();
+	})
     .def("value_len", &SerializedCellsReader::value_len)
     .def("value_str", &SerializedCellsReader::value_str)
     .def("timestamp", &SerializedCellsReader::timestamp)
