@@ -19,14 +19,13 @@ Configuration options with cmake:
     (default is "all", for None, "none" should be used) 
   
          -DLANGS=py2,py3,pypy2,js,java,php,rb,pl
-     if set and the depenencies are not meet it will quite wit fatal error
   
-  File System Brokers can be set with the FSBROKERS param by comman delimited of hdfs,qfs,ceph,mapr
-    (default is "all", for None, "none" should be used) 
+  File System Brokers can be set with the FSBROKERS param by comman delimited of hdfs,qfs,ceph,mapr  
   
          -DFSBROKERS=hdfs,qfs,ceph,mapr
-     if set and the depenencies are not meet it will quite wit fatal error
-     
-     
+         
+The configuration options of LANGS and FSBROKERS, apply:
+   - default is "all" and "none" should be used for None,
+   - if set and the depenencies are not meet it will quit wit fatal error
      
 for more guidence you can follow with the Hypertable repository [https://github.com/hypertable/hypertable]
