@@ -3,6 +3,7 @@ STATE:
 WITH "make PyHypertable":
 
 import imp
+
 ht=imp.load_dynamic('PyHypertable', '/root/builds/builts/hypertable/src/py/libpyhypertable/libPyHypertable.so')
 dir(ht)
 ['__doc__', '__file__', '__name__', '__package__', 'is_bool', 'open_namespace']
