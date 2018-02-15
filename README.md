@@ -24,7 +24,7 @@ Configuration options with cmake:
   
          -DFSBROKERS=hdfs,qfs,ceph,mapr
          
-The configuration options of LANGS and FSBROKERS, apply:
+To configuration options of LANGS and FSBROKERS, follow apply:
    - default is "all" and "none" should be used for None,
    - if set and the depenencies are not meet it will quit wit fatal error
      
