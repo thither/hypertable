@@ -1,2 +1,2 @@
-add_test(Client-large-row env INSTALL_DIR=${INSTALL_DIR} PYTHONPATH=${CMAKE_INSTALL_PREFIX}/src/py 
+add_test(Client-large-row env INSTALL_DIR=${INSTALL_DIR} PYTHONPATH=${CMAKE_INSTALL_PREFIX}/lib/py 
 		${CMAKE_CURRENT_SOURCE_DIR}/run.sh)
