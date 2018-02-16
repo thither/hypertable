@@ -80,14 +80,16 @@ endif ()
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
 
 if (PYTHON2_FOUND)
-  install( CODE "
-	execute_process(
-		COMMAND   	\"python setup.py install\"
-		WORKING_DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg
-		COMMENT   	\"ThriftClientPy setup.py\"
-	)
-		"
-  )
+install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python setup.py install;)")
+endif ()
+if (PYTHON3_FOUND)
+install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python3 setup.py install;)")
+endif ()
+if (PYPY2_FOUND)
+install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy setup.py install;)")
+endif ()
+if (PYPY3_FOUND)
+install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy2 setup.py install;)")
 endif ()
 		
 endif ()

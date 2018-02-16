@@ -1,24 +1,6 @@
-# -- coding: utf-8 --
-import sys
-
-if sys.version_info.major == 3:
-    import imp
-    # import importlib as imp
-else:
-    import imp
-
-from hypertable.thrift_client import *
-from hypertable.thrift_client.hyperthrift.gen.ttypes import *
-
-# import libHyperPython as ht_serialize
-if sys.argv[1] == 'python':
-    ht_serialize = imp.load_dynamic('libHyperPython', sys.argv[2])
-elif sys.argv[1] == 'python3':
-    ht_serialize = imp.load_dynamic('libHyperPython', sys.argv[2])
-elif sys.argv[1] == 'pypy':
-    ht_serialize = imp.load_dynamic('libHyperPyPy', sys.argv[2])
-
-
+from hypertable.thriftclient import ThriftClient
+from hypertable.thriftclient.serialized_cells import Reader
+from hypertable.thriftclient.hyperthrift.gen.ttypes import *
 print ("SerializedCellsReader Test")
 
 num_cells = 100
@@ -48,7 +30,7 @@ while True:
     print ('buf len: '+str(len(buf)))
     if len(buf) <= 5:
         break
-    scr = ht_serialize.SerializedCellsReader(buf, len(buf))
+    scr = Reader(buf, len(buf))
     try:
         while scr.has_next():
             c = (scr.get_cell())
