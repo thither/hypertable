@@ -39,15 +39,16 @@ if (Thrift_FOUND)
 		DEPENDS   	${ThriftBroker_IDL_DIR}/Client.thrift
 					${ThriftBroker_IDL_DIR}/Hql.thrift
 		COMMENT   	"ThriftPyGen"
+		
+	#### SET HYPERTHRIFT module to HYPERTABLE PKG
+	add_custom_command(
+		TARGET 	ThriftClientPy
+		COMMAND   cp 
+		ARGS      -r ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/gen-py/hyperthrift ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/
+	)
 )
 endif ()
 
-#### SET HYPERTHRIFT module to HYPERTABLE PKG
-add_custom_command(
-  TARGET 	ThriftClientPy
-  COMMAND   cp 
-  ARGS      -r ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/gen-py/hyperthrift ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/
-)
 
 
 
