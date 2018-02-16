@@ -46,6 +46,18 @@ if (Thrift_FOUND)
 		COMMAND   cp 
 		ARGS      -r ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/gen-py/hypertable/thrift_client/hyperthrift ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/
 	)
+	#### minimize attr access
+	add_custom_command(
+		TARGET 	 ThriftClientPy
+		COMMAND  sed 
+		ARGS     -i 's/import hypertable.thrift_client.hyperthrift.gen.ttypes/from hypertable.thrift_client.hyperthrift import gen.ttypes as gen\_ttypes/g' ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/hyperthrift/gen2/ttypes.py
+	)
+	add_custom_command(
+		TARGET 	 ThriftClientPy
+		COMMAND  sed 
+		ARGS     -i 's/hypertable.thrift_client.hyperthrift.gen.ttypes\./gen_ttypes\./g' ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/hyperthrift/gen2/ttypes.py
+	)
+	
 endif ()
 
 
