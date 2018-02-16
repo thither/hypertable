@@ -44,7 +44,7 @@ if (Thrift_FOUND)
 	add_custom_command(
 		TARGET 	ThriftClientPy
 		COMMAND   cp 
-		ARGS      -r ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/gen-py/hyperthrift ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/
+		ARGS      -r ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/gen-py/hypertable/thrift_client/hyperthrift ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/
 	)
 endif ()
 
