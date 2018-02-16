@@ -1,6 +1,6 @@
-from hypertable.thriftclient import ThriftClient
-from hypertable.thriftclient.serialized_cells import Reader
-from hypertable.thriftclient.hyperthrift.gen.ttypes import *
+from hypertable.thrift_client import ThriftClient
+from hypertable.thrift_client.serialized_cells import Reader
+from hypertable.thrift_client.hyperthrift.gen.ttypes import *
 print ("SerializedCellsReader Test")
 
 num_cells = 100

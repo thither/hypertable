@@ -1,5 +1,5 @@
-from hypertable.thriftclient import ThriftClient
-from hypertable.thriftclient.serialized_cells import Writer
+from hypertable.thrift_client import ThriftClient
+from hypertable.thrift_client.serialized_cells import Writer
 
 print ("SerializedCellsWriter Test")
 

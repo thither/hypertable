@@ -1,7 +1,7 @@
 import sys
 import time
-from hypertable.thriftclient import *
-from hypertable.thriftclient.hyperthrift.gen.ttypes import *
+from hypertable.thrift_client import *
+from hypertable.thrift_client.hyperthrift.gen.ttypes import *
 
 try:
     client = ThriftClient("localhost", 15867)
