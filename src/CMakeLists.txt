@@ -30,9 +30,6 @@ if (Thrift_FOUND)
   if (LANGS OR LANG_PL)
 	add_subdirectory(perl/ThriftClient)
   endif ()
-  if (LANGS OR LANG_PY2 OR LANG_PY3 OR LANG_PYPY2 OR LANG_PYPY3)
-    add_subdirectory(py/ThriftClient)
-  endif ()
   if (LANGS OR LANG_PHP)
    add_subdirectory(php/ThriftClient)
   endif ()
@@ -52,14 +49,21 @@ if (Qfs_FOUND)
    add_subdirectory(cc/FsBroker/qfs)
 endif ()
 
+
+if (LANGS OR LANG_PY2 OR LANG_PY3 OR LANG_PYPY2 OR LANG_PYPY3)
+  add_subdirectory(py/ht-package)
+endif ()
+
 if (LANGS OR LANG_JAVA OR Hdfs_FOUND)
 	add_subdirectory(java)
 endif ()
 
 
-if (LANGS OR LANG_PY2 OR LANG_PY3 OR LANG_PYPY2 OR LANG_PYPY3)
-  if (PYTHONTHRIFT_FOUND AND (PYTHON2_FOUND OR PYTHON3_FOUND OR PYPY2_FOUND OR PYPY3_FOUND))
-    add_subdirectory(cc/HyperPython)
-    #add_subdirectory(py/libpyhypertable)
-  endif ()
-endif ()
+
+
+#if (LANGS OR LANG_PY2 OR LANG_PY3 OR LANG_PYPY2 OR LANG_PYPY3)
+#  if (PYTHONTHRIFT_FOUND AND (PYTHON2_FOUND OR PYTHON3_FOUND OR PYPY2_FOUND OR PYPY3_FOUND))
+#    # add_subdirectory(cc/HyperPython)
+#    #add_subdirectory(py/libpyhypertable)
+#  endif ()
+#endif ()

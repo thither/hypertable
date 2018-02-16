@@ -252,3 +252,19 @@ endif ()
 mark_as_advanced(
   Boost_INCLUDE_DIR
 )
+
+FIND_BOOST_LIBRARY(BOOST_PYTHON2_LIB python ${Boost_PARENT} false)
+if (LANG_PY2 AND NOT BOOST_PYTHON2_LIB)		
+	message(FATAL_ERROR "Language python3 require libboost_python(2)")
+endif ()
+if (BOOST_PYTHON2_LIB)	
+	set(BOOST_PYTHON2_LIB ${BOOST_PYTHON2_LIB})
+endif ()
+
+FIND_BOOST_LIBRARY(BOOST_PYTHON3_LIB python3 ${Boost_PARENT} false)
+if (LANG_PY3 AND NOT BOOST_PYTHON3_LIB)		
+	message(FATAL_ERROR "Language python3 require libboost_python3")
+endif ()
+if (BOOST_PYTHON3_LIB)	
+	set(BOOST_PYTHON3_LIB ${BOOST_PYTHON3_LIB})
+endif ()
