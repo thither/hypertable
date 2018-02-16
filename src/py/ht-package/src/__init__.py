@@ -1,1 +1,1 @@
-__all__ = ['thriftclient', 'libHyperPython', 'libHyperPyPy']
+__all__ = ['thrift_client', 'libHyperPython', 'libHyperPyPy']
