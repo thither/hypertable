@@ -3,7 +3,7 @@
 import random
 import sys
 import time
-from hypertable.thrift_client import *
+from hypertable.thrift_client.thriftclient import ThriftClient
 from hypertable.thrift_client.hyperthrift.gen.ttypes import *
 
 if (len(sys.argv) < 2):
