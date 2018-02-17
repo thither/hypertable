@@ -30,11 +30,10 @@ typedef bool (SerializedCellsWriter::*addfn)(const char *row,
 	const char *column_family, const char *column_qualifier,
 	int64_t timestamp, const char *value, int32_t value_length,
 	int cell_flag);
-typedef const char *(SerializedCellsWriter::*getfn)();
+static addfn afn = &SerializedCellsWriter::add;
+	
 typedef int32_t(SerializedCellsWriter::*getlenfn)();
-
-static addfn afn = &Hypertable::SerializedCellsWriter::add;
-static getlenfn lenfn = &Hypertable::SerializedCellsWriter::get_buffer_length;
+static getlenfn lenfn = &SerializedCellsWriter::get_buffer_length;
 
 
 PYBIND11_MODULE(serialized_cells, m) {

@@ -28,6 +28,7 @@ for i in range(0, num_cells):
     s_sz += len(test_input[-1])
 print ('est scw sz: '+str(s_sz))
 scw.finalize(0)
+print ('buf len: '+str(len(scw)))
 client.set_cells_serialized(namespace, "thrift_test", scw.get())
 
 res = client.hql_query(namespace, "select * from thrift_test cell_limit " + str(num_cells))
@@ -42,8 +43,9 @@ for cell in res.cells:
 
 client.namespace_close(namespace)
 client.close()
-
 if sorted(test_input) != sorted(output_test):
     print (sorted(test_input)[0])
     print (sorted(output_test)[0])
+    print (len(test_input))
+    print (len(output_test))
     exit(1)
