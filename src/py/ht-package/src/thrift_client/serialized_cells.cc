@@ -52,18 +52,23 @@ PYBIND11_MODULE(serialized_cells, m) {
     ;
 
   py::class_<SerializedCellsReader, std::unique_ptr<SerializedCellsReader>> (m, "Reader")
-	.def(py::init<String, uint32_t>())
+	.def(py::init<py::bytes &, uint32_t>())
 	.def("has_next", &SerializedCellsReader::next)
     .def("get_cell", &SerializedCellsReader::get_cell)
-	.def("row", &SerializedCellsReader::row)
-
-    .def("column_family", &SerializedCellsReader::column_family)
-    .def("column_qualifier", &SerializedCellsReader::column_qualifier)
+	.def("row", []( SerializedCellsReader &scr) {
+		return py::bytes(scr.row());
+	})
+	.def("column_family", []( SerializedCellsReader &scr) {
+		return py::bytes(scr.column_family());
+	})
+	.def("column_qualifier", []( SerializedCellsReader &scr) {
+		return py::bytes(scr.column_qualifier());
+	})
+	.def("value_str", []( SerializedCellsReader &scr) {
+		return py::bytes(String(scr.value_str(), scr.value_len()));
+	})
     .def("value", &SerializedCellsReader::value_str)
     .def("value_len", &SerializedCellsReader::value_len)
-	.def("value_str", []( SerializedCellsReader &scr) {
-		return py::bytes(String((char *)scr.value(), scr.value_len()));
-	})
     .def("timestamp", &SerializedCellsReader::timestamp)
     .def("cell_flag", &SerializedCellsReader::cell_flag)
     .def("flush", &SerializedCellsReader::flush)

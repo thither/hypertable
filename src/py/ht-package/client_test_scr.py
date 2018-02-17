@@ -1,4 +1,6 @@
-from hypertable.thrift_client import ThriftClient
+# -- coding: utf-8 --
+
+from hypertable.thrift_client.thriftclient import ThriftClient
 from hypertable.thrift_client.serialized_cells import Reader
 from hypertable.thrift_client.hyperthrift.gen.ttypes import *
 print ("SerializedCellsReader Test")
@@ -20,31 +22,46 @@ client.hql_query(namespace, "create table thrift_test (col)")
 for i in range(0, num_cells):
     i = str(i)
     client.hql_query(
-        namespace, "insert into thrift_test values ('2012-10-10','row"+i+"','col:qly"+i+"','"+str(i*value_multi)+"')")
-    test_input.append(str('row'+i+'_col:qly'+i+'_'+str(i*value_multi)))
+        namespace, "insert into thrift_test values ('2012-10-10','row"+i+"','col:qly"+i+"','"+(i*value_multi)+"')")
+    test_input.append(('row'+i+'_col:qly'+i+'_'+(i*value_multi)).encode())
 
 # read with SerializedCellsReader
 scanner = client.scanner_open(namespace, "thrift_test", ScanSpec(None, None, None, 1))
-while True:
-    buf = client.scanner_get_cells_serialized(scanner)
-    print ('buf len: '+str(len(buf)))
-    if len(buf) <= 5:
-        break
-    scr = Reader(buf, len(buf))
-    try:
-        while scr.has_next():
-            c = (scr.get_cell())
-            print c
-            v = [scr.row(), scr.column_family(), scr.column_qualifier(), scr.value_str(), scr.value_len()]
-            print (len(v[-2]), v[-1])
-            output_test.append(str(v[0])+"_"+str(v[1])+':'+str(v[2])+"_"+str(v[3]))
-    except:
-        print (sys.exc_info())
+err_s = []
+try:
+    while True:
+        buf = client.scanner_get_cells_serialized(scanner)
+        l_buf = len(buf)
+        print ('buf len: ' + str(l_buf))
+        if l_buf <= 5:
+            break
+        scr = Reader(buf, l_buf)
+        try:
+            while scr.has_next():
+                # c = (scr.get_cell())
+                # print (c)
+                ts = int(scr.timestamp())
+                row = scr.row()
+                cf = scr.column_family()
+                cq = scr.column_qualifier()
+                value = scr.value_str()
+                # v_bin = scr.value()
+                v_len = int(scr.value_len())
 
+                v = [ts, row, cf, cq, value, scr.value_len()]
+                print (v)
+                print (len(value), v_len)
+                output_test.append(row+'_'.encode()+cf+':'.encode()+cq+'_'.encode()+value)
+        except Exception as e:
+            err_s.append(e)
+except Exception as e:
+    err_s.append(e)
 client.scanner_close(scanner)
 client.namespace_close(namespace)
 client.close()
 
+if err_s:
+    print (err_s)
 if sorted(test_input) == sorted(output_test):
     print (0)
     exit()

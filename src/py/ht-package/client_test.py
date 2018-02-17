@@ -12,7 +12,14 @@ try:
     except:
         print ("Caught exception when tyring to open 'bad' namespace")
 
+    try:
+        client.create_namespace("test")
+    except:
+        pass
     namespace = client.namespace_open("test")
+    client.hql_query(namespace, "drop table if exists thrift_test")
+    client.hql_query(namespace, "create table thrift_test (col)")
+
     res = client.hql_query(namespace, "show tables")
     print (res)
     res = client.hql_query(namespace, "select * from thrift_test")

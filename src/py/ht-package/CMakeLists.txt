@@ -50,7 +50,7 @@ if (Thrift_FOUND)
 	add_custom_command(
 		TARGET 	 ThriftClientPy
 		COMMAND  sed 
-		ARGS     -i 's/import hypertable.thrift_client.hyperthrift.gen.ttypes/from hypertable.thrift_client.hyperthrift import gen.ttypes as gen_ttypes/g' ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/hyperthrift/gen2/ttypes.py
+		ARGS     -i 's/import hypertable.thrift_client.hyperthrift.gen.ttypes/from hypertable.thrift_client.hyperthrift.gen import ttypes as gen_ttypes/g' ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/hyperthrift/gen2/ttypes.py
 	)
 	add_custom_command(
 		TARGET 	 ThriftClientPy
@@ -93,19 +93,19 @@ if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
 
 if (PYTHON2_FOUND)
 install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python setup.py sdist;)")
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python -m pip install dist/hypertable-${VERSION}.tar.gz;)")
+install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz;)")
 endif ()
 if (PYTHON3_FOUND)
 install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python3 setup.py sdist;)")
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python3 -m pip install dist/hypertable-${VERSION}.tar.gz;)")
+install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python3 -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz;)")
 endif ()
 if (PYPY2_FOUND)
 install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy setup.py sdist;)")
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy -m pip install dist/hypertable-${VERSION}.tar.gz;)")
+install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz;)")
 endif ()
 if (PYPY3_FOUND)
 install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy3 setup.py sdist;)")
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy3 -m pip install dist/hypertable-${VERSION}.tar.gz;)")
+install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy3 -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz;)")
 endif ()
 		
 endif ()
