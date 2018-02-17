@@ -62,13 +62,11 @@ client.close()
 
 if err_s:
     print (err_s)
-if sorted(test_input) == sorted(output_test):
-    print (0)
-    exit()
+if sorted(test_input) != sorted(output_test):
+    print (sorted(test_input)[0])
+    print (sorted(output_test)[0])
+    print (len(test_input))
+    print (len(output_test))
+    exit(1)
 
-print (sorted(test_input)[0])
-print (sorted(output_test)[0])
-print (len(test_input))
-print (len(output_test))
-print (1)
-exit()
+
