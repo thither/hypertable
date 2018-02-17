@@ -26,7 +26,8 @@ try:
     print (res)
 
     print ("mutator examples")
-    mutator = client.mutator_open(namespace, "thrift_test", 0, 0)
+    mutator = client.mutator_open(namespace, b'thrift_test', 0, 0)
+    print ("mutator examples mutator_set_cell")
     client.mutator_set_cell(mutator, Cell(Key("py-k1", "col", None), "py-v1"))
     client.mutator_flush(mutator)
     client.mutator_close(mutator)
