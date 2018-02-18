@@ -27,7 +27,7 @@ add_custom_command(
   ARGS     -r ${HYPERTABLE_SOURCE_DIR}/src/py/ht-package/* ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg
 )
 configure_file(setup.py.in ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/setup.py @ONLY)
-configure_file(requirements.txt ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/requirements.txt @ONLY)
+configure_file(requirements.txt.in ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/requirements.txt @ONLY)
 
 #### GENERATE HYPERTHRIFT module
 if (Thrift_FOUND)
