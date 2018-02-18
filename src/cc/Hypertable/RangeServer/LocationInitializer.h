@@ -54,7 +54,7 @@ namespace Hypertable {
 
     /// Constructor.
     /// @param context %Range server context
-    LocationInitializer(std::shared_ptr<Context> &context);
+    LocationInitializer(std::shared_ptr<RangeServerContext> &context);
 
     /// Checks if "removed" attribute is set on Hyperspace location file
     virtual bool is_removed(const String &path,
@@ -79,7 +79,7 @@ namespace Hypertable {
   private:
 
     /// %Range server context
-    std::shared_ptr<Context> m_context;
+    std::shared_ptr<RangeServerContext> m_context;
 
     /// %Mutex for serializing concurrent access.
     std::mutex m_mutex;

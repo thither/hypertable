@@ -820,7 +820,7 @@ void Monitoring::run_rrdtool(std::vector<String> &command) {
   int ret = ::system(cmd.c_str());
   if (ret != 0) {
     HT_WARNF("Monitor: failed to invoke `rrdtool`; make sure it's properly "
-            "installed and in your $PATH (command returned status %d)", ret);
+            "installed and in your $PATH (command %s returned status %d)", cmd.c_str(), ret);
   }
 }
 

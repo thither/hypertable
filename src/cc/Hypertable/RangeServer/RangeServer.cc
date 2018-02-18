@@ -115,7 +115,7 @@ Apps::RangeServer::RangeServer(PropertiesPtr &props, ConnectionManagerPtr &conn_
   m_ganglia_collector =
     std::make_shared<MetricsCollectorGanglia>("rangeserver", props);
 
-  m_context = std::make_shared<Context>();
+  m_context = std::make_shared<RangeServerContext>();
   m_context->props = props;
   m_context->comm = conn_mgr->get_comm();
   m_context->server_state = std::make_shared<ServerState>();
