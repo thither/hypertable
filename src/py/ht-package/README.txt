@@ -23,8 +23,14 @@ All of the examples in this document reference a pointer to a Thrift client obje
 
 .. code-block:: python
 
+
+    from hypertable.thrift_client.thriftclient import ThriftClient
+    from hypertable.thrift_client.serialized_cells import Reader, Writer
+    from hypertable.thrift_client.hyperthrift.gen.ttypes import *
+
     try:
         client = ThriftClient("localhost", 15867)
     except Exception as e:
         print e
         sys.exit(1)
+
