@@ -14,7 +14,11 @@ Install python hypertable client:
 .. code-block:: console
 
     pip install hypertable
+    
+A dist package is available at the build dir ./src/py/ht-package/pkg/dist/hypertable-0.9.8.11.tar.gz follow make install
+(It can be unpacked to Hypertable install dir ./lib/py or remain as site-packages installation)
 
+The hyperthrift Thrift's generated files module need to be part of the package for the protocol version consistency, if to use not equivalent protocol versions, errors such as serialization version might occur, and should be bounded by the thrift requirement version on with the pkg requirements.txt file.
 
 Creating a thrift client
 ------------------------
