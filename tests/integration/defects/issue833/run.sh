@@ -8,7 +8,7 @@ echo "Defect #833"
 echo "======================="
 
 # make sure hypertable jar files are copied into lib/java
-$HT_HOME/bin/ht-set-hadoop-distro.sh cdh5
+$HT_HOME/bin/ht-set-hadoop-distro.sh $1
 
 JARS=$HT_HOME/lib/java/*:.
 java -ea -cp $JARS org.hypertable.hadoop.mapreduce.ScanSpec
