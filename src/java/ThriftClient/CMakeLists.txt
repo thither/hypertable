@@ -1,21 +1,31 @@
 
 
-file(MAKE_DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/java/hypertable-common/src/main/java)
+file(MAKE_DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/java/mvn/thriftclient/src/main/java)
 add_custom_target(ThriftGenJava ALL)
 add_custom_command(
   TARGET 	ThriftGenJava
   COMMAND   thrift
-  ARGS      -r --gen java -o ${HYPERTABLE_BINARY_DIR}/src/java/hypertable-common/src/main/java
+  ARGS      -r --gen java -o ${HYPERTABLE_BINARY_DIR}/src/java/mvn/thriftclient/src/main/java
             ${ThriftBroker_IDL_DIR}/Hql.thrift
   DEPENDS   ${ThriftBroker_IDL_DIR}/Client.thrift
             ${ThriftBroker_IDL_DIR}/Hql.thrift
   COMMENT   "thrift2java"
 )
+add_custom_command(
+  TARGET 	ThriftGenJava
+  COMMAND cp 
+  ARGS    -r ${HYPERTABLE_BINARY_DIR}/src/java/mvn/thriftclient/src/main/java/gen-java/* ${HYPERTABLE_BINARY_DIR}/src/java/mvn/thriftclient/src/main/java/
+)
+add_custom_command(
+  TARGET 	ThriftGenJava
+  COMMAND rm 
+  ARGS    -r ${HYPERTABLE_BINARY_DIR}/src/java/mvn/thriftclient/src/main/java/gen-java
+)
 
 
 if (PREVIOUS_JAVA_GEN)  # expected dest file velidation
 
-set(ThriftGenJava_DIR ${HYPERTABLE_BINARY_DIR}/java/hypertable-common/src/main/java/org/hypertable/thriftgen)
+set(ThriftGenJava_DIR ${HYPERTABLE_BINARY_DIR}/java/common/src/main/java/org/hypertable/thriftgen)
   set(ThriftGenJava_SRCS
       ${ThriftGenJava_DIR}/AccessGroupOptions.java
       ${ThriftGenJava_DIR}/AccessGroupSpec.java
@@ -48,16 +58,10 @@ set(ThriftGenJava_DIR ${HYPERTABLE_BINARY_DIR}/java/hypertable-common/src/main/j
   add_custom_command(
     OUTPUT    ${ThriftGenJava_SRCS}
     COMMAND   thrift
-    ARGS      -r -gen java -out ${HYPERTABLE_BINARY_DIR}/java/hypertable-common/src/main/java
+    ARGS      -r -gen java -out ${HYPERTABLE_BINARY_DIR}/java/common/src/main/java
               ${ThriftBroker_IDL_DIR}/Hql.thrift
     DEPENDS   ${ThriftBroker_IDL_DIR}/Client.thrift
               ${ThriftBroker_IDL_DIR}/Hql.thrift
     COMMENT   "thrift2java"
   )
-endif ()
-
-
-if (JAVAC_VERSION)
-  add_test(ThriftClient-java
-           bash -c "${INSTALL_DIR}/bin/ht-set-hadoop-distro.sh cdh5; ${INSTALL_DIR}/bin/ht-java-run.sh org.hypertable.thrift.BasicClientTest")
 endif ()

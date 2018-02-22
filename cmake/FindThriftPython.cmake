@@ -22,7 +22,7 @@
 
 
 set(PYTHONTHRIFT_FOUND OFF)
-if (THRIFT_SOURCE_DIR OR EXISTS ${THRIFT_SOURCE_DIR}/lib/py/src/Thrift.py)
+if (THRIFT_SOURCE_DIR AND EXISTS ${THRIFT_SOURCE_DIR}/lib/py/src/Thrift.py)
 	set(PYTHONTHRIFT_FOUND ON)
 else ()
 	exec_program(env ARGS python -c'import thrift' OUTPUT_VARIABLE PYTHONTHRIFT_OUT

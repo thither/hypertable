@@ -109,6 +109,7 @@ mark_as_advanced(
   Thrift_NB_LIB
   Thrift_LIB_DEPENDENCIES
   Thrift_INCLUDE_DIR
+  THRIFT_SOURCE_DIR
   )
   
   

@@ -20,14 +20,17 @@
 # This module defines
 #  RUBYTHRIFT_FOUND, If false, do not Ruby w/ thrift
 
-exec_program(env ARGS ruby -I${THRIFT_SOURCE_DIR}/lib/rb/lib -r thrift -e 0 
-             OUTPUT_VARIABLE RUBYTHRIFT_OUT
-             RETURN_VALUE RUBYTHRIFT_RETURN)
-
-if (RUBYTHRIFT_RETURN STREQUAL "0")
-  set(RUBYTHRIFT_FOUND TRUE)
+set(RUBYTHRIFT_FOUND OFF)
+if (THRIFT_SOURCE_DIR AND EXISTS ${THRIFT_SOURCE_DIR}/lib/rb/lib/thrift/client.rb)
+	set(RUBYTHRIFT_FOUND ON)
 else ()
-  set(RUBYTHRIFT_FOUND FALSE)
+	exec_program(env ARGS ruby -I${THRIFT_SOURCE_DIR}/lib/rb/lib -r thrift -e 0 
+				OUTPUT_VARIABLE RUBYTHRIFT_OUT
+				RETURN_VALUE RUBYTHRIFT_RETURN)
+
+	if (RUBYTHRIFT_RETURN STREQUAL "0")
+		set(RUBYTHRIFT_FOUND TRUE)
+	endif ()
 endif ()
 
 if (RUBYTHRIFT_FOUND)

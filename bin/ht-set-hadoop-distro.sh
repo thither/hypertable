@@ -20,7 +20,13 @@
 
 export HT_HOME=$(cd `dirname "$0"`/.. && pwd)
 
-declare -a Distros=('apache1' 'apache2' 'cdh3' 'cdh4' 'cdh5' 'hdp2');
+declare -a Distros=(); #'apache-1' 'apache-2' 'cdh-3' 'cdh-4' 'cdh-5' 'hdp-2'
+
+for distro in ../lib/java/ht-fsbroker-*.jar; do
+	distro=${distro:-1}  
+	Distros+=( "${distro:24:-21} " )
+done;
+
 
 usage() {
   local REAL_HOME=$HT_HOME
@@ -29,8 +35,8 @@ usage() {
     REAL_HOME="`dirname $HT_HOME`/`readlink $HT_HOME`"
   fi
   VERSION=`basename $REAL_HOME`
-  THRIFT_JAR=`ls $REAL_HOME/lib/java/common/libthrift-*`
-  THRIFT_JAR=`basename $THRIFT_JAR`
+  # THRIFT_JAR=`ls $REAL_HOME/lib/java/common/libthrift-*`
+  # THRIFT_JAR=`basename $THRIFT_JAR`
   echo
   echo "usage: ht-set-hadoop-distro.sh [OPTIONS] <distro>"
   echo
@@ -48,19 +54,10 @@ usage() {
     echo "  $distro"
   done
   echo
-  echo "It starts by clearing the primary jar directory with the following command:"
-  echo
-  echo "  rm -f $REAL_HOME/lib/java/*.jar"
-  echo
-  echo "Then it copies the jar files appropriate for the distribution from the"
-  echo "lib/java/common, lib/java/specific, lib/java/<distro>, lib/java/apache1,"
-  echo "and/or lib/java/apache2 installation subdirectories into the primary jar"
-  echo "directory.  Lastly, it sets up convenience links in the primary jar"
+  echo "It sets up convenience links in the primary jar"
   echo "directory for the hypertable and thrift jar files.  For example:"
   echo
-  echo "  hypertable-examples.jar -> hypertable-examples-$VERSION-apache2.jar"
-  echo "  hypertable.jar -> hypertable-$VERSION-apache2.jar"
-  echo "  libthrift.jar -> $THRIFT_JAR"
+  echo "  htFsbroker.jar -> ht-fsbroker-distro-distro_version-$VERSION-bundled.jar"
   echo
 }
 
@@ -85,36 +82,13 @@ if [ -z $DISTRO ]; then
     exit 1;
 fi
 
-\rm -f $HT_HOME/lib/java/*.jar
-\cp -f $HT_HOME/lib/java/common/*.jar $HT_HOME/lib/java
 
-if [ -d $HT_HOME/lib/java/$DISTRO ]; then
-  \cp -f $HT_HOME/lib/java/$DISTRO/*.jar $HT_HOME/lib/java
-fi
-
-if [ $DISTRO == "cdh4" ] || [ $DISTRO == "ibmbi3" ]; then
-    \cp $HT_HOME/lib/java/apache2/hypertable-*.jar $HT_HOME/lib/java
-    \cp $HT_HOME/lib/java/specific/guava-11.0.2.jar $HT_HOME/lib/java
-    \cp $HT_HOME/lib/java/specific/protobuf-java-2.4.0a.jar $HT_HOME/lib/java
-elif [ $DISTRO == "cdh5" ]; then
-    \cp $HT_HOME/lib/java/apache2/*.jar $HT_HOME/lib/java
-    \cp $HT_HOME/lib/java/specific/guava-11.0.2.jar $HT_HOME/lib/java
-    \cp $HT_HOME/lib/java/specific/protobuf-java-2.5.0.jar $HT_HOME/lib/java
-elif [ $DISTRO == "hdp2" ]; then
-    \cp $HT_HOME/lib/java/apache2/*.jar $HT_HOME/lib/java
-    \cp $HT_HOME/lib/java/specific/guava-11.0.2.jar $HT_HOME/lib/java
-    \cp $HT_HOME/lib/java/specific/protobuf-java-2.5.0.jar $HT_HOME/lib/java
-elif [ $DISTRO == "apache2" ]; then
-    \cp $HT_HOME/lib/java/specific/guava-11.0.2.jar $HT_HOME/lib/java
-    \cp $HT_HOME/lib/java/specific/protobuf-java-2.5.0.jar $HT_HOME/lib/java
-fi
 
 # Setup symlinks
 pushd .
 cd $HT_HOME/lib/java
-\ln -sf hypertable-[0-9]* hypertable.jar
-\ln -sf hypertable-examples-* hypertable-examples.jar
-\ln -sf libthrift-* libthrift.jar
+\ln -sf ht-fsbroker-$DISTRO-[0-9]*-bundled.jar htFsbroker.jar
+\ln -sf ht-common-[0-9]*-bundled.jar htCommon.jar
 popd
 
 echo $DISTRO > $HT_HOME/conf/hadoop-distro

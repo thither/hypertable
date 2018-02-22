@@ -18,7 +18,7 @@ add_subdirectory(rb/Monitoring)
 if (Thrift_FOUND)
   add_subdirectory(cc/ThriftBroker)
   
-  if (LANGS OR LANG_JAVA OR Hdfs_FOUND)
+  if (LANGS OR LANG_JAVA)
     add_subdirectory(java/ThriftClient)
   endif ()
   if (LANGS OR LANG_JS)
@@ -54,7 +54,7 @@ if (LANGS OR LANG_PY2 OR LANG_PY3 OR LANG_PYPY2 OR LANG_PYPY3)
   add_subdirectory(py/ht-package)
 endif ()
 
-if (LANGS OR LANG_JAVA OR Hdfs_FOUND)
+if (LANGS OR LANG_JAVA OR FSBROKERS OR FSBROKER_HDFS)
 	add_subdirectory(java)
 endif ()
 

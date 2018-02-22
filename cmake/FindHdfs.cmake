@@ -61,7 +61,7 @@ if (JAVA_INCLUDE_PATH)
     endif ()
     if (HDFS_DIST MATCHES "^Hadoop")
 			string(SUBSTRING ${HDFS_VERSION} 0 1 HDFS_VERSION_TOP)
-	      set(HDFS_DIST "apache${HDFS_VERSION_TOP}")
+	      set(HDFS_DIST "apache")
 		  set(Hdfs_FOUND ON)
 	  elseif (HDFS_DIST MATCHES "CDH" OR HDFS_DIST MATCHES "cloud") #not checked version parsing
 	      set(HDFS_DIST "cdh")

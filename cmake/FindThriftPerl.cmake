@@ -20,14 +20,16 @@
 # This module defines
 #  PERLTHRIFT_FOUND, If false, do not use perl w/ thrift
 
-exec_program(env ARGS perl -I${THRIFT_SOURCE_DIR}/lib/perl/lib -MThrift -e 0 
-             OUTPUT_VARIABLE PERLTHRIFT_OUT 
-             RETURN_VALUE PERLTHRIFT_RETURN)
-
-if (PERLTHRIFT_RETURN STREQUAL "0")
-  set(PERLTHRIFT_FOUND TRUE)
+set(PERLTHRIFT_FOUND OFF)
+if (THRIFT_SOURCE_DIR AND EXISTS ${THRIFT_SOURCE_DIR}/lib/perl/lib/Thrift.pm)
+	set(PERLTHRIFT_FOUND ON)
 else ()
-  set(PERLTHRIFT_FOUND FALSE)
+	exec_program(env ARGS perl -I${THRIFT_SOURCE_DIR}/lib/perl/lib -MThrift -e 0 
+				 OUTPUT_VARIABLE PERLTHRIFT_OUT 
+				 RETURN_VALUE PERLTHRIFT_RETURN)
+	if (PERLTHRIFT_RETURN STREQUAL "0")
+		set(PERLTHRIFT_FOUND TRUE)
+	endif ()
 endif ()
 
 if (PERLTHRIFT_FOUND)

@@ -15,10 +15,10 @@ cat ${SCRIPT_DIR}/test.hql | $HT_HOME/bin/ht hypertable \
         --namespace / --no-prompt --test-mode \
         > test.output
 
-
+### JavaThriftClient no longer require hadoop
 # make sure hypertable jar files are copied into lib/java
-$HT_HOME/bin/ht-set-hadoop-distro.sh $1
-
+# $HT_HOME/bin/ht-set-hadoop-distro.sh $1
+#############
 #
 # javac/java failed on test01 with this:
 #
@@ -29,8 +29,12 @@ $HT_HOME/bin/ht-set-hadoop-distro.sh $1
 # To fix this, manually add the thriftbroker-*.jar as the first jar file
 # in the classpath
 #
+
 echo "compiling"
-CP=$HT_HOME/lib/java/*:$SCRIPT_DIR:.
+VERSION=$1
+Thrift_VERSION=$2
+CP=$HT_HOME/lib/java/ht-thriftclient-${VERSION}-v${Thrift_VERSION}-bundled.jar:\
+   $HT_HOME/lib/java/ht-thriftclient-hadoop-tools-${VERSION}-v${Thrift_VERSION}-bundled.jar:
 javac -classpath $CP -d . $SCRIPT_DIR/TestInputOutput.java
 
 echo "running"
