@@ -18,13 +18,18 @@ Configuration options with cmake:
   Support for libraries in the different languages can be set with the LANGS param by comman delimited languages(ext+version)
     (default is "all", for None, "none" should be used) 
   
-         -DLANGS=py2,py3,pypy2,js,java,php,rb,pl
-  
+    -Dlanguages=php,pl,py2,pypy2,py3,pypy3,java,js,rb   
+
   File System Brokers can be set with the FSBROKERS param by comman delimited of hdfs,qfs,ceph,mapr  
   
-         -DFSBROKERS=hdfs,qfs,ceph,mapr
-         
-To configuration options of LANGS and FSBROKERS, follow apply:
+        -Dfsbrokers=hdfs,ceph,qfs,mapr    
+  
+  Followed with optionally another param 
+        (default is the available setup of hadoop)
+        
+        -Dhdfs_vers=apache-2.7.5,apache-1.1.0,apache-1.1.1,apache-1.2.1
+
+To configuration options of "languages" and "fsbrokers", follow apply:
    - default is "all" and "none" should be used for None,
    - if set and the depenencies are not meet it will quit wit fatal error
      
