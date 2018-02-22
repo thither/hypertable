@@ -18,7 +18,7 @@ Configuration options with cmake:
   Support for libraries in the different languages can be set with the LANGS param by comman delimited languages(ext+version)
     (default is "all", for None, "none" should be used) 
   
-    -Dlanguages=php,pl,py2,pypy2,py3,pypy3,java,js,rb   
+        -Dlanguages=php,pl,py2,pypy2,py3,pypy3,java,js,rb   
 
   File System Brokers can be set with the FSBROKERS param by comman delimited of hdfs,qfs,ceph,mapr  
   
