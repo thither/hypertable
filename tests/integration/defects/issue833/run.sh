@@ -14,6 +14,5 @@ echo "======================="
 
 VERSION=$1
 Thrift_VERSION=$2
-CP=$HT_HOME/lib/java/ht-thriftclient-${VERSION}-v${Thrift_VERSION}-bundled.jar:\
-   $HT_HOME/lib/java/ht-thriftclient-hadoop-tools-${VERSION}-v${Thrift_VERSION}-bundled.jar
+CP="$HT_HOME/lib/java/ht-thriftclient-${VERSION}-v${Thrift_VERSION}-bundled.jar:$HT_HOME/lib/java/ht-thriftclient-hadoop-tools-${VERSION}-v${Thrift_VERSION}-bundled.jar"
 java -ea -cp $CP org.hypertable.hadoop.mapreduce.ScanSpec

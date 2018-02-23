@@ -23,6 +23,8 @@ set(JAVA_BUNDLED ON)
 
 set(HT_MVN_SRC_DIR  ${HYPERTABLE_SOURCE_DIR}/src/java/mvn)
 set(HT_MVN_DEST_DIR  ${HYPERTABLE_BINARY_DIR}/src/java/mvn)
+# clearoff previous
+execute_process(COMMAND  rm -rf ${HT_MVN_DEST_DIR}/*)
 file(MAKE_DIRECTORY ${HT_MVN_DEST_DIR})
 set(MODULES_PLACE_HOLDER "")
 
@@ -92,12 +94,13 @@ if( NOT MODULES_PLACE_HOLDER STREQUAL "")
 	
 	add_custom_target(MVN_build ALL 
 					  mvn -f mvn/pom.xml -Dmaven.test.skip=true 
-				      package) #
+				      package)
 	install(FILES ${HT_MVN_DEST_DIR}/common/target/ht-common-${VERSION}-bundled.jar
             DESTINATION lib/java/)
 	if (Thrift_FOUND)
 		add_dependencies(MVN_build ThriftGenJava)
 	endif ()
+	
 endif ()
 
 
