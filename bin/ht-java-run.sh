@@ -83,7 +83,7 @@ RUN_CP_GROUP=""
 DEBUG_ARGS=
 
 # Setup CLASSPATH
-CLASSPATH="$HYPERTABLE_HOME"
+CLASSPATH="$HYPERTABLE_HOME:$HYPERTABLE_HOME/lib"
 
 while [ $# -gt 1 ] ; do
   if [ "--pidfile" == "$1" ] ; then

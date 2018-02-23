@@ -27,6 +27,8 @@ public class BasicClientTest {
         ns = client.namespace_open("test");
       }
 			
+      show(client.hql_query(ns, "drop table if exists thrift_test").toString());
+      show(client.hql_query(ns, "create table thrift_test (col)").toString());
       
       // HQL examples
       show(client.hql_query(ns, "show tables").toString());

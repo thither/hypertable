@@ -63,7 +63,7 @@ endmacro()
 
 # This is a workaround for install() which always preserves symlinks
 macro(HT_INSTALL_LIBS dest)
- if (HT_COMPONENT_INSTALL)
+ if (NOT HT_COMPONENT_INSTALL)
   if (INSTALL_EXCLUDE_DEPENDENT_LIBS)
     message(STATUS "Not installing dependent libraries")
   else ()
