@@ -89,7 +89,8 @@ namespace {
   Cronolog *g_slow_query_log {};
 }
 
-#define THROW_TE(_code_, _str_) do { ThriftGen::ClientException te; \
+#define THROW_TE(_code_, _str_) do { \
+  Hypertable::ThriftGen::ClientException te; \
   te.code = _code_; \
   te.message.append(Error::get_text(_code_)); \
   te.message.append(" - "); \

@@ -17,17 +17,22 @@
 # 02110-1301, USA.
 #
 
-HT_GLOB(ThriftGen_SRCS
-        gen-cpp/Client_constants.cpp 
-        gen-cpp/ClientService.cpp 
-        gen-cpp/Client_types.cpp
-        gen-cpp/Hql_constants.cpp 
-        gen-cpp/HqlService.cpp 
-        gen-cpp/Hql_types.cpp)
-
 set(CMAKE_CXX_FLAGS "-DHAVE_NETINET_IN_H ${CMAKE_CXX_FLAGS}")
 
-add_library(HyperThrift ThriftHelper.cc SerializedCellsReader.cc SerializedCellsWriter.cc ${ThriftGen_SRCS})
+# clear previous
+## EXCEPTIONALLY TO CPP require the gen-cpp files to be in the source directory
+execute_process(COMMAND  rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp)
+execute_process(COMMAND  thrift -r --gen cpp -o ${CMAKE_CURRENT_SOURCE_DIR}
+								${CMAKE_CURRENT_SOURCE_DIR}/Hql.thrift)
+
+
+add_library(HyperThrift ThriftHelper.cc SerializedCellsReader.cc SerializedCellsWriter.cc 
+			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/Client_constants.cpp 
+			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/ClientService.cpp 
+			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/Client_types.cpp
+			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/Hql_constants.cpp 
+			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/HqlService.cpp 
+			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/Hql_types.cpp)
 target_link_libraries(HyperThrift ${Thrift_LIBS} ${LibEvent_LIBS})
 
 add_library(HyperThriftConfig Config.cc)
@@ -35,15 +40,6 @@ target_link_libraries(HyperThriftConfig HyperThrift Hypertable)
 
 set(ThriftBroker_SRCS ThriftBroker.cc MetricsHandler.cc)
 
-add_custom_command(
-  OUTPUT    ${ThriftGen_SRCS}
-  COMMAND   thrift
-  ARGS      -r --gen cpp -o ${CMAKE_CURRENT_SOURCE_DIR}
-            ${CMAKE_CURRENT_SOURCE_DIR}/Hql.thrift
-  DEPENDS   ${CMAKE_CURRENT_SOURCE_DIR}/Client.thrift
-            ${CMAKE_CURRENT_SOURCE_DIR}/Hql.thrift
-  COMMENT   "thrift2cpp"
-)
 
 # Disable tcmalloc for 32-bit systems
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "i386" OR
