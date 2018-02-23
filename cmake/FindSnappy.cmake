@@ -65,6 +65,8 @@ if (SNAPPY_FOUND)
     set(SNAPPY_VERSION "unknown") 
   endif ()
   message(STATUS "       version: ${SNAPPY_VERSION}")
+  
+  HT_INSTALL_LIBS(lib ${SNAPPY_LIBRARY})
 else ()
   message(STATUS "Not Found Snappy: ${SNAPPY_LIBRARY}")
   if (SNAPPY_FIND_REQUIRED)

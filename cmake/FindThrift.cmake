@@ -98,25 +98,32 @@ if (Thrift_FOUND)
   string(REPLACE " " ";" Thrift_VERSION ${Thrift_VERSION})
   list(GET Thrift_VERSION -1 Thrift_VERSION)
   
+  include_directories(${LibEvent_INCLUDE_DIR} ${Thrift_INCLUDE_DIR})
+  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHT_WITH_THRIFT")
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHT_WITH_THRIFT")
+  set(ThriftBroker_IDL_DIR ${HYPERTABLE_SOURCE_DIR}/src/cc/ThriftBroker)
+
+  mark_as_advanced(
+	Thrift_LIB
+	Thrift_NB_LIB
+	Thrift_LIB_DEPENDENCIES
+	Thrift_INCLUDE_DIR
+	THRIFT_SOURCE_DIR
+  )
+  
+  HT_INSTALL_LIBS(lib ${Thrift_LIBS})
+  # Install Thrift dependencies
+  string(REPLACE " " ";" LIB_DEPENDENCIES_LIST ${Thrift_LIB_DEPENDENCIES})
+  foreach(dep ${LIB_DEPENDENCIES_LIST})
+    HT_INSTALL_LIBS(lib ${dep})
+  endforeach ()
 else ()
   message(STATUS "Thrift compiler/libraries NOT found. "
           "Thrift support will be disabled (${Thrift_RETURN}, "
           "${Thrift_INCLUDE_DIR}, ${Thrift_LIB}, ${Thrift_NB_LIB})")
 endif ()
 
-mark_as_advanced(
-  Thrift_LIB
-  Thrift_NB_LIB
-  Thrift_LIB_DEPENDENCIES
-  Thrift_INCLUDE_DIR
-  THRIFT_SOURCE_DIR
-  )
   
-  
-include_directories(${LibEvent_INCLUDE_DIR} ${Thrift_INCLUDE_DIR})
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHT_WITH_THRIFT")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHT_WITH_THRIFT")
-set(ThriftBroker_IDL_DIR ${HYPERTABLE_SOURCE_DIR}/src/cc/ThriftBroker)
 
 # Copy Thrift files
 if (THRIFT_SOURCE_DIR)

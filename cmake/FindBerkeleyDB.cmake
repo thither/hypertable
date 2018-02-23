@@ -111,3 +111,7 @@ mark_as_advanced(
   BDB_LIBRARY
   BDB_INCLUDE_DIR
   )
+
+if (NOT PACKAGE_THRIFTBROKER)
+  HT_INSTALL_LIBS(lib ${BDB_LIBRARIES})
+endif ()

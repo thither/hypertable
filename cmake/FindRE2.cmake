@@ -66,6 +66,8 @@ if (RE2_FOUND)
     set(RE2_VERSION "unknown") 
   endif ()
   message(STATUS "       version: ${RE2_VERSION}")
+  
+  HT_INSTALL_LIBS(lib ${RE2_LIBRARIES})
 else ()
   message(STATUS "Not Found RE2: ${RE2_LIBRARY}")
   if (RE2_FIND_REQUIRED)

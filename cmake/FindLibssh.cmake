@@ -36,19 +36,9 @@ find_library(Libssh_LIBRARY NO_DEFAULT_PATH
   PATHS ${HT_DEPENDENCY_LIB_DIR} /lib /usr/lib /usr/local/lib /opt/local/lib /usr/lib/x86_64-linux-gnu
 )
 
-find_library(Libssh_ssl_LIBRARY NO_DEFAULT_PATH
-  NAMES ssl
-  PATHS ${HT_DEPENDENCY_LIB_DIR} /usr/local/ssl/lib /lib /lib64 /usr/lib /usr/lib64 /usr/local/lib /usr/local/lib64 /opt/local/lib
-)
-
-find_library(Libssh_crypto_LIBRARY NO_DEFAULT_PATH
-  NAMES crypto
-  PATHS ${HT_DEPENDENCY_LIB_DIR} /usr/local/ssl/lib /lib /lib64 /usr/lib /usr/lib64 /usr/local/lib /usr/local/lib64 /opt/local/lib
-)
-
-if (Libssh_INCLUDE_DIR AND Libssh_LIBRARY)
+if (Libssh_INCLUDE_DIR)
   set(Libssh_FOUND TRUE)
-  set(Libssh_LIBRARIES ${Libssh_LIBRARY} ${Libssh_ssl_LIBRARY} ${Libssh_crypto_LIBRARY})
+  set(Libssh_LIBRARIES ${Libssh_LIBRARY} ${Libssl_LIBRARIES})
 
   exec_program(${CMAKE_SOURCE_DIR}/bin/src-utils/ldd.sh
                ARGS ${Libssh_LIBRARY}
@@ -96,6 +86,20 @@ if (Libssh_FOUND)
     message(FATAL_ERROR "Please fix the libssl installation and try again.")
   endif ()
   message("       version: ${TC_TRY_OUT}")
+  
+  mark_as_advanced(
+	Libssh_LIBRARIES
+	Libssh_LIB_DEPENDENCIES
+	Libssh_INCLUDE_DIR
+  )
+  HT_INSTALL_LIBS(lib ${Libssh_LIBRARY})
+  
+  # Install dependencies
+  string(REPLACE " " ";" LIB_DEPENDENCIES_LIST ${Libssh_LIB_DEPENDENCIES})
+  foreach(dep ${LIB_DEPENDENCIES_LIST})
+    HT_INSTALL_LIBS(lib ${dep})
+  endforeach ()
+
 else ()
   message(STATUS "Not Found Libssh")
   if (Libssh_FIND_REQUIRED)
@@ -103,8 +107,3 @@ else ()
   endif ()
 endif ()
 
-mark_as_advanced(
-  Libssh_LIBRARIES
-  Libssh_LIB_DEPENDENCIES
-  Libssh_INCLUDE_DIR
-)

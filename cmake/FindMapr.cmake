@@ -52,6 +52,8 @@ if (Mapr_INCLUDE_DIR AND MapRClient_LIB AND jvm_LIB)
   if (NOT Mapr_FIND_QUIETLY)
      message(STATUS "Found MAPR: ${Mapr_LIBRARIES}")
   endif ()
+  
+  HT_INSTALL_LIBS(lib ${Mapr_LIBRARIES})
 else ()
    if (FSBROKER_MAPR)
       message(FATAL_ERROR "Could NOT find MAPR libraries")

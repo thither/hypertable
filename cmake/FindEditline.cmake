@@ -87,6 +87,8 @@ if (EDITLINE_FOUND)
          message(FATAL_ERROR "Please fix the Editline installation and try again.  Make sure you build libedit with --enable-widec!")
          set(EDITLINE_LIBRARIES)
     endif ()
+	
+	HT_INSTALL_LIBS(lib ${EDITLINE_LIBRARIES})
 endif ()
 
 if (NCURSES_LIBRARY)

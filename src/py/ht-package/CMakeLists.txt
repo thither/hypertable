@@ -63,7 +63,7 @@ endif ()
 
 
 
-
+#  env PYTHONPATH=${CMAKE_INSTALL_PREFIX}/lib/py
 
 if (PYTHON2_FOUND)
 	add_test(ThriftClient-python2 env python ${CMAKE_CURRENT_SOURCE_DIR}/client_test.py)
@@ -93,20 +93,24 @@ endif ()
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
 
 if (PYTHON2_FOUND)
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python setup.py sdist;)")
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz -r requirements.txt;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python setup.py sdist;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python -m pip install --upgrade -r requirements.txt;)")
 endif ()
 if (PYTHON3_FOUND)
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python3 setup.py sdist;)")
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python3 -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz -r requirements.txt;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python3 setup.py sdist;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python3 -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python3 -m pip install --upgrade -r requirements.txt;)")
 endif ()
 if (PYPY2_FOUND)
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy setup.py sdist;)")
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz -r requirements.txt;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy setup.py sdist;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy -m pip install --upgrade -r requirements.txt;)")
 endif ()
 if (PYPY3_FOUND)
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy3 setup.py sdist;)")
-install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy3 -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz -r requirements.txt;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy3 setup.py sdist;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy3 -m pip install --upgrade dist/hypertable-${VERSION}.tar.gz;)")
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy3 -m pip install --upgrade -r requirements.txt;)")
 endif ()
 		
 endif ()

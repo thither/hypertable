@@ -41,6 +41,8 @@ if (LibEvent_FOUND)
   if (NOT LibEvent_FIND_QUIETLY)
     message(STATUS "Found libevent: ${LibEvent_LIBS}")
   endif ()
+  
+  HT_INSTALL_LIBS(lib ${LibEvent_LIB})
 else ()
   message(STATUS "libevent NOT found.")
 endif ()

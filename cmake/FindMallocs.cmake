@@ -45,3 +45,5 @@ elseif (NOT USE_GLIBC_MALLOC AND Tcmalloc_FOUND)
   endif ()
 endif ()
 message(STATUS "Using MALLOC: ${MALLOC_LIBRARY} ")
+
+HT_INSTALL_LIBS(lib ${MALLOC_LIBRARY})

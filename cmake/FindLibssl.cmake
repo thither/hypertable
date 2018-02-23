@@ -95,6 +95,19 @@ if (Libssl_FOUND)
     message(FATAL_ERROR "Please fix the libssl installation and try again.")
   endif ()
   message("       version: ${TC_TRY_OUT}")
+  
+  mark_as_advanced(
+	Libssl_LIBRARIES
+	Libssl_LIB_DEPENDENCIES
+	Libssl_INCLUDE_DIR
+  )
+  HT_INSTALL_LIBS(lib ${Libssl_LIBRARIES})
+  
+  # Install dependencies
+  string(REPLACE " " ";" LIB_DEPENDENCIES_LIST ${Libssl_LIB_DEPENDENCIES})
+  foreach(dep ${LIB_DEPENDENCIES_LIST})
+    HT_INSTALL_LIBS(lib ${dep})
+  endforeach ()
 else ()
   message(STATUS "Not Found Libssl: ${Libssl_LIBRARY}")
   if (Libssl_FIND_REQUIRED)
@@ -102,8 +115,3 @@ else ()
   endif ()
 endif ()
 
-mark_as_advanced(
-  Libssl_LIBRARIES
-  Libssl_LIB_DEPENDENCIES
-  Libssl_INCLUDE_DIR
-)

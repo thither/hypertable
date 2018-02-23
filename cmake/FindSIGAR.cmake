@@ -86,6 +86,8 @@ endif ()
 if (SIGAR_FOUND)
   message(STATUS "Found SIGAR: ${SIGAR_LIBRARIES}")
   message(STATUS "Operating System: ${OS_VERSION}")
+  
+  HT_INSTALL_LIBS(lib ${SIGAR_LIBRARY})
 else ()
   message(STATUS "Not Found SIGAR: ${SIGAR_LIBRARY}")
   if (SIGAR_FIND_REQUIRED)
