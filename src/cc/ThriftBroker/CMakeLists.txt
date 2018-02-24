@@ -19,20 +19,27 @@
 
 set(CMAKE_CXX_FLAGS "-DHAVE_NETINET_IN_H ${CMAKE_CXX_FLAGS}")
 
-# clear previous
-## EXCEPTIONALLY TO CPP require the gen-cpp files to be in the source directory
-execute_process(COMMAND  rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp)
-execute_process(COMMAND  thrift -r --gen cpp -o ${CMAKE_CURRENT_SOURCE_DIR}
-								${CMAKE_CURRENT_SOURCE_DIR}/Hql.thrift)
-
+# IF .thirft instruction change with version it is prefered .thrift by versions
+if( NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION})
+	execute_process(COMMAND  mkdir -p ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION})
+endif ()
+if( NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION}/gen-cpp)
+	execute_process(COMMAND  thrift -r --gen cpp 
+							 -o ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION}/
+							 ${CMAKE_CURRENT_SOURCE_DIR}/Hql.thrift)
+	# set current gen-cpp/ included path				 
+	execute_process(COMMAND rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp)	
+	execute_process(COMMAND cp -r ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION}/gen-cpp
+	                              ${CMAKE_CURRENT_SOURCE_DIR}/)			 
+endif ()
 
 add_library(HyperThrift ThriftHelper.cc SerializedCellsReader.cc SerializedCellsWriter.cc 
-			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/Client_constants.cpp 
-			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/ClientService.cpp 
-			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/Client_types.cpp
-			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/Hql_constants.cpp 
-			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/HqlService.cpp 
-			${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp/Hql_types.cpp)
+			gen-cpp/Client_constants.cpp 
+			gen-cpp/ClientService.cpp 
+			gen-cpp/Client_types.cpp
+			gen-cpp/Hql_constants.cpp 
+			gen-cpp/HqlService.cpp 
+			gen-cpp/Hql_types.cpp)
 target_link_libraries(HyperThrift ${Thrift_LIBS} ${LibEvent_LIBS})
 
 add_library(HyperThriftConfig Config.cc)

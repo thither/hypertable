@@ -73,7 +73,7 @@ if (Thrift_FOUND)
 
 	if (JAVARE_FOUND)
 		add_test(ThriftClient-java
-				 bash -c "java -cp ${INSTALL_DIR}/lib/java/ht-thriftclient-${VERSION}-v${Thrift_VERSION}-bundled.jar org.hypertable.thrift.BasicClientTest")
+				 java -cp ${INSTALL_DIR}/lib/java/ht-thriftclient-${VERSION}-v${Thrift_VERSION}-bundled.jar org.hypertable.thrift.BasicClientTest)
 	endif ()
 
 endif ()

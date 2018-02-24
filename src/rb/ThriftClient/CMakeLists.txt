@@ -29,18 +29,13 @@ if (Thrift_FOUND)
 	add_custom_command(
 		TARGET 		ThriftGenRb
 		COMMAND   	thrift
-		ARGS      	-r --gen rb -o ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/
+		ARGS      	-r --gen rb -o ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable/
 					${ThriftBroker_IDL_DIR}/Hql.thrift
 		DEPENDS   	${ThriftBroker_IDL_DIR}/Client.thrift
 					${ThriftBroker_IDL_DIR}/Hql.thrift
 		COMMENT   	"thrift2rb"
 	)
 		
-	add_custom_command(
-		TARGET 	ThriftGenRb
-		COMMAND mv 
-		ARGS    ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/gen-rb/* ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable/
-	)
 	#### minimize attr access
 	add_custom_command(
 		TARGET 	 ThriftGenRb
@@ -51,10 +46,7 @@ endif ()
 
 
 
-if (RUBYTHRIFT_FOUND)
-  add_test(ThriftClient-ruby ruby -I ${INSTALL_DIR}/lib/rb
-      ${CMAKE_CURRENT_SOURCE_DIR}/client_test.rb)
-endif ()
+add_test(ThriftClient-ruby ruby -I ${INSTALL_DIR}/lib/rb ${CMAKE_CURRENT_SOURCE_DIR}/client_test.rb)
 
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
   install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable DESTINATION lib/rb)

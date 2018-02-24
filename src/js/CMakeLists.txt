@@ -31,12 +31,13 @@ if (NODEJS_FOUND)
 		COMMENT   	"ThriftPyGen"
 	)
 
-  add_test(NAME ThriftClient-nodejs
-           COMMAND env NODE_PATH=${CMAKE_INSTALL_PREFIX}/lib/js/node/node_modules/hypertable/lib/ ${NODEJS_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/node/client_test.js )
-
   if (NOT HT_COMONENT_INSTALL OR PACKAGE_THRIFTBROKER)
     install(DIRECTORY node DESTINATION lib/js)
     install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/js/gen-nodejs/ DESTINATION lib/js/node/node_modules/hypertable/lib/hypertable/)
   endif ()
+
+  add_test(NAME ThriftClient-nodejs
+           WORKING_DIRECTORY ${INSTALL_DIR}/lib/js/node/
+           COMMAND ${NODEJS_EXECUTABLE} ./client_test.js )
 
 endif ()
