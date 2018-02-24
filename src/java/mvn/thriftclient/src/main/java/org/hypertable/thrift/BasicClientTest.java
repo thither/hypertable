@@ -20,13 +20,8 @@ public class BasicClientTest {
     long ns = -1;
     try {
       client = ThriftClient.create("localhost", 15867);
-	  try {
-        client.create_namespace("test");
-      }
-      finally {
-        ns = client.namespace_open("test");
-      }
-			
+	  ns = client.namespace_open("test");
+
       show(client.hql_query(ns, "drop table if exists thrift_test").toString());
       show(client.hql_query(ns, "create table thrift_test (col)").toString());
       
