@@ -101,7 +101,7 @@ SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -fuse-linker-plugin -ffat-lto-objects ")
 # SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsection-anchors")
 SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -floop-interchange")
- 
+
 # C++ flags
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")

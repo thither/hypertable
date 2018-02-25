@@ -40,7 +40,7 @@ if (Thrift_FOUND)
 	add_custom_command(
 		TARGET 	 ThriftGenRb
 		COMMAND  sed 
-		ARGS     -i 's/hypertable\\/thrift_gen\\/client_types/client_types/g'  ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable/hql_types.rb
+		ARGS     -i 's/hypertable\\/thrift_gen\\/client_types/client_types/g'  ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable/gen-rb/hql_types.rb
 	)
 endif ()
 

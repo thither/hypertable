@@ -24,18 +24,18 @@
 #  Mapr_FOUND       - True if Mapr found.
 
 
-if (Mapr_INCLUDE_DIR)
-  # Already in cache, be silent
-  set(Mapr_FIND_QUIETLY TRUE)
-endif ()
-
 find_path(Mapr_INCLUDE_DIR hdfs.h
-  /opt/mapr/hadoop/hadoop-0.20.2/src/c++/libhdfs
+	$ENV{HADOOP_HOME}/include/
+	/opt/mapr/hadoop/hadoop-0.20.2/src/c++/libhdfs
 )
 
 macro(FIND_MAPR_LIB lib)
-  find_library(${lib}_LIB NAMES ${lib}
-    PATHS /opt/mapr/lib $ENV{JAVA_HOME}/jre/lib/amd64/server  )
+  find_library(${lib}_LIB NAMES ${lib} PATHS 
+	/opt/mapr/lib 
+	$ENV{JAVA_HOME}/jre/lib/amd64/server  
+	$ENV{JAVA_HOME}/lib/server/libjvm.so
+	$ENV{HADOOP_HOME}/lib/native/
+	)
   mark_as_advanced(${lib}_LIB)
 endmacro(FIND_MAPR_LIB lib libname)
 
@@ -49,10 +49,8 @@ if (Mapr_INCLUDE_DIR AND MapRClient_LIB AND jvm_LIB)
   mark_as_advanced(
     Mapr_INCLUDE_DIR
   )
-  if (NOT Mapr_FIND_QUIETLY)
-     message(STATUS "Found MAPR: ${Mapr_LIBRARIES}")
-  endif ()
-  
+  message(STATUS "Found MAPR: ${Mapr_LIBRARIES}")
+
   HT_INSTALL_LIBS(lib ${Mapr_LIBRARIES})
 else ()
    if (FSBROKER_MAPR)
