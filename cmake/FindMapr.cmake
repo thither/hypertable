@@ -25,7 +25,7 @@
 
 
 find_path(Mapr_INCLUDE_DIR hdfs.h
-	$ENV{HADOOP_HOME}/include/
+	$ENV{HADOOP_HOME}/include
 	/opt/mapr/hadoop/hadoop-0.20.2/src/c++/libhdfs
 )
 
@@ -33,8 +33,8 @@ macro(FIND_MAPR_LIB lib)
   find_library(${lib}_LIB NAMES ${lib} PATHS 
 	/opt/mapr/lib 
 	$ENV{JAVA_HOME}/jre/lib/amd64/server  
-	$ENV{JAVA_HOME}/lib/server/libjvm.so
-	$ENV{HADOOP_HOME}/lib/native/
+	$ENV{JAVA_HOME}/lib/server
+	$ENV{HADOOP_HOME}/lib/native
 	)
   mark_as_advanced(${lib}_LIB)
 endmacro(FIND_MAPR_LIB lib libname)
