@@ -55,7 +55,9 @@ if (LANGS OR LANG_PY2 OR LANG_PY3 OR LANG_PYPY2 OR LANG_PYPY3)
 endif ()
 
 if (LANGS OR LANG_JAVA OR FSBROKERS OR FSBROKER_HDFS)
-	add_subdirectory(java)
+	if(NOT SKIP_JAVA_BUILD)
+		add_subdirectory(java)
+	endif ()
 endif ()
 
 

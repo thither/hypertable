@@ -20,7 +20,6 @@
 
 set(Hdfs_FOUND OFF)
 
-if (JAVA_INCLUDE_PATH)
   
   if (NOT HADOOP_INCLUDE_PATH)
 	set(HADOOP_INCLUDE_PATH $ENV{HADOOP_INCLUDE_PATH} )
@@ -67,21 +66,16 @@ if (JAVA_INCLUDE_PATH)
 	      set(HDFS_DIST "cdh")
 		  set(Hdfs_FOUND ON)
 	  endif ()
-	
-  else ()
-     set(HDFS_VERSION  "not found")
-     set(HDFS_DIST  "unknown")
   endif ()
 	
   message(STATUS "       distribution: ${HDFS_DIST}")
   message(STATUS "       version: ${HDFS_VERSION}")
 
-else ()
-  message(STATUS "Java JNI not found. Legacy Hadoop support will be disabled.")
-endif(JAVA_INCLUDE_PATH)
-
 if(NOT Hdfs_FOUND AND FSBROKER_HDFS)
     message(FATAL_ERROR "Could NOT find HDFS libraries")
+endif ()
+if(SKIP_JAVA_BUILD AND FSBROKER_HDFS)
+    message(FATAL_ERROR "Java build env not found")
 endif ()
 
 

@@ -207,15 +207,11 @@ if (LANGS OR LANG_PY2 OR LANG_PY3 OR LANG_PYPY2 OR LANG_PYPY3)
 endif ()
 
 if (LANGS OR LANG_JAVA OR FSBROKERS OR FSBROKER_HDFS)
-	find_package(JavaRunEnv)
+	find_package(Java)
 	find_package(Maven REQUIRED)
-	find_package(JNI)
 endif ()
 
 # File Systems 
-if (FSBROKERS OR FSBROKER_MAPR)
-	find_package(Mapr)
-endif ()
 if (FSBROKERS OR FSBROKER_QFS)
 	find_package(Qfs)
 endif ()
@@ -224,6 +220,9 @@ if (FSBROKERS OR FSBROKER_CEPH)
 endif ()
 if (FSBROKERS OR FSBROKER_HDFS)
 	find_package(Hdfs)
+endif ()
+if (FSBROKERS OR FSBROKER_MAPR)
+	find_package(Mapr)
 endif ()
 
 # THRIFT

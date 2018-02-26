@@ -32,26 +32,31 @@ find_path(Mapr_INCLUDE_DIR hdfs.h
 macro(FIND_MAPR_LIB lib)
   find_library(${lib}_LIB NAMES ${lib} PATHS 
 	/opt/mapr/lib 
-	$ENV{JAVA_HOME}/jre/lib/amd64/server  
-	$ENV{JAVA_HOME}/lib/server
 	$ENV{HADOOP_HOME}/lib/native
 	)
   mark_as_advanced(${lib}_LIB)
 endmacro(FIND_MAPR_LIB lib libname)
 
 FIND_MAPR_LIB(MapRClient)
-FIND_MAPR_LIB(jvm)
 
-if (Mapr_INCLUDE_DIR AND MapRClient_LIB AND jvm_LIB)
+if (Mapr_INCLUDE_DIR AND MapRClient_LIB)
   set(Mapr_FOUND TRUE)
-  set(Mapr_LIBRARIES ${MapRClient_LIB} ${jvm_LIB})
   
   mark_as_advanced(
     Mapr_INCLUDE_DIR
   )
   message(STATUS "Found MAPR: ${Mapr_LIBRARIES}")
+  if (jvm_LIB)
+	set(Mapr_LIBRARIES ${MapRClient_LIB} ${jvm_LIB})
+	HT_INSTALL_LIBS(lib ${Mapr_LIBRARIES})
+  else ()
+	if (FSBROKER_MAPR)
+		message(FATAL_ERROR "Could NOT find jvm_LIB for MAPR libraries")
+	endif ()
+	set(Mapr_FOUND FALSE)
+	set(Mapr_LIBRARIES)
+  endif ()
 
-  HT_INSTALL_LIBS(lib ${Mapr_LIBRARIES})
 else ()
    if (FSBROKER_MAPR)
       message(FATAL_ERROR "Could NOT find MAPR libraries")

@@ -43,22 +43,4 @@ else ()
   set(SKIP_JAVA_BUILD TRUE)
 endif ()
 
-exec_program(env ARGS javac -version OUTPUT_VARIABLE JAVAC_OUT
-             RETURN_VALUE JAVAC_RETURN)
 
-if (JAVAC_RETURN STREQUAL "0")
-  message(STATUS "    Javac: ${JAVAC_OUT}")
-  message(STATUS "    Java headers at: ${JAVA_INCLUDE_PATH}")
-  
-
-  if (NOT JAVAC_OUT MATCHES "^javac 9.")
-	string(REGEX MATCH "1\\.[6-9]\\..*" JAVAC_VERSION ${JAVAC_OUT})
-	if (NOT JAVAC_VERSION)
-		message(STATUS "    Expected JDK 1.6 or greater. Skipping Java build")
-		set(SKIP_JAVA_BUILD TRUE)
-	endif ()
-  endif ()
-else ()
-  message(STATUS "    Javac: not found")
-  set(SKIP_JAVA_BUILD TRUE)
-endif ()
