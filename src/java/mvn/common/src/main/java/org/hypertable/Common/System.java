@@ -38,26 +38,11 @@ public class System {
   public static int processorCount;
 
   static {
-    String classpath = java.lang.System.getProperty("java.class.path");
-
-    StringTokenizer st = new StringTokenizer(classpath, ":");
-    while (st.hasMoreTokens()) {
-      String path = st.nextToken();
-      if (!path.endsWith(".jar")) {
-        File base = new File(path);
-        File binDir = new File(base, "bin");
-        if (!binDir.exists())
-          continue;
-        File confDir = new File(base, "conf");
-        if (!confDir.exists())
-          continue;
-        if (path.endsWith("/"))
-          installDir = path.substring(0, path.length()-1);
-        else
-          installDir = path;
-        break;
-      }
-    }
+	installDir = java.lang.System.getProperty("ht_home");
+    if (installDir.endsWith("/"))
+        installDir = installDir.substring(0, installDir.length()-1);
+    java.lang.System.out.println("Installation Directory = '"
+                                 + installDir + "'");
 
     clusterDef = new ClusterDefinition(installDir + "/conf/cluster.def");
 

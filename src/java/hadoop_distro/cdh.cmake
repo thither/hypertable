@@ -30,7 +30,7 @@ if (HDFS_VER MATCHES "^3")
 					${HT_MVN_DEST_DIR}/fsbroker-cdh-3/pom.xml @ONLY)
 	set(MODULES_PLACE_HOLDER "${MODULES_PLACE_HOLDER} \n <module>fsbroker-cdh-3</module>")
 	
-	install(FILES ${HT_MVN_DEST_DIR}/fsbroker-cdh-3/target/ht-fsbroker-cdh-${HDFS_VER}-${VERSION}-bundled.jar
+	install(FILES ${HT_MVN_DEST_DIR}/fsbroker-cdh-3/target/ht-fsbroker-${VERSION}-cdh-${HDFS_VER}-bundled.jar
             DESTINATION lib/java/)
 	
 	# CDH3 jars
@@ -60,7 +60,7 @@ if (HDFS_VER MATCHES "^4")
 	set(MODULES_PLACE_HOLDER "${MODULES_PLACE_HOLDER} \n <module>fsbroker-cdh-4.2.1</module>")
 	
 	
-	install(FILES ${HT_MVN_DEST_DIR}/fsbroker-cdh-4/target/ht-fsbroker-cdh-${HDFS_VER}-${VERSION}-bundled.jar
+	install(FILES ${HT_MVN_DEST_DIR}/fsbroker-cdh-4/target/ht-fsbroker-${VERSION}-cdh-${HDFS_VER}-bundled.jar
             DESTINATION lib/java/)
 	# CDH4 jars
     #if(NOT JAVA_BUNDLED)

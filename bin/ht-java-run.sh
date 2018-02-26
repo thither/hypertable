@@ -83,7 +83,7 @@ RUN_CP_GROUP=""
 DEBUG_ARGS=
 
 # Setup CLASSPATH
-CLASSPATH="$HYPERTABLE_HOME:$HYPERTABLE_HOME/lib"
+CLASSPATH="$HYPERTABLE_HOME/lib"
 
 while [ $# -gt 1 ] ; do
   if [ "--pidfile" == "$1" ] ; then
@@ -161,17 +161,17 @@ if [ ${RUN_CP_GROUP} == "FsBroker" ]; then
 
 
 	# add lib/java to CLASSPATH
-	CLASSPATH=${CLASSPATH}:$HYPERTABLE_HOME/lib/java/htFsbroker.jar:$HYPERTABLE_HOME/lib/java/htCommon.jar;
+	CLASSPATH=${CLASSPATH}:$HYPERTABLE_HOME/lib/java/htFsbroker.jar;
 
 fi
 
 #
 # run it
 #
-echo $JAVA_HOME/bin/java $DEBUG_ARGS -cp "$CLASSPATH" "$@"
+echo $JAVA_HOME/bin/java -Dht_home=$HYPERTABLE_HOME $DEBUG_ARGS -cp "$CLASSPATH" "$@"
 if [ "$JAVA_HOME" != "" ] ; then
-  exec $JAVA_HOME/bin/java $DEBUG_ARGS -cp "$CLASSPATH" "$@"
+  exec $JAVA_HOME/bin/java -Dht_home=$HYPERTABLE_HOME $DEBUG_ARGS -cp "$CLASSPATH" "$@"
 else
-  exec java $DEBUG_ARGS -cp "$CLASSPATH" "$@"
+  exec java -Dht_home=$HYPERTABLE_HOME $DEBUG_ARGS -cp "$CLASSPATH" "$@"
 fi
 

@@ -171,7 +171,7 @@ if [ $? != 0 ] ; then
     fi
     exec_server ht-java-run.sh --cp-group FsBroker org.hypertable.FsBroker.hadoop.main --verbose "$@"
   elif [ "$FS" == "mapr" ] ; then
-    exec_server htFsBrokerMapr --verbose "$@"
+    LD_LIBRARY_PATH="${JAVA_HOME}/lib" LIBHDFS3_CONF="${HADOOP_HOME}/etc/hadoop" exec_server htFsBrokerMapr --verbose "$@"
   elif [ "$FS" == "ceph" ] ; then
     exec_server htFsBrokerCeph --verbose "$@"
   elif [ "$FS" == "local" ] ; then

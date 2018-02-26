@@ -24,7 +24,6 @@
           <groupId>org.hypertable</groupId>
           <artifactId>ht-common</artifactId>
           <version>@VERSION@</version>
-		  <scope>provided</scope>
         </dependency>
 		
         <dependency>
@@ -117,23 +116,25 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>3.0.0</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.1.0</version>
         <executions>
-          <execution>
-            <id>jar-with-deps</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
+			<execution>
+				<id>jar-with-deps</id>
+				<phase>package</phase>
+				<goals>
+					<goal>shade</goal>
+				</goals>
+				<configuration>          
+					<outputFile>target/ht-fsbroker-@VERSION@-apache-hadoop-@HDFS_VER@-bundled.jar</outputFile>
+					<transformers>
+						<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+					</transformers>
+				</configuration>
+			</execution>
         </executions>
-        <configuration>
-          <descriptors>
-            <descriptor>assembly.xml</descriptor>
-          </descriptors>
-        </configuration>
-      </plugin>
-    </plugins>
+        </plugin>
+     </plugins>
   </build>
 </project>

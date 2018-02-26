@@ -1,3 +1,32 @@
+Version 0.9.8.12:
+(2018-02-26)
+
+    Updated for Thrift 0.10.0, Java 9.0.4, gcc 7.3.0, berkeley-db 6.2.32
+	Updated to std=C++17 with LTO on -O3
+	Thrift build is protocol version dependent  
+	Thrift gen is done each build gen files are not kept except cc at src/cc/ThriftBroker/thrift-version
+	New configuration option Hypertable.RangeServer.Location.AutoReInitiate= defaults to false
+	Python hypertable pkg structure has been changed and serialized_cells at pkg install
+	HyperPython depreciated in favor for distutils setup
+	Added Support for python3, pypy2, pypy3 - serialized_cells(reader has issues) 
+	Steadiness to building options and multi build options for FsBrokers
+	Added build opt -Dfsbrokers=hdfs,mapr,ceph,qfs (only specified, None or try) 
+	Added build opt -Dhdfs_vers=apache-2.7.5,apache-1.1.0,apache-1.1.1,apache-1.2.1,cdh-3 etc. (if hdfs enabled)
+	Added build opt -Dlanguages=js,java,php,py2,py3,pypy2,pypy3,perl,rb (only specified, None or try) 
+	Java directory moved to src/java 
+	Restructure of maven build with preference to bundled-jar a FsBroker and a ThriftClient
+	Java ThriftClient does not require htCommon and Hadoop jars and can be joined with Hadoop-Tools
+	Change of jar names and structure at lib/java ht-fsbroker-VERSION-vendor-ver-bundled.jar
+	ht-set-hadoop-distro.sh options depend on available jars at lib/java ht-fsbroker-VERSION-*-bundled.jar
+	ht-java-run.sh arg --cp-group  class-path-group FsBroker is the only used
+	org.hypertable.Common.System.installDir is set by arg -Dht_home=
+	Graphiz generate svg instead jpg
+	Steadiness to some tests and adjustments
+	Fixed RRDtool execution arg to --step=%u
+	RangeServer "Context" changed to "RangeServerContext"
+	Fixed ht_cluster SSH con steadiness and optional ../conf/ht_ssh_config 
+	
+	
 Version 0.9.8.11:
 (2016-03-14)
 

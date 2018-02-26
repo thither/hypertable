@@ -41,10 +41,10 @@ if(HDFS_VER_GROUP)
 	set(MODULES_PLACE_HOLDER "${MODULES_PLACE_HOLDER} \n <module>fsbroker-apache-${HDFS_VER}</module>")
 	
 	if (JAVA_BUNDLED)
-		install(FILES ${HT_MVN_DEST_DIR}/fsbroker-apache-${HDFS_VER}/target/ht-fsbroker-apache-hadoop-${HDFS_VER}-${VERSION}-bundled.jar
+		install(FILES ${HT_MVN_DEST_DIR}/fsbroker-apache-${HDFS_VER}/target/ht-fsbroker-${VERSION}-apache-hadoop-${HDFS_VER}-bundled.jar
 				DESTINATION lib/java/)
 	else ()
-		install(FILES ${HT_MVN_DEST_DIR}/fsbroker-apache-${HDFS_VER}/target/ht-fsbroker-apache-hadoop-${HDFS_VER}-${VERSION}.jar
+		install(FILES ${HT_MVN_DEST_DIR}/fsbroker-apache-${HDFS_VER}/target/ht-fsbroker-${VERSION}-apache-hadoop-${HDFS_VER}.jar
 				DESTINATION lib/java/${HDFS_VER_GROUP}/)
 	endif ()
 endif ()

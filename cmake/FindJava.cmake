@@ -81,15 +81,19 @@ endmacro(FIND_JAVA_LIB lib libname)
 
 FIND_JAVA_LIB(jawt) # find_package(JNI)
 FIND_JAVA_LIB(jvm)
+FIND_JAVA_LIB(java)
+FIND_JAVA_LIB(verify)
+
 find_path(Jni_INCLUDE_DIR jni.h
 	$ENV{JAVA_HOME}/include
 )
-if (jawt_LIB AND Jni_INCLUDE_DIR)
+if (jawt_LIB AND java_LIB AND Jni_INCLUDE_DIR)
   message(STATUS "Java AWT Native Interface: ${jawt_LIB} ${Jni_INCLUDE_DIR}")
 else ()
   message(STATUS "Java AWT Native Interface: not found")
 endif ()
 if (jvm_LIB)
+  set(jvm_LIB ${jvm_LIB} ${java_LIB} ${verify_LIB})
   message(STATUS "Java Virtual Machine: ${jvm_LIB}")
 else ()
   message(STATUS "Java Virtual Machine: not found")

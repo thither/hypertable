@@ -24,7 +24,7 @@ declare -a Distros=(); #'apache-1' 'apache-2' 'cdh-3' 'cdh-4' 'cdh-5' 'hdp-2'
 
 for distro in ../lib/java/ht-fsbroker-*.jar; do
 	distro=${distro:-1}  
-	Distros+=( "${distro:24:-21} " )
+	Distros+=( "${distro:33:-12} " )
 done;
 
 
@@ -87,8 +87,7 @@ fi
 # Setup symlinks
 pushd .
 cd $HT_HOME/lib/java
-\ln -sf ht-fsbroker-$DISTRO-[0-9]*-bundled.jar htFsbroker.jar
-\ln -sf ht-common-[0-9]*-bundled.jar htCommon.jar
+\ln -sf ht-fsbroker-[0-9]*-$DISTRO-bundled.jar htFsbroker.jar
 popd
 
 echo $DISTRO > $HT_HOME/conf/hadoop-distro
