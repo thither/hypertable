@@ -311,7 +311,7 @@ void MaprBroker::remove(ResponseCallback *cb, const char *fname) {
 
   HT_DEBUGF("remove file='%s'", fname);
 
-  if (hdfsDelete(m_filesystem, fname) == -1) {
+  if (hdfsDelete(m_filesystem, fname, 1) == -1) {
     report_error(cb);
     HT_ERRORF("unlink failed: file='%s' - %s", fname,
               strerror(errno));
@@ -441,7 +441,7 @@ namespace {
       if (fileInfo[i].mKind == kObjectKindDirectory)
 	rmdir_recursive(fs, child);
       else if (fileInfo[i].mKind == kObjectKindFile) {
-	if (hdfsDelete(fs, child.c_str()) == -1) {
+	if (hdfsDelete(fs, child.c_str(), 1) == -1) {
 	  if (errno != 0) {
 	    HT_THROWF(Error::FSBROKER_IO_ERROR, "Problem deleting file '%s' - %s",
 		      child.c_str(), strerror(errno));
@@ -450,7 +450,7 @@ namespace {
       }
     }
 
-    if (hdfsDelete(fs, dname.c_str()) == -1) {
+    if (hdfsDelete(fs, dname.c_str(), 1) == -1) {
       HT_THROWF(Error::FSBROKER_IO_ERROR, "Problem removing directory '%s' - %s",
 		dname.c_str(), strerror(errno));
     }
