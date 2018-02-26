@@ -22,7 +22,7 @@
 #  MAVEN_FOUND, If false, do not try to use maven
 
 
-if (NOT JAVA_INCLUDE_PATH)
+if (NOT JAVA_INCLUDE_PATH OR JAVA_INCLUDE_PATH STREQUAL "")
     if (NOT $ENV{JAVA_INCLUDE_PATH})
 		set(JAVA_INCLUDE_PATH $ENV{JAVA_HOME}/include )
 	else ()
@@ -69,8 +69,10 @@ endif ()
 
 macro(FIND_JAVA_LIB lib)
   find_library(${lib}_LIB NAMES ${lib} PATHS 
+	$ENV{JAVA_HOME}/jre/lib/amd64
 	$ENV{JAVA_HOME}/jre/lib/amd64/server  
 	$ENV{JAVA_HOME}/lib/server
+	$ENV{JAVA_HOME}/lib
 	)
   if(${lib}_LIB)
 	mark_as_advanced(${lib}_LIB)
@@ -86,7 +88,7 @@ else ()
   message(STATUS "Java AWT Native Interface: not found")
 endif ()
 if (jvm_LIB)
-  message(STATUS "Java virtual machine: ${jvm_LIB}")
+  message(STATUS "Java Virtual Machine: ${jvm_LIB}")
 else ()
-  message(STATUS "Java virtual machine: not found")
+  message(STATUS "Java Virtual Machine: not found")
 endif ()
