@@ -37,7 +37,7 @@ macro(FIND_MAPR_LIB lib)
   mark_as_advanced(${lib}_LIB)
 endmacro(FIND_MAPR_LIB lib libname)
 
-FIND_MAPR_LIB(MapRClient)
+FIND_MAPR_LIB(hdfs)
 
 if (Mapr_INCLUDE_DIR AND MapRClient_LIB)
   set(Mapr_FOUND TRUE)
