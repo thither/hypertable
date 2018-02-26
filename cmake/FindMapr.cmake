@@ -39,15 +39,13 @@ endmacro(FIND_MAPR_LIB lib libname)
 
 FIND_MAPR_LIB(hdfs)
 
-if (Mapr_INCLUDE_DIR AND MapRClient_LIB)
+if (Mapr_INCLUDE_DIR AND hdfs_LIB)
   set(Mapr_FOUND TRUE)
   
-  mark_as_advanced(
-    Mapr_INCLUDE_DIR
-  )
-  message(STATUS "Found MAPR: ${Mapr_LIBRARIES}")
   if (jvm_LIB)
-	set(Mapr_LIBRARIES ${MapRClient_LIB} ${jvm_LIB})
+	set(Mapr_LIBRARIES ${hdfs_LIB} ${jvm_LIB})
+	mark_as_advanced(Mapr_INCLUDE_DIR)
+	message(STATUS "Found MAPR: ${Mapr_LIBRARIES}")
 	HT_INSTALL_LIBS(lib ${Mapr_LIBRARIES})
   else ()
 	if (FSBROKER_MAPR)
