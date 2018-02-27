@@ -96,7 +96,7 @@ if( NOT MODULES_PLACE_HOLDER STREQUAL "")
 				      package)
 	install(FILES ${HT_MVN_DEST_DIR}/common/target/ht-common-${VERSION}-bundled.jar
             DESTINATION lib/java/)
-	if (Thrift_FOUND)
+	if (Thrift_FOUND AND (LANGS OR LANG_JAVA))
 		add_dependencies(MVN_build ThriftGenJava)
 	endif ()
 	
