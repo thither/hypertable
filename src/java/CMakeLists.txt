@@ -46,7 +46,7 @@ endif ()
 
 
 # JAVA THRIFTCLIENT
-if (Thrift_FOUND)
+if (Thrift_FOUND AND (LANGS OR LANG_JAVA))
 	
 	file(COPY ${HT_MVN_SRC_DIR}/thriftclient DESTINATION ${HT_MVN_DEST_DIR}/)
 	configure_file(${HT_MVN_DEST_DIR}/thriftclient/pom.xml.in

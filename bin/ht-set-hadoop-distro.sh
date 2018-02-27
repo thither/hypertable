@@ -18,14 +18,19 @@
 # along with Hypertable. If not, see <http://www.gnu.org/licenses/>
 #
 
-export HT_HOME=$(cd `dirname "$0"`/.. && pwd)
+if [ -z $HT_HOME ]; then
+	export HT_HOME=$(cd `dirname "$0"`/.. && pwd)
+fi
 
 declare -a Distros=(); #'apache-1' 'apache-2' 'cdh-3' 'cdh-4' 'cdh-5' 'hdp-2'
 
-for distro in ../lib/java/ht-fsbroker-*.jar; do
+prefix=$HT_HOME/lib/java;
+for distro in $prefix/ht-fsbroker-*.jar; do
 	distro=${distro:-1}  
-	Distros+=( "${distro:33:-12} " )
-done;
+	Distros+=( "${distro:${#prefix}+22:-12} " )
+done;	
+echo $Distros
+
 
 
 usage() {
@@ -57,7 +62,7 @@ usage() {
   echo "It sets up convenience links in the primary jar"
   echo "directory for the hypertable and thrift jar files.  For example:"
   echo
-  echo "  htFsbroker.jar -> ht-fsbroker-distro-distro_version-$VERSION-bundled.jar"
+  echo "  htFsbroker.jar -> ht-fsbroker-$VERSION-distro-distro_version-bundled.jar"
   echo
 }
 
