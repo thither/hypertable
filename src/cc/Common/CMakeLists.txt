@@ -84,10 +84,14 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 
 add_library(HyperCommon ${Common_SRCS} ${Fmemopen_SRCS})
-target_link_libraries(HyperCommon ${EXPAT_LIBRARIES} ${SIGAR_LIBRARIES}
-  ${BOOST_LIBS} ${EDITLINE_LIBRARIES} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT} ${RE2_LIBRARIES} ${MALLOC_LIBRARY} ${Libssl_LIBRARIES})
-
+target_link_libraries(HyperCommon ${SIGAR_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT} ${MALLOC_LIBRARY} ${BOOST_LIBS} 
+  ${NCURSES_LIBRARY} 
+  ${RE2_LIBRARIES})
+  # ${Libssl_LIBRARIES} 
+  # ${EDITLINE_LIBRARIES}  ${EDITLINE_LIBRARY} 
+  # ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES}
+  # ${EXPAT_LIBRARIES}
 add_executable(ht_system_info system_info.cc)
 target_link_libraries(ht_system_info HyperCommon)
 
@@ -96,10 +100,10 @@ target_link_libraries(ht_wordstream HyperCommon)
 
 # tests
 add_executable(Base64_test tests/Base64_test.cc)
-target_link_libraries(Base64_test HyperCommon)
+target_link_libraries(Base64_test HyperCommon  ${Libssl_LIBRARIES})
 
 add_executable(Crypto_test tests/Crypto_test.cc)
-target_link_libraries(Crypto_test HyperCommon)
+target_link_libraries(Crypto_test HyperCommon ${Libssl_LIBRARIES})
 
 add_executable(directory_test tests/directory_test.cc)
 target_link_libraries(directory_test HyperCommon)
@@ -146,7 +150,7 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 
 # pagearena tests
 add_executable(pagearena_test tests/pagearena_test.cc)
-target_link_libraries(pagearena_test HyperCommon ${MALLOC_LIBRARY})
+target_link_libraries(pagearena_test HyperCommon)
 
 # mutex tests
 add_executable(mutex_test tests/mutex_test.cc)
@@ -187,11 +191,11 @@ target_link_libraries(bloom_filter_test HyperCommon)
 
 # hash test
 add_executable(hash_test tests/hash_test.cc)
-target_link_libraries(hash_test HyperCommon ${MALLOC_LIBRARY})
+target_link_libraries(hash_test HyperCommon)
 
 # timeinline test
 add_executable(timeinline_test tests/timeinline_test.cc)
-target_link_libraries(timeinline_test HyperCommon ${MALLOC_LIBRARY})
+target_link_libraries(timeinline_test HyperCommon)
 
 # container tests
 add_executable(container_test tests/container_test.cc)

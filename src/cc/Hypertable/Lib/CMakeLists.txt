@@ -177,7 +177,11 @@ bmz/bmz.c
 
 add_library(Hypertable ${Hypertable_SRCS})
 add_dependencies(Hypertable HyperComm Hyperspace HyperCommon)
-target_link_libraries(Hypertable ${EXPAT_LIBRARIES} Hyperspace HyperFsBroker ${MALLOC_LIBRARY} HyperThirdParty m)
+target_link_libraries(Hypertable 
+	${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES}
+	${EXPAT_LIBRARIES}
+	${MALLOC_LIBRARY} 
+	Hyperspace HyperFsBroker HyperThirdParty m)
 
 # ColumnFamilySpec_test
 add_executable(ColumnFamilySpec_test tests/ColumnFamilySpec_test.cc)

@@ -30,7 +30,7 @@ find_path(EDITLINE_INCLUDE_DIR editline/readline.h
     /usr/include
     )
 
-find_library(EDITLINE_LIBRARY NAMES edit PATHS
+find_library(EDITLINE_LIBRARY NAMES libedit.a edit PATHS
     /opt/local/lib
     /usr/local/lib
     /usr/lib
@@ -73,6 +73,7 @@ else ()
 		set(EDITLINE_FOUND "NO")
         message(FATAL_ERROR "Could not find suitable Editline libraries")
 	endif ()
+	set(NCURSES_LIBRARY ${EDITLINE_LIBRARY})
 endif ()
 
 if (EDITLINE_FOUND)
@@ -80,7 +81,7 @@ if (EDITLINE_FOUND)
                 ${HYPERTABLE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp
                 ${HYPERTABLE_SOURCE_DIR}/cmake/CheckEditline.cc
                 CMAKE_FLAGS -DINCLUDE_DIRECTORIES=${EDITLINE_INCLUDE_DIR}
-                    -DLINK_LIBRARIES=${EDITLINE_LIBRARIES}
+                LINK_LIBRARIES ${EDITLINE_LIBRARIES}
                 OUTPUT_VARIABLE EDITLINE_TRY_OUT)
     if (EDITLINE_CHECK_BUILD STREQUAL "FALSE")
          message(STATUS "${EDITLINE_TRY_OUT}")

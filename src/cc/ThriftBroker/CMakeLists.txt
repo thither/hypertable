@@ -48,18 +48,9 @@ target_link_libraries(HyperThriftConfig HyperThrift Hypertable)
 set(ThriftBroker_SRCS ThriftBroker.cc MetricsHandler.cc)
 
 
-# Disable tcmalloc for 32-bit systems
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL "i386" OR
-    CMAKE_SYSTEM_PROCESSOR STREQUAL "i586" OR
-    CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
-  set(THRIFT_MALLOC_LIBRARY "")
-else ()
-  set(THRIFT_MALLOC_LIBRARY ${MALLOC_LIBRARY})
-endif ()
-
 # htThriftBroker
 add_executable(htThriftBroker ${ThriftBroker_SRCS})
-target_link_libraries(htThriftBroker HyperThriftConfig HyperAppHelper ${THRIFT_MALLOC_LIBRARY})
+target_link_libraries(htThriftBroker HyperThriftConfig HyperAppHelper)
 
 # Basic regression test
 add_executable(client_test tests/client_test.cc)

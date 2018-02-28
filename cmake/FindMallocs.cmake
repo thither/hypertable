@@ -44,6 +44,13 @@ elseif (NOT USE_GLIBC_MALLOC AND Tcmalloc_FOUND)
     endif ()
   endif ()
 endif ()
-message(STATUS "Using MALLOC: ${MALLOC_LIBRARY} ")
 
-HT_INSTALL_LIBS(lib ${MALLOC_LIBRARY})
+# Disable tcmalloc for 32-bit systems
+if (CMAKE_SYSTEM_PROCESSOR STREQUAL "i386" OR
+    CMAKE_SYSTEM_PROCESSOR STREQUAL "i586" OR
+    CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
+  set(MALLOC_LIBRARY "")
+else ()
+	message(STATUS "Using MALLOC: ${MALLOC_LIBRARY} ")
+	HT_INSTALL_LIBS(lib ${MALLOC_LIBRARY})
+endif ()

@@ -35,8 +35,8 @@ find_path(Thrift_INCLUDE_DIR Thrift.h NO_DEFAULT_PATH PATHS
 
 set(Thrift_LIB_PATHS ${HT_DEPENDENCY_LIB_DIR} /usr/local/lib /opt/local/lib /usr/lib64)
 
-find_library(Thrift_LIB NAMES thrift NO_DEFAULT_PATH PATHS ${Thrift_LIB_PATHS})
-find_library(Thrift_NB_LIB NAMES thriftnb PATHS ${Thrift_LIB_PATHS})
+find_library(Thrift_LIB NAMES thrift NO_DEFAULT_PATH PATHS ${Thrift_LIB_PATHS}) # libthrift.a 
+find_library(Thrift_NB_LIB NAMES thriftnb PATHS ${Thrift_LIB_PATHS}) # libthriftnb.a 
 
 if (Thrift_VERSION MATCHES "^Thrift version" AND LibEvent_LIBS
     AND LibEvent_INCLUDE_DIR AND Thrift_LIB AND Thrift_NB_LIB
@@ -112,11 +112,13 @@ if (Thrift_FOUND)
   )
   
   HT_INSTALL_LIBS(lib ${Thrift_LIBS})
-  # Install Thrift dependencies
-  string(REPLACE " " ";" LIB_DEPENDENCIES_LIST ${Thrift_LIB_DEPENDENCIES})
-  foreach(dep ${LIB_DEPENDENCIES_LIST})
-    HT_INSTALL_LIBS(lib ${dep})
-  endforeach ()
+  if(Thrift_LIB_DEPENDENCIES)
+	# Install Thrift dependencies
+	string(REPLACE " " ";" LIB_DEPENDENCIES_LIST ${Thrift_LIB_DEPENDENCIES})
+	foreach(dep ${LIB_DEPENDENCIES_LIST})
+		HT_INSTALL_LIBS(lib ${dep})
+	endforeach ()
+  endif ()
 else ()
   message(STATUS "Thrift compiler/libraries NOT found. "
           "Thrift support will be disabled (${Thrift_RETURN}, "

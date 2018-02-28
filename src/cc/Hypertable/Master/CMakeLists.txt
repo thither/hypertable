@@ -77,19 +77,19 @@ target_link_libraries(HyperMaster m Hyperspace HyperFsBroker Hypertable ${RRD_LI
 
 # htMaster
 add_executable(htMaster main.cc)
-target_link_libraries(htMaster HyperMaster Hyperspace Hypertable HyperRanger HyperFsBroker ${MALLOC_LIBRARY})
+target_link_libraries(htMaster HyperMaster Hyperspace Hypertable HyperRanger HyperFsBroker)
 
 # op_test_driver
 add_executable(op_test_driver tests/op_test_driver.cc)
-target_link_libraries(op_test_driver HyperMaster HyperRanger Hyperspace Hypertable HyperFsBroker ${MALLOC_LIBRARY})
+target_link_libraries(op_test_driver HyperMaster HyperRanger Hyperspace Hypertable HyperFsBroker)
 
 # op_dependency_test
 add_executable(op_dependency_test tests/op_dependency_test.cc tests/OperationTest.cc)
-target_link_libraries(op_dependency_test HyperMaster HyperRanger Hyperspace Hypertable HyperFsBroker ${MALLOC_LIBRARY})
+target_link_libraries(op_dependency_test HyperMaster HyperRanger Hyperspace Hypertable HyperFsBroker)
 
 # system_state_test
 add_executable(system_state_test tests/system_state_test.cc)
-target_link_libraries(system_state_test HyperCommon HyperMaster HyperRanger Hypertable ${MALLOC_LIBRARY})
+target_link_libraries(system_state_test HyperCommon HyperMaster HyperRanger Hypertable)
 
 #
 # Copy test files
