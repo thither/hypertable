@@ -17,7 +17,7 @@
 #
 
 # Dependent libraries
-HT_INSTALL_LIBS(lib ${Kfs_LIBRARIES} ${EXPAT_LIBRARIES} ${BZIP2_LIBRARIES} ${ZLIB_LIBRARIES})
+HT_INSTALL_LIBS(lib ${Kfs_LIBRARIES})
 
 # Apple specific
 if (APPLE)

@@ -33,17 +33,33 @@ if( NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION}/gen-cpp)
 	                              ${CMAKE_CURRENT_SOURCE_DIR}/)			 
 endif ()
 
-add_library(HyperThrift ThriftHelper.cc SerializedCellsReader.cc SerializedCellsWriter.cc 
+# libHyperThrift
+HT_ADD_LIBS(
+	TARGET HyperThrift 
+	SRCS ThriftHelper.cc SerializedCellsReader.cc SerializedCellsWriter.cc 
 			gen-cpp/Client_constants.cpp 
 			gen-cpp/ClientService.cpp 
 			gen-cpp/Client_types.cpp
 			gen-cpp/Hql_constants.cpp 
 			gen-cpp/HqlService.cpp 
-			gen-cpp/Hql_types.cpp)
-target_link_libraries(HyperThrift ${Thrift_LIBS} ${LibEvent_LIBS})
+			gen-cpp/Hql_types.cpp
+	DEPENDENCIES ${Thrift_LIBS} ${LibEvent_LIBS})
+#add_library(HyperThrift ThriftHelper.cc SerializedCellsReader.cc SerializedCellsWriter.cc 
+#			gen-cpp/Client_constants.cpp 
+#			gen-cpp/ClientService.cpp 
+#			gen-cpp/Client_types.cpp
+#			gen-cpp/Hql_constants.cpp 
+#			gen-cpp/HqlService.cpp 
+#			gen-cpp/Hql_types.cpp)
+#target_link_libraries(HyperThrift ${Thrift_LIBS} ${LibEvent_LIBS})
 
-add_library(HyperThriftConfig Config.cc)
-target_link_libraries(HyperThriftConfig HyperThrift Hypertable)
+# libHyperThriftConfig
+HT_ADD_LIBS(
+	TARGET HyperThriftConfig 
+	SRCS Config.cc
+	DEPENDENCIES HyperThrift Hypertable)
+#add_library(HyperThriftConfig Config.cc)
+#target_link_libraries(HyperThriftConfig HyperThrift Hypertable)
 
 set(ThriftBroker_SRCS ThriftBroker.cc MetricsHandler.cc)
 

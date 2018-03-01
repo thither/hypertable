@@ -30,14 +30,12 @@ find_path(RE2_INCLUDE_DIR re2/re2.h NO_DEFAULT_PATH PATHS
   /usr/local/include
 )
 
-set(RE2_NAMES libre2.a re2)
-find_library(RE2_LIBRARY NAMES ${RE2_NAMES} NO_DEFAULT_PATH PATHS
-    ${HT_DEPENDENCY_LIB_DIR}
-    /usr/local/lib
-    /usr/local/re2/lib
-    /opt/local/lib
-    /usr/lib
-    )
+HT_FIND_LIB(
+	OUTPUT RE2_LIBRARY
+	PATHS  ""
+	STATIC libre2.a
+	SHARED re2
+)
 
 if (RE2_INCLUDE_DIR AND RE2_LIBRARY)
   set(RE2_FOUND TRUE)

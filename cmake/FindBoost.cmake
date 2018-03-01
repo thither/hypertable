@@ -125,6 +125,7 @@ endmacro(FIND_BOOST_PARENT root includedir)
 
 macro(FIND_BOOST_LIBRARY lib libname libroot required)
   set(${lib}_NAMES
+    # "libboost_${libname}.a"
     "boost_${libname}"
     "boost_${libname}-mt"
     "boost_${libname}-gcc45-mt"
@@ -149,6 +150,7 @@ macro(FIND_BOOST_LIBRARY lib libname libroot required)
 
   mark_as_advanced(${lib})
 endmacro()
+
 
 # Assume we didn't find it.
 set(Boost_FOUND 0)
@@ -214,11 +216,29 @@ if (Boost_INCLUDE_DIR)
 
     message(STATUS "Boost lib dir: ${Boost_LIBRARY_DIR}")
   endif ()
-
+  
   # BOOST_LIBS is our default boost libs.
   set(BOOST_LIBS ${BOOST_IOSTREAMS_LIB} ${BOOST_PROGRAM_OPTIONS_LIB}
       ${BOOST_FILESYSTEM_LIB} ${BOOST_THREAD_LIB})
-
+	  
+#  set(libs liblzma  libiconv libicuuc libicudata libicui18n libicuio libicutu libicutest)
+#  foreach(lib ${libs})
+#	find_library(add_${lib}LIB NO_DEFAULT_PATH
+#		NAMES ${lib}.a
+#		PATHS /usr/local/lib /opt/local/lib /usr/lib /lib
+#	)
+#	set(BOOST_LIBS ${BOOST_LIBS} ${add_${lib}LIB})
+#  endforeach()
+#  
+#  set(libs thread signals unit_test_framework log math_c99 iostreams wave atomic wserialization stacktrace_addr2line math_c99f serialization 
+#			locale math_c99l test_exec_monitor exception fiber stacktrace_basic prg_exec_monitor filesystem math_tr1l date_time coroutine 
+#			program_options math_tr1f system container regex chrono random log_setup stacktrace_noop math_tr1 timer type_erasure graph context )
+#  foreach(lib ${libs})
+#	FIND_BOOST_LIBRARY(add_${lib}LIB ${lib} ${Boost_PARENT} false)
+#	set(BOOST_LIBS ${BOOST_LIBS} ${add_${lib}LIB})
+#  endforeach()
+  
+  
   if(Boost_HAS_SYSTEM_LIB)
     set(BOOST_LIBS ${BOOST_LIBS} ${BOOST_SYSTEM_LIB} ${BOOST_SYSTEM_MT_LIB})
   endif()

@@ -72,8 +72,12 @@ SystemState.cc
 )
 
 # HyperMaster Lib
-add_library(HyperMaster ${Master_SRCS})
-target_link_libraries(HyperMaster m Hyperspace HyperFsBroker Hypertable ${RRD_LIBRARIES})
+HT_ADD_LIBS(
+	TARGET HyperMaster 
+	SRCS ${Master_SRCS}
+	DEPENDENCIES m Hyperspace HyperFsBroker Hypertable)
+#add_library(HyperMaster ${Master_SRCS})
+#target_link_libraries(HyperMaster m Hyperspace HyperFsBroker Hypertable ${RRD_LIBRARIES})
 
 # htMaster
 add_executable(htMaster main.cc)

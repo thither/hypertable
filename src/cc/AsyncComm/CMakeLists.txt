@@ -50,8 +50,13 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   link_libraries(nsl socket resolv)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 
-add_library(HyperComm ${AsyncComm_SRCS})
-target_link_libraries(HyperComm HyperCommon)
+# lib HyperComm
+HT_ADD_LIBS(
+	TARGET HyperComm 
+	SRCS ${AsyncComm_SRCS}
+	DEPENDENCIES HyperCommon)
+#add_library(HyperComm ${AsyncComm_SRCS})
+#target_link_libraries(HyperComm HyperCommon)
 
 # sampleClient
 add_executable(sampleClient sampleClient.cc)

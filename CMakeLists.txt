@@ -125,9 +125,12 @@ if (ASAN)
 endif ()
 
 # Uncomment the following to build dynamic libraries
-if (BUILD_SHARED_LIBS)
-	set (BUILD_SHARED_LIBS ON)
-	message(STATUS "Building shared libraries")
+set (BUILD_SHARED_LIBS OFF)
+if (ENABLE_SHARED)
+	set (ENABLE_SHARED ON)
+	message(STATUS "Building shared and static libraries")
+else ()
+	message(STATUS "Building static libraries by default, opt -DENABLE_SHARED")
 endif ()
 
 # Locate required packages
@@ -186,14 +189,14 @@ find_package(Mallocs)
 find_package(Boost REQUIRED)
 find_package(SIGAR REQUIRED)
 find_package(BerkeleyDB REQUIRED)
-find_package(EXPAT REQUIRED)
-find_package(Editline REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(BZip2 REQUIRED)
-find_package(RE2 REQUIRED)
+HT_FASTLIB_SET(NAME "EXPAT" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libexpat.a SHARED expat INCLUDE expat.h)
+HT_FASTLIB_SET(NAME "ZLIB" REQUIRED TRUE  LIB_PATHS "" INC_PATHS "" STATIC libz.a SHARED z INCLUDE zlib.h)
+HT_FASTLIB_SET(NAME "BZIP2" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libbz2.a SHARED bz2 INCLUDE bzlib.h)
 find_package(Snappy REQUIRED)
-find_package(RRDtool REQUIRED)
+find_package(RE2 REQUIRED)
+find_package(Editline REQUIRED)
 find_package(Cronolog REQUIRED)
+find_package(RRDtool REQUIRED)
 find_package(Doxygen)
 find_package(LibEvent REQUIRED)
 find_package(Libssh REQUIRED)
@@ -281,9 +284,7 @@ endif ()
 
 # include directories
 include_directories(src/cc ${HYPERTABLE_BINARY_DIR}/src/cc
-    ${ZLIB_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} ${Libssl_INCLUDE_DIR}
-    ${EXPAT_INCLUDE_DIRS} ${BDB_INCLUDE_DIR} ${EDITLINE_INCLUDE_DIR}
-    ${SIGAR_INCLUDE_DIR})
+    ${Boost_INCLUDE_DIRS} ${Libssl_INCLUDE_DIR} ${EDITLINE_INCLUDE_DIR} ${SIGAR_INCLUDE_DIR})
 
 
 include(TestHelper)

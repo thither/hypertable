@@ -65,7 +65,7 @@ endmacro()
 macro(HT_INSTALL_LIBS dest)
  if (NOT HT_COMPONENT_INSTALL)
   if (INSTALL_EXCLUDE_DEPENDENT_LIBS)
-    message(STATUS "Not installing dependent libraries")
+    message(STATUS "       Not installing dependent libraries")
   else ()
     foreach(fpath ${ARGN})
       if (NOT ${fpath} MATCHES "(NOTFOUND|\\.a)$")
@@ -75,10 +75,148 @@ macro(HT_INSTALL_LIBS dest)
         HT_GET_SONAME(soname ${fpath})
         configure_file(${fpath} "${dest}/${soname}" COPYONLY)
         install(FILES "${CMAKE_BINARY_DIR}/${dest}/${soname}" DESTINATION ${dest})
-      else ()
-         message(STATUS "Problem installing ${fpath} soname=${soname} to ${dest}")
+      elseif (${fpath} MATCHES "\\.a$")
+         message(STATUS "       Not installing static library: ${fpath}")
       endif ()
     endforeach()
   endif ()
  endif ()
 endmacro()
+
+
+##### HT_FASTLIB_SET
+	# HT_FASTLIB_SET(
+	#	NAME 	  	CAP.NAME
+	#	REQUIRED  	BOOL
+	#	LIB_PATHS  	SEARCH_PATHS
+	#	INC_PATHS  	SEARCH_PATHS
+	#	STATIC 		STATIC_LIBS
+	#	SHARED 		SHARED_LIBS
+	#	INCLUDE 	HEADER FILES
+	# )
+function(HT_FASTLIB_SET)
+	set(oneValueArgs NAME REQUIRED)
+	set(multiValueArgs LIB_PATHS INC_PATHS STATIC SHARED INCLUDE)
+	cmake_parse_arguments(HT_FASTLIB_SET "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+	
+	# message(STATUS "HT_FASTLIB_SET: 
+	#					${HT_FASTLIB_SET_NAME}
+	#					${HT_FASTLIB_SET_REQUIRED} 
+	#					${HT_FASTLIB_SET_LIB_PATHS} 
+	#					${HT_FASTLIB_SET_INC_PATHS} 
+	#					${HT_FASTLIB_SET_STATIC} 
+	#					${HT_FASTLIB_SET_SHARED}
+	#					${HT_FASTLIB_SET_INCLUDE}")
+
+	find_path(INCLUDE_DIRS ${HT_FASTLIB_SET_INCLUDE} NO_DEFAULT_PATH 
+			  PATHS ${HT_FASTLIB_SET_INC_PATHS} ${HT_DEPENDENCY_INCLUDE_DIR} /opt/local/include /usr/local/include /usr/include )
+
+	HT_FIND_LIB(
+		OUTPUT LIBRARY
+		PATHS  ${HT_FASTLIB_SET_LIB_PATHS}
+		STATIC ${HT_FASTLIB_SET_STATIC}
+		SHARED ${HT_FASTLIB_SET_SHARED}
+	)
+	if (INCLUDE_DIRS AND LIBRARY)
+		include_directories(${INCLUDE_DIRS})
+		set("${HT_FASTLIB_SET_NAME}_FOUND" TRUE)
+		set("${HT_FASTLIB_SET_NAME}_LIBRARIES" ${LIBRARY})
+		
+		message(STATUS "Found ${HT_FASTLIB_SET_NAME}: ${${HT_FASTLIB_SET_NAME}_LIBRARIES}")
+		message(STATUS "       Include path: ${INCLUDE_DIRS}")
+		
+		HT_INSTALL_LIBS(lib ${${HT_FASTLIB_SET_NAME}_LIBRARIES})
+	else ()
+		set("${HT_FASTLIB_SET_NAME}_FOUND" FALSE)
+		set("${HT_FASTLIB_SET_NAME}_LIBRARIES")
+		message(STATUS "Not Found ${HT_FASTLIB_SET_NAME}: ${HT_FASTLIB_SET_SHARED} ${HT_FASTLIB_SET_STATIC}")
+		if (${HT_FASTLIB_SET_REQUIRED})
+			message(FATAL_ERROR "Could NOT find ${HT_FASTLIB_SET_NAME} library")
+		endif ()
+	endif ()
+		
+	set("${HT_FASTLIB_SET_NAME}_FOUND"  ${${HT_FASTLIB_SET_NAME}_FOUND} PARENT_SCOPE)
+	set("${HT_FASTLIB_SET_NAME}_LIBRARIES" ${${HT_FASTLIB_SET_NAME}_LIBRARIES} PARENT_SCOPE)
+endfunction()
+
+##### HT_FIND_LIB
+	# HT_FIND_LIB(
+	#	OUTPUT VAR_NAME
+	#	PATHS  SEARCH_PATHS
+	#	STATIC STATIC_LIBS
+	#	SHARED SHARED_LIBS
+	# )
+function(HT_FIND_LIB)
+	set(oneValueArgs OUTPUT)
+	set(multiValueArgs PATHS STATIC SHARED)
+	cmake_parse_arguments(HT_FIND_LIB "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+	
+	if(BUILD_WITH_STATIC AND HT_FIND_LIB_STATIC)
+		set(HT_FIND_LIB_LIBS ${HT_FIND_LIB_STATIC})
+	else()
+		set(HT_FIND_LIB_LIBS ${HT_FIND_LIB_SHARED})
+	endif ()
+	
+	# message(STATUS "HT_FIND_LIB: ${HT_FIND_LIB_OUTPUT} ${HT_FIND_LIB_PATHS} ${HT_FIND_LIB_STATIC} ${HT_FIND_LIB_SHARED}")
+	set("${HT_FIND_LIB_OUTPUT}" "" PARENT_SCOPE)
+	foreach(lib ${HT_FIND_LIB_LIBS})
+		# message(STATUS "looking for: ${lib}")
+		find_library(
+			HT_FOUND_${lib} 
+			NAMES ${lib}
+			PATHS ${HT_FIND_LIB_PATHS} ${HT_DEPENDENCY_LIB_DIR} /opt/local/lib /usr/local/lib  /usr/lib  /lib 
+		)
+		set("${HT_FIND_LIB_OUTPUT}" ${${HT_FIND_LIB_OUTPUT}} ${HT_FOUND_${lib}} PARENT_SCOPE)
+    endforeach()	
+	# message(STATUS "HT_FOUND_LIB: ${HT_FIND_LIB_OUTPUT} ${${HT_FIND_LIB_OUTPUT}}")
+endfunction()
+
+
+##### Buld static and Shared libs or as requested, default both
+	# HT_ADD_LIBS(
+	#	TARGET libNameTarget 
+	#	SRCS   sourceToCompile
+	#	DEPENDENCIES dependenciesOfTheTraget
+	# )
+function(HT_ADD_LIBS)
+	set(oneValueArgs TARGET)
+	set(multiValueArgs SRCS DEPENDENCIES)
+	cmake_parse_arguments(HT_ADD_LIBS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+  
+	add_library(obj${HT_ADD_LIBS_TARGET} OBJECT ${HT_ADD_LIBS_SRCS})
+	add_library(${HT_ADD_LIBS_TARGET} STATIC $<TARGET_OBJECTS:obj${HT_ADD_LIBS_TARGET}>)
+	
+	set(HT_ADD_LIBS_DEPS )
+	foreach(lib ${HT_ADD_LIBS_DEPENDENCIES})
+		if ("${lib}" MATCHES "\\.a$")
+			set(HT_ADD_LIBS_STATIC_DEPS ${HT_ADD_LIBS_STATIC_DEPS} "${lib}")
+		else ()
+			set(HT_ADD_LIBS_DEPS ${HT_ADD_LIBS_DEPS} "${lib}")
+		endif ()
+	endforeach()
+	
+	if(HT_ADD_LIBS_STATIC_DEPS)
+		string(REPLACE ";" " " HT_ADD_LIBS_STATIC_DEPS "${HT_ADD_LIBS_STATIC_DEPS}")
+		if (WIN32)
+			set(HT_ADD_LIBS_STATIC_DEPS "/WHOLEARCHIVE ${HT_ADD_LIBS_STATIC_DEPS} /NOWHOLEARCHIVE")
+		elseif (APPLE)
+			set(HT_ADD_LIBS_STATIC_DEPS "-Wl,--all_load ${HT_ADD_LIBS_STATIC_DEPS} -Wl,--no-all_load")
+		else ()
+			set(HT_ADD_LIBS_STATIC_DEPS "-Wl,--whole-archive ${HT_ADD_LIBS_STATIC_DEPS} -Wl,--no-whole-archive")
+		endif ()
+	endif ()
+	
+	set(HT_ADD_LIBS_DEPS ${HT_ADD_LIBS_DEPS} "${HT_ADD_LIBS_STATIC_DEPS}")
+	# message(STATUS "shared libs flags: ${HT_ADD_LIBS_DEPS}")
+
+	if (ENABLE_SHARED)
+		set_property(TARGET obj${HT_ADD_LIBS_TARGET} PROPERTY POSITION_INDEPENDENT_CODE 1)
+		add_library(${HT_ADD_LIBS_TARGET}-shared SHARED $<TARGET_OBJECTS:obj${HT_ADD_LIBS_TARGET}>)
+		SET_TARGET_PROPERTIES(${HT_ADD_LIBS_TARGET}-shared PROPERTIES OUTPUT_NAME ${HT_ADD_LIBS_TARGET} CLEAN_DIRECT_OUTPUT 1)
+		SET_TARGET_PROPERTIES(${HT_ADD_LIBS_TARGET}-shared PROPERTIES VERSION ${VERSION} SOVERSION ${VERSION})
+		target_link_libraries(${HT_ADD_LIBS_TARGET}-shared ${HT_ADD_LIBS_DEPS})
+	endif ()
+	
+	target_link_libraries(${HT_ADD_LIBS_TARGET} ${HT_ADD_LIBS_DEPS})
+endfunction()
+

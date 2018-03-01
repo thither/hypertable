@@ -33,9 +33,13 @@ HsHelpText.cc
 HsClientState.cc
 )
 
-# Hyperspace library
-add_library(Hyperspace ${Hyperspace_SRCS})
-target_link_libraries(Hyperspace HyperTools)
+# lib Hyperspace
+HT_ADD_LIBS(
+	TARGET Hyperspace 
+	SRCS ${Hyperspace_SRCS}
+	DEPENDENCIES HyperTools)
+#add_library(Hyperspace ${Hyperspace_SRCS})
+#target_link_libraries(Hyperspace HyperTools)
 
 set(Master_SRCS
 StateDbKeys.cc

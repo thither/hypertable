@@ -83,11 +83,19 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   link_libraries(socket)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 
-add_library(HyperCommon ${Common_SRCS} ${Fmemopen_SRCS})
-target_link_libraries(HyperCommon ${SIGAR_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT} ${MALLOC_LIBRARY} ${BOOST_LIBS} 
-  ${NCURSES_LIBRARY} 
-  ${RE2_LIBRARIES})
+HT_ADD_LIBS(
+	TARGET HyperCommon 
+	SRCS ${Common_SRCS} ${Fmemopen_SRCS}
+	DEPENDENCIES ${SIGAR_LIBRARIES} 
+				 ${CMAKE_THREAD_LIBS_INIT} ${MALLOC_LIBRARY} ${BOOST_LIBS} 
+				 ${NCURSES_LIBRARY} 
+				 ${RE2_LIBRARIES})
+  
+# add_library(HyperCommon ${Common_SRCS} ${Fmemopen_SRCS})
+# target_link_libraries(HyperCommon ${SIGAR_LIBRARIES}
+#  ${CMAKE_THREAD_LIBS_INIT} ${MALLOC_LIBRARY} ${BOOST_LIBS} 
+#  ${NCURSES_LIBRARY} 
+#  ${RE2_LIBRARIES})
   # ${Libssl_LIBRARIES} 
   # ${EDITLINE_LIBRARIES}  ${EDITLINE_LIBRARY} 
   # ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES}

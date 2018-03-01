@@ -25,9 +25,13 @@ Unique.cc
 Unique.h
 Error.h
 )
-
-add_library(HyperAppHelper ${Helper_SRCS})
-target_link_libraries(HyperAppHelper Hypertable HyperCommon )
+# lib HyperAppHelper
+HT_ADD_LIBS(
+	TARGET HyperAppHelper 
+	SRCS ${Helper_SRCS}
+	DEPENDENCIES Hypertable HyperCommon)
+#add_library(HyperAppHelper ${Helper_SRCS})
+#target_link_libraries(HyperAppHelper Hypertable HyperCommon )
 # ${BOOST_LIBS} ${Log4cpp_LIBRARIES}
 # ${ZLIB_LIBRARIES} ${SIGAR_LIBRARIES} ${NCURSES_LIBRARY}
 # ${CMAKE_THREAD_LIBS_INIT} ${MALLOC_LIBRARY}

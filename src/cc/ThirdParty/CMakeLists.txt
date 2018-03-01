@@ -22,7 +22,11 @@ lzo/minilzo.c
 quicklz/quicklz.cc
 )
 
-add_library(HyperThirdParty ${ThirdParty_SRCS})
+# lib HyperThirdParty
+HT_ADD_LIBS(
+	TARGET HyperThirdParty 
+	SRCS ${ThirdParty_SRCS})
+#add_library(HyperThirdParty ${ThirdParty_SRCS})
 
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)
