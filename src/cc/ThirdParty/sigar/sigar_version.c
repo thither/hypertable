@@ -1,15 +1,15 @@
 #include "sigar.h"
 
 static sigar_version_t sigar_version = {
-    "@@BUILD_DATE@@",
-    "@@SCM_REVISION@@",
-    "1.6.4",
-    "@@ARCHNAME@@",
-    "@@ARCHLIB@@",
-    "@@BINNAME@@",
-    "SIGAR-@@VERSION_STRING@@, "
-    "SCM revision @@SCM_REVISION@@, "
-    "built @@BUILD_DATE@@ as @@ARCHLIB@@",
+    "",
+    "",
+    "libHyperThirdParty-sigar-1.6.4",
+    "",
+    "",
+    "",
+    "libHyperThirdParty-sigar-1.6.4"
+    ""
+    "",
     1,
     6,
     4,
