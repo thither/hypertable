@@ -221,7 +221,7 @@ if (Boost_INCLUDE_DIR)
   set(BOOST_LIBS ${BOOST_IOSTREAMS_LIB} ${BOOST_PROGRAM_OPTIONS_LIB}
       ${BOOST_FILESYSTEM_LIB} ${BOOST_THREAD_LIB})
 	  
-#  set(libs liblzma  libiconv libicuuc libicudata libicui18n libicuio libicutu libicutest)
+#  set(libs   libiconv libicuuc libicudata libicui18n libicuio libicutu libicutest)
 #  foreach(lib ${libs})
 #	find_library(add_${lib}LIB NO_DEFAULT_PATH
 #		NAMES ${lib}.a

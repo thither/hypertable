@@ -38,9 +38,8 @@ set(Thrift_LIB_PATHS ${HT_DEPENDENCY_LIB_DIR} /usr/local/lib /opt/local/lib /usr
 find_library(Thrift_LIB NAMES thrift NO_DEFAULT_PATH PATHS ${Thrift_LIB_PATHS}) # libthrift.a 
 find_library(Thrift_NB_LIB NAMES thriftnb PATHS ${Thrift_LIB_PATHS}) # libthriftnb.a 
 
-if (Thrift_VERSION MATCHES "^Thrift version" AND LibEvent_LIBS
-    AND LibEvent_INCLUDE_DIR AND Thrift_LIB AND Thrift_NB_LIB
-    AND Thrift_INCLUDE_DIR)
+if (Thrift_VERSION MATCHES "^Thrift version" AND EVENT_LIBRARIES
+	AND Thrift_LIB AND Thrift_NB_LIB AND Thrift_INCLUDE_DIR)
   set(Thrift_FOUND TRUE)
   set(Thrift_LIBS ${Thrift_LIB} ${Thrift_NB_LIB})
 
@@ -84,7 +83,7 @@ if (Thrift_VERSION MATCHES "^Thrift version" AND LibEvent_LIBS
 
 else ()
   set(Thrift_FOUND FALSE)
-  if (NOT LibEvent_LIBS OR NOT LibEvent_INCLUDE_DIR)
+  if (NOT EVENT_LIBRARIES)
     message(STATUS "libevent is required for thrift broker support")
   endif ()
 endif ()
@@ -98,7 +97,7 @@ if (Thrift_FOUND)
   string(REPLACE " " ";" Thrift_VERSION ${Thrift_VERSION})
   list(GET Thrift_VERSION -1 Thrift_VERSION)
   
-  include_directories(${LibEvent_INCLUDE_DIR} ${Thrift_INCLUDE_DIR})
+  include_directories(${Thrift_INCLUDE_DIR})
   SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHT_WITH_THRIFT")
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHT_WITH_THRIFT")
   set(ThriftBroker_IDL_DIR ${HYPERTABLE_SOURCE_DIR}/src/cc/ThriftBroker)

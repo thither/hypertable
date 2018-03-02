@@ -43,7 +43,7 @@ HT_ADD_LIBS(
 			gen-cpp/Hql_constants.cpp 
 			gen-cpp/HqlService.cpp 
 			gen-cpp/Hql_types.cpp
-	DEPENDENCIES ${Thrift_LIBS} ${LibEvent_LIBS})
+	DEPENDENCIES ${Thrift_LIBS} ${EVENT_LIBRARIES} ${LZMA_LIBRARIES})
 #add_library(HyperThrift ThriftHelper.cc SerializedCellsReader.cc SerializedCellsWriter.cc 
 #			gen-cpp/Client_constants.cpp 
 #			gen-cpp/ClientService.cpp 
@@ -67,6 +67,7 @@ set(ThriftBroker_SRCS ThriftBroker.cc MetricsHandler.cc)
 # htThriftBroker
 add_executable(htThriftBroker ${ThriftBroker_SRCS})
 target_link_libraries(htThriftBroker HyperThriftConfig HyperAppHelper)
+
 
 # Basic regression test
 add_executable(client_test tests/client_test.cc)

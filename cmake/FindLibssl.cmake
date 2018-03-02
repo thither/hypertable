@@ -96,11 +96,7 @@ if (Libssl_FOUND)
   endif ()
   message("       version: ${TC_TRY_OUT}")
   
-  mark_as_advanced(
-	Libssl_LIBRARIES
-	Libssl_LIB_DEPENDENCIES
-	Libssl_INCLUDE_DIR
-  )
+
   HT_INSTALL_LIBS(lib ${Libssl_LIBRARIES})
   
   # Install dependencies

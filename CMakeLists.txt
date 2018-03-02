@@ -187,18 +187,20 @@ message(STATUS "Using thread library: ${CMAKE_THREAD_LIBS_INIT}")
 find_package(Mallocs)
 
 find_package(Boost REQUIRED)
-find_package(SIGAR REQUIRED)
+# find_package(SIGAR REQUIRED)
 find_package(BerkeleyDB REQUIRED)
 HT_FASTLIB_SET(NAME "EXPAT" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libexpat.a SHARED expat INCLUDE expat.h)
-HT_FASTLIB_SET(NAME "ZLIB" REQUIRED TRUE  LIB_PATHS "" INC_PATHS "" STATIC libz.a SHARED z INCLUDE zlib.h)
+HT_FASTLIB_SET(NAME "ZLIB"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libz.a SHARED z INCLUDE zlib.h)
 HT_FASTLIB_SET(NAME "BZIP2" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libbz2.a SHARED bz2 INCLUDE bzlib.h)
+HT_FASTLIB_SET(NAME "LZMA"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC liblzma.a SHARED lzma INCLUDE lzma1.h)
+
 find_package(Snappy REQUIRED)
 find_package(RE2 REQUIRED)
 find_package(Editline REQUIRED)
 find_package(Cronolog REQUIRED)
 find_package(RRDtool REQUIRED)
 find_package(Doxygen)
-find_package(LibEvent REQUIRED)
+HT_FASTLIB_SET(NAME "EVENT" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libevent.a SHARED event INCLUDE event.h)
 find_package(Libssh REQUIRED)
 find_package(Libssl REQUIRED)
 
@@ -283,8 +285,12 @@ endif ()
 
 
 # include directories
-include_directories(src/cc ${HYPERTABLE_BINARY_DIR}/src/cc
-    ${Boost_INCLUDE_DIRS} ${Libssl_INCLUDE_DIR} ${EDITLINE_INCLUDE_DIR} ${SIGAR_INCLUDE_DIR})
+include_directories(
+	src/cc 
+	${HYPERTABLE_BINARY_DIR}/src/cc 
+	src/cc/ThirdParty/sigar
+
+    ${Boost_INCLUDE_DIRS} ${Libssl_INCLUDE_DIR} ${EDITLINE_INCLUDE_DIR})
 
 
 include(TestHelper)
