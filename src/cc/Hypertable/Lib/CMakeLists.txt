@@ -179,7 +179,7 @@ bmz/bmz.c
 HT_ADD_LIBS(
 	TARGET Hypertable 
 	SRCS ${Hypertable_SRCS}
-	DEPENDENCIES Hyperspace HyperFsBroker HyperThirdParty m 
+	DEPENDENCIES Hyperspace HyperFsBroker m 
 				 ${MALLOC_LIBRARY} 
 				 ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${EXPAT_LIBRARIES})
 #add_library(Hypertable ${Hypertable_SRCS})

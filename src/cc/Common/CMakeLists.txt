@@ -86,7 +86,8 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 HT_ADD_LIBS(
 	TARGET HyperCommon 
 	SRCS ${Common_SRCS} ${Fmemopen_SRCS}
-	DEPENDENCIES ${CMAKE_THREAD_LIBS_INIT} ${MALLOC_LIBRARY} ${BOOST_LIBS} 
+	DEPENDENCIES HyperThirdParty
+			 	 ${CMAKE_THREAD_LIBS_INIT} ${MALLOC_LIBRARY} ${BOOST_LIBS} 
 				 ${NCURSES_LIBRARY} 
 				 ${RE2_LIBRARIES})
 # add_library(HyperCommon ${Common_SRCS} ${Fmemopen_SRCS})
