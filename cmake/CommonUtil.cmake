@@ -107,9 +107,30 @@ function(HT_FASTLIB_SET)
 	#					${HT_FASTLIB_SET_STATIC} 
 	#					${HT_FASTLIB_SET_SHARED}
 	#					${HT_FASTLIB_SET_INCLUDE}")
-
-	find_path(INCLUDE_DIRS ${HT_FASTLIB_SET_INCLUDE} NO_DEFAULT_PATH 
-			  PATHS ${HT_FASTLIB_SET_INC_PATHS} ${HT_DEPENDENCY_INCLUDE_DIR} /opt/local/include /usr/local/include /usr/include )
+	
+	# explicit lookup
+	foreach(path ${HT_FASTLIB_SET_INC_PATHS}  ${HT_DEPENDENCY_INCLUDE_DIR} 
+				 /opt/local/include  /usr/local/include  /usr/include)
+				
+		foreach(inc_h ${HT_FASTLIB_SET_INCLUDE})
+			if(EXISTS ${path}/${inc_h} AND NOT INCLUDE_DIR${inc_h})
+				set(INCLUDE_DIR${inc_h} ${path})	
+			endif ()
+		endforeach()
+		
+		set(INCLUDE_DIRS)
+		foreach(inc_h ${HT_FASTLIB_SET_INCLUDE})
+			if(INCLUDE_DIR${inc_h})
+				set(INCLUDE_DIRS ${INCLUDE_DIRS} ${INCLUDE_DIR${inc_h}})
+			else()
+				set(INCLUDE_DIRS)
+				break()
+			endif ()	
+		endforeach()	
+		if(INCLUDE_DIRS)
+			break()
+		endif ()
+	endforeach()
 
 	HT_FIND_LIB(
 		OUTPUT LIBRARY
@@ -166,7 +187,12 @@ function(HT_FIND_LIB)
 		find_library(
 			HT_FOUND_${lib} 
 			NAMES ${lib}
-			PATHS ${HT_FIND_LIB_PATHS} ${HT_DEPENDENCY_LIB_DIR} /opt/local/lib /usr/local/lib  /usr/lib  /lib 
+			PATHS ${HT_FIND_LIB_PATHS} 
+				  ${HT_DEPENDENCY_LIB_DIR} 
+				  /opt/local/lib 
+				  /usr/local/lib  
+				  /usr/lib  
+				  /lib 
 		)
 		set("${HT_FIND_LIB_OUTPUT}" ${${HT_FIND_LIB_OUTPUT}} ${HT_FOUND_${lib}})
     endforeach()

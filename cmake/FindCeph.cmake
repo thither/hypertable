@@ -39,11 +39,11 @@ find_library(Ceph_LIB
 	PATHS /usr/local/lib
 	      $ENV{HOME}/ceph/src/.libs)
 
-if (Ceph_INCLUDE AND Ceph_LIB AND Libssl_LIBRARIES)
+if (Ceph_INCLUDE AND Ceph_LIB AND SSL_LIBRARIES)
   mark_as_advanced(Ceph_INCLUDE)
   mark_as_advanced(Ceph_LIB)
   set(Ceph_FOUND TRUE)
-  set(Ceph_LIBRARIES ${Ceph_LIB} ${Libssl_LIBRARIES})
+  set(Ceph_LIBRARIES ${Ceph_LIB} ${SSL_LIBRARIES} ${CRYPTO_LIBRARIES})
   message(STATUS "Found ceph: ${Ceph_LIBRARIES}")
   
   HT_INSTALL_LIBS(lib ${Ceph_LIBRARIES})

@@ -43,23 +43,13 @@ HT_ADD_LIBS(
 			gen-cpp/Hql_constants.cpp 
 			gen-cpp/HqlService.cpp 
 			gen-cpp/Hql_types.cpp
-	DEPENDENCIES ${THRIFT_LIBRARIES} ${EVENT_LIBRARIES} ${LZMA_LIBRARIES})
-#add_library(HyperThrift ThriftHelper.cc SerializedCellsReader.cc SerializedCellsWriter.cc 
-#			gen-cpp/Client_constants.cpp 
-#			gen-cpp/ClientService.cpp 
-#			gen-cpp/Client_types.cpp
-#			gen-cpp/Hql_constants.cpp 
-#			gen-cpp/HqlService.cpp 
-#			gen-cpp/Hql_types.cpp)
-#target_link_libraries(HyperThrift ${THRIFT_LIBRARIES} ${LibEvent_LIBS})
+	DEPENDENCIES ${THRIFT_LIBRARIES} ${EVENT_LIBRARIES} ${SSL_LIBRARIES})
 
 # libHyperThriftConfig
 HT_ADD_LIBS(
 	TARGET HyperThriftConfig 
 	SRCS Config.cc
 	DEPENDENCIES HyperThrift Hypertable)
-#add_library(HyperThriftConfig Config.cc)
-#target_link_libraries(HyperThriftConfig HyperThrift Hypertable)
 
 set(ThriftBroker_SRCS ThriftBroker.cc MetricsHandler.cc)
 

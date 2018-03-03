@@ -30,11 +30,6 @@ HT_ADD_LIBS(
 	TARGET HyperAppHelper 
 	SRCS ${Helper_SRCS}
 	DEPENDENCIES Hypertable HyperCommon)
-#add_library(HyperAppHelper ${Helper_SRCS})
-#target_link_libraries(HyperAppHelper Hypertable HyperCommon )
-# ${BOOST_LIBS} ${Log4cpp_LIBRARIES}
-# ${ZLIB_LIBRARIES} ${SIGAR_LIBRARIES} ${NCURSES_LIBRARY}
-# ${CMAKE_THREAD_LIBS_INIT} ${MALLOC_LIBRARY}
 
 # tests
 add_executable(unique_test tests/unique_test.cc)

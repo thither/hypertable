@@ -32,8 +32,8 @@ HT_FASTLIB_SET(
 	LIB_PATHS /usr/local/lib/thrift
 	INC_PATHS ${HT_DEPENDENCY_INCLUDE_DIR}/thrift
 			  /usr/local/include/thrift
-			  /opt/local/include/thrift
 			  /usr/include/thrift
+			  /opt/local/include/thrift
 	STATIC libthrift.a libthriftnb.a 
 	SHARED thrift thriftnb
 	INCLUDE Thrift.h

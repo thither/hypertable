@@ -192,17 +192,15 @@ find_package(BerkeleyDB REQUIRED)
 HT_FASTLIB_SET(NAME "EXPAT" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libexpat.a SHARED expat INCLUDE expat.h)
 HT_FASTLIB_SET(NAME "ZLIB"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libz.a SHARED z INCLUDE zlib.h)
 HT_FASTLIB_SET(NAME "BZIP2" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libbz2.a SHARED bz2 INCLUDE bzlib.h)
-HT_FASTLIB_SET(NAME "LZMA"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC liblzma.a SHARED lzma INCLUDE lzma1.h)
+HT_FASTLIB_SET(NAME "LZMA"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC liblzma.a SHARED lzma INCLUDE lzma.h)
 
 find_package(Snappy REQUIRED)
 find_package(RE2 REQUIRED)
 find_package(Editline REQUIRED)
-find_package(Cronolog REQUIRED)
-find_package(RRDtool REQUIRED)
-find_package(Doxygen)
 HT_FASTLIB_SET(NAME "EVENT" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libevent.a SHARED event INCLUDE event.h)
-find_package(Libssh REQUIRED)
 find_package(Libssl REQUIRED)
+find_package(Libssh REQUIRED)
+
 
 if (LANGS OR LANG_JS)
 	find_package(Nodejs)
@@ -233,6 +231,9 @@ endif ()
 # THRIFT
 find_package(Thrift REQUIRED)
 
+find_package(Cronolog REQUIRED)
+find_package(RRDtool REQUIRED)
+find_package(Doxygen)
 
 # Use llvm instead of gcc
 if (LLVM)
