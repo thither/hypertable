@@ -26,7 +26,7 @@ if (PYTHON2_FOUND)
 	add_library(HyperPython2 MODULE SerializedCells.cc)
 	add_dependencies(HyperPython2 ThriftClientPy)
 
-	target_link_libraries(HyperPython2 HyperThrift HyperCommon  Hypertable ${PYTHON2_LIBRARY} ${BOOST_PYTHON2_LIB} ${Thrift_LIBS} ${LibEvent_LIBS})
+	target_link_libraries(HyperPython2 HyperThrift HyperCommon  Hypertable ${PYTHON2_LIBRARY} ${BOOST_PYTHON2_LIB} ${THRIFT_LIBRARIES} ${LibEvent_LIBS})
 	target_include_directories(HyperPython2 PRIVATE ${PYTHON2_INCLUDE_DIR})
 	
 	install(TARGETS HyperPython2
@@ -41,7 +41,7 @@ endif ()
 if (PYTHON3_FOUND)
 	add_library(HyperPython3 MODULE SerializedCells.cc)
 	add_dependencies(HyperPython3 ThriftClientPy)
-	target_link_libraries(HyperPython3 HyperThrift HyperCommon  Hypertable ${PYTHON3_LIBRARY} ${BOOST_PYTHON3_LIB} ${Thrift_LIBS} ${LibEvent_LIBS})
+	target_link_libraries(HyperPython3 HyperThrift HyperCommon  Hypertable ${PYTHON3_LIBRARY} ${BOOST_PYTHON3_LIB} ${THRIFT_LIBRARIES} ${LibEvent_LIBS})
 	target_include_directories(HyperPython3 PRIVATE ${PYTHON3_INCLUDE_DIR})
 	
 	install(TARGETS HyperPython3
@@ -59,7 +59,7 @@ endif ()
 if (PYPY2_FOUND AND Pybind11_FOUND)
 	add_library(HyperPyPy2 MODULE SerializedCells_pyBind11.cc)
 	add_dependencies(HyperPyPy2 ThriftClientPy)
-	target_link_libraries(HyperPyPy2 HyperThrift HyperCommon Hypertable ${PYPY2_LIBDIR} ${Thrift_LIBS} ${LibEvent_LIBS})
+	target_link_libraries(HyperPyPy2 HyperThrift HyperCommon Hypertable ${PYPY2_LIBDIR} ${THRIFT_LIBRARIES} ${LibEvent_LIBS})
 	target_compile_options(HyperPyPy2 PRIVATE
 					  -flto
 					  -DPYTHON_VERSION=2
@@ -81,7 +81,7 @@ endif ()
 if (PYPY3_FOUND AND Pybind11_FOUND)
 	add_library(HyperPyPy3 MODULE SerializedCells_pyBind11.cc)
 	add_dependencies(HyperPyPy3 ThriftClientPy)
-	target_link_libraries(HyperPyPy3 HyperThrift HyperCommon Hypertable ${PYPY3_LIBDIR} ${Thrift_LIBS} ${LibEvent_LIBS})
+	target_link_libraries(HyperPyPy3 HyperThrift HyperCommon Hypertable ${PYPY3_LIBDIR} ${THRIFT_LIBRARIES} ${LibEvent_LIBS})
 	target_compile_options(HyperPyPy3 PRIVATE
 					  -flto
 					  -DPYTHON_VERSION=3

@@ -20,16 +20,16 @@
 set(CMAKE_CXX_FLAGS "-DHAVE_NETINET_IN_H ${CMAKE_CXX_FLAGS}")
 
 # IF .thirft instruction change with version it is prefered .thrift by versions
-if( NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION})
-	execute_process(COMMAND  mkdir -p ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION})
+if( NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${THRIFT_VERSION})
+	execute_process(COMMAND  mkdir -p ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${THRIFT_VERSION})
 endif ()
-if( NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION}/gen-cpp)
+if( NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${THRIFT_VERSION}/gen-cpp)
 	execute_process(COMMAND  thrift -r --gen cpp 
-							 -o ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION}/
+							 -o ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${THRIFT_VERSION}/
 							 ${CMAKE_CURRENT_SOURCE_DIR}/Hql.thrift)
 	# set current gen-cpp/ included path				 
 	execute_process(COMMAND rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/gen-cpp)	
-	execute_process(COMMAND cp -r ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${Thrift_VERSION}/gen-cpp
+	execute_process(COMMAND cp -r ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${THRIFT_VERSION}/gen-cpp
 	                              ${CMAKE_CURRENT_SOURCE_DIR}/)			 
 endif ()
 
@@ -43,7 +43,7 @@ HT_ADD_LIBS(
 			gen-cpp/Hql_constants.cpp 
 			gen-cpp/HqlService.cpp 
 			gen-cpp/Hql_types.cpp
-	DEPENDENCIES ${Thrift_LIBS} ${EVENT_LIBRARIES} ${LZMA_LIBRARIES})
+	DEPENDENCIES ${THRIFT_LIBRARIES} ${EVENT_LIBRARIES} ${LZMA_LIBRARIES})
 #add_library(HyperThrift ThriftHelper.cc SerializedCellsReader.cc SerializedCellsWriter.cc 
 #			gen-cpp/Client_constants.cpp 
 #			gen-cpp/ClientService.cpp 
@@ -51,7 +51,7 @@ HT_ADD_LIBS(
 #			gen-cpp/Hql_constants.cpp 
 #			gen-cpp/HqlService.cpp 
 #			gen-cpp/Hql_types.cpp)
-#target_link_libraries(HyperThrift ${Thrift_LIBS} ${LibEvent_LIBS})
+#target_link_libraries(HyperThrift ${THRIFT_LIBRARIES} ${LibEvent_LIBS})
 
 # libHyperThriftConfig
 HT_ADD_LIBS(

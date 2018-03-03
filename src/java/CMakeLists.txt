@@ -46,7 +46,7 @@ endif ()
 
 
 # JAVA THRIFTCLIENT
-if (Thrift_FOUND AND (LANGS OR LANG_JAVA))
+if (THRIFT_FOUND AND (LANGS OR LANG_JAVA))
 	
 	file(COPY ${HT_MVN_SRC_DIR}/thriftclient DESTINATION ${HT_MVN_DEST_DIR}/)
 	configure_file(${HT_MVN_DEST_DIR}/thriftclient/pom.xml.in
@@ -54,9 +54,9 @@ if (Thrift_FOUND AND (LANGS OR LANG_JAVA))
 	set(MODULES_PLACE_HOLDER "${MODULES_PLACE_HOLDER} \n <module>thriftclient</module>")
 	
 
-	install(FILES ${HT_MVN_DEST_DIR}/thriftclient/target/ht-thriftclient-${VERSION}-v${Thrift_VERSION}-bundled.jar
+	install(FILES ${HT_MVN_DEST_DIR}/thriftclient/target/ht-thriftclient-${VERSION}-v${THRIFT_VERSION}-bundled.jar
             DESTINATION lib/java/)
-	## install(FILES ${MAVEN_REPOSITORY}/org/apache/thrift/libthrift/${Thrift_VERSION}/libthrift-${Thrift_VERSION}.jar
+	## install(FILES ${MAVEN_REPOSITORY}/org/apache/thrift/libthrift/${THRIFT_VERSION}/libthrift-${THRIFT_VERSION}.jar
     ##       	DESTINATION lib/java/common)
 	
 	
@@ -65,7 +65,7 @@ if (Thrift_FOUND AND (LANGS OR LANG_JAVA))
 					${HT_MVN_DEST_DIR}/thriftclient-hadoop-tools/pom.xml @ONLY)
 	set(MODULES_PLACE_HOLDER "${MODULES_PLACE_HOLDER} \n <module>thriftclient-hadoop-tools</module>")
 		
-	install(FILES ${HT_MVN_DEST_DIR}/thriftclient-hadoop-tools/target/ht-thriftclient-hadoop-tools-${VERSION}-v${Thrift_VERSION}-bundled.jar
+	install(FILES ${HT_MVN_DEST_DIR}/thriftclient-hadoop-tools/target/ht-thriftclient-hadoop-tools-${VERSION}-v${THRIFT_VERSION}-bundled.jar
             DESTINATION lib/java/)
 		
 #		install(FILES ${HT_MVN_DEST_DIR}/examples/target/examples-${VERSION}-apache1.jar
@@ -73,7 +73,7 @@ if (Thrift_FOUND AND (LANGS OR LANG_JAVA))
 
 	if (JAVARE_FOUND)
 		add_test(ThriftClient-java
-				 java -cp ${INSTALL_DIR}/lib/java/ht-thriftclient-${VERSION}-v${Thrift_VERSION}-bundled.jar org.hypertable.thrift.BasicClientTest)
+				 java -cp ${INSTALL_DIR}/lib/java/ht-thriftclient-${VERSION}-v${THRIFT_VERSION}-bundled.jar org.hypertable.thrift.BasicClientTest)
 	endif ()
 
 endif ()
@@ -96,7 +96,7 @@ if( NOT MODULES_PLACE_HOLDER STREQUAL "")
 				      package)
 	install(FILES ${HT_MVN_DEST_DIR}/common/target/ht-common-${VERSION}-bundled.jar
             DESTINATION lib/java/)
-	if (Thrift_FOUND AND (LANGS OR LANG_JAVA))
+	if (THRIFT_FOUND AND (LANGS OR LANG_JAVA))
 		add_dependencies(MVN_build ThriftGenJava)
 	endif ()
 	

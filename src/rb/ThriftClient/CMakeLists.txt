@@ -25,7 +25,7 @@ add_custom_command(
 )
 
 #### GENERATE HYPERTHRIFT module
-if (Thrift_FOUND)
+if (THRIFT_FOUND)
 	add_custom_command(
 		TARGET 		ThriftGenRb
 		COMMAND   	thrift

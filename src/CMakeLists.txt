@@ -15,7 +15,7 @@ add_subdirectory(rb/Monitoring)
 
 
 # THRIFT CLIENTS
-if (Thrift_FOUND)
+if (THRIFT_FOUND)
   add_subdirectory(cc/ThriftBroker)
   
   if (LANGS OR LANG_JAVA)

@@ -19,7 +19,7 @@
 
 
 add_library(PyHypertable MODULE src/pyhypertable.cc)
-target_link_libraries(PyHypertable HyperThrift HyperCommon Hypertable ${PYTHON2_LIBRARY} ${Thrift_LIBS} ${LibEvent_LIBS})
+target_link_libraries(PyHypertable HyperThrift HyperCommon Hypertable ${PYTHON2_LIBRARY} ${THRIFT_LIBRARIES} ${LibEvent_LIBS})
 
 target_include_directories(PyHypertable PRIVATE ${PYTHON2_INCLUDE_DIR})
 	install(TARGETS PyHypertable

@@ -44,7 +44,7 @@
     <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
-      <version>@Thrift_VERSION@</version>
+      <version>@THRIFT_VERSION@</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

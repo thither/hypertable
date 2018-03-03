@@ -137,6 +137,8 @@ function(HT_FASTLIB_SET)
 		
 	set("${HT_FASTLIB_SET_NAME}_FOUND"  ${${HT_FASTLIB_SET_NAME}_FOUND} PARENT_SCOPE)
 	set("${HT_FASTLIB_SET_NAME}_LIBRARIES" ${${HT_FASTLIB_SET_NAME}_LIBRARIES} PARENT_SCOPE)
+	set("${HT_FASTLIB_SET_NAME}_INCLUDE_DIR" ${INCLUDE_DIRS} PARENT_SCOPE)
+	
 endfunction()
 
 ##### HT_FIND_LIB
@@ -158,7 +160,7 @@ function(HT_FIND_LIB)
 	endif ()
 	
 	# message(STATUS "HT_FIND_LIB: ${HT_FIND_LIB_OUTPUT} ${HT_FIND_LIB_PATHS} ${HT_FIND_LIB_STATIC} ${HT_FIND_LIB_SHARED}")
-	set("${HT_FIND_LIB_OUTPUT}" "" PARENT_SCOPE)
+	set("${HT_FIND_LIB_OUTPUT}" "")
 	foreach(lib ${HT_FIND_LIB_LIBS})
 		# message(STATUS "looking for: ${lib}")
 		find_library(
@@ -166,8 +168,9 @@ function(HT_FIND_LIB)
 			NAMES ${lib}
 			PATHS ${HT_FIND_LIB_PATHS} ${HT_DEPENDENCY_LIB_DIR} /opt/local/lib /usr/local/lib  /usr/lib  /lib 
 		)
-		set("${HT_FIND_LIB_OUTPUT}" ${${HT_FIND_LIB_OUTPUT}} ${HT_FOUND_${lib}} PARENT_SCOPE)
-    endforeach()	
+		set("${HT_FIND_LIB_OUTPUT}" ${${HT_FIND_LIB_OUTPUT}} ${HT_FOUND_${lib}})
+    endforeach()
+	set("${HT_FIND_LIB_OUTPUT}" ${${HT_FIND_LIB_OUTPUT}} PARENT_SCOPE)
 	# message(STATUS "HT_FOUND_LIB: ${HT_FIND_LIB_OUTPUT} ${${HT_FIND_LIB_OUTPUT}}")
 endfunction()
 

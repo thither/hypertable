@@ -35,7 +35,7 @@ setup(
     description='Python Extension for Hypertable',
     long_description=long_description,
 
-    #install_requires=['thrift==@Thrift_VERSION@'],  # # OR pack with the PACKAGE
+    #install_requires=['thrift==@THRIFT_VERSION@'],  # # OR pack with the PACKAGE
 
     url='http://hypertable.com/documentation/developer_guide/python/',
     license='GPLv3',

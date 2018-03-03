@@ -10,13 +10,13 @@
   </parent>
 
   <groupId>org.hypertable</groupId>
-  <name>Hypertable Thrift Client - v@Thrift_VERSION@  - Hadoop Tools</name>
+  <name>Hypertable Thrift Client - v@THRIFT_VERSION@  - Hadoop Tools</name>
   <artifactId>ht-thriftclient-hadoop-tools</artifactId>
   <version>@VERSION@</version>
   <packaging>jar</packaging>
 
   <properties>
-    <thrift.version>v@Thrift_VERSION@</thrift.version>
+    <thrift.version>v@THRIFT_VERSION@</thrift.version>
   </properties>
   
   <dependencies>
@@ -87,7 +87,7 @@
               <goal>single</goal>
             </goals>
 			<configuration>
-				<classifier>v@Thrift_VERSION@</classifier>
+				<classifier>v@THRIFT_VERSION@</classifier>
 			</configuration>
           </execution>
         </executions>

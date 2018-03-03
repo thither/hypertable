@@ -23,7 +23,7 @@ set(INSTALLED_SERVERS
   ${INSTALL_DIR}/bin/htFsBrokerLocal
 )
 
-if (Thrift_FOUND)
+if (THRIFT_FOUND)
   set(INSTALLED_SERVERS ${INSTALLED_SERVERS} ${INSTALL_DIR}/bin/htThriftBroker)
 endif ()
 

@@ -9,20 +9,20 @@
 	<relativePath>../</relativePath>
   </parent>
 
-  <name>Hypertable Thrift Client - v@Thrift_VERSION@ </name>
+  <name>Hypertable Thrift Client - v@THRIFT_VERSION@ </name>
   <artifactId>ht-thriftclient</artifactId>
   <version>@VERSION@</version>
   <packaging>jar</packaging>
 
   <properties>
-    <thrift.version>v@Thrift_VERSION@</thrift.version>
+    <thrift.version>v@THRIFT_VERSION@</thrift.version>
   </properties>
   
   <dependencies>
 		<dependency>
 			<groupId>org.apache.thrift</groupId>
 			<artifactId>libthrift</artifactId>
-			<version>@Thrift_VERSION@</version>
+			<version>@THRIFT_VERSION@</version>
 		</dependency>
   </dependencies>
   
@@ -39,7 +39,7 @@
               <goal>single</goal>
             </goals>
 			<configuration>
-				<classifier>v@Thrift_VERSION@</classifier>
+				<classifier>v@THRIFT_VERSION@</classifier>
 			</configuration>
           </execution>
         </executions>

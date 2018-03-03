@@ -30,7 +30,7 @@ configure_file(setup.py.in ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/setup.
 configure_file(requirements.txt.in ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/requirements.txt @ONLY)
 
 #### GENERATE HYPERTHRIFT module
-if (Thrift_FOUND)
+if (THRIFT_FOUND)
 	add_custom_command(
 		TARGET 		ThriftClientPy
 		COMMAND   	thrift

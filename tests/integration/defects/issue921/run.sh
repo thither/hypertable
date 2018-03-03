@@ -34,8 +34,8 @@ cat ${SCRIPT_DIR}/test.hql | $HT_HOME/bin/ht hypertable \
 
 echo "compiling"
 VERSION=$1
-Thrift_VERSION=$2
-CP="$HT_HOME/lib/java/ht-thriftclient-${VERSION}-v${Thrift_VERSION}-bundled.jar:$HT_HOME/lib/java/ht-thriftclient-hadoop-tools-${VERSION}-v${Thrift_VERSION}-bundled.jar"
+THRIFT_VERSION=$2
+CP="$HT_HOME/lib/java/ht-thriftclient-${VERSION}-v${THRIFT_VERSION}-bundled.jar:$HT_HOME/lib/java/ht-thriftclient-hadoop-tools-${VERSION}-v${THRIFT_VERSION}-bundled.jar"
 javac -classpath $CP -d . $SCRIPT_DIR/TestInputOutput.java
 
 echo "running"
