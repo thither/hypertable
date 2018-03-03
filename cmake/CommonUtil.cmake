@@ -242,7 +242,7 @@ function(HT_ADD_LIBS)
 
 	if (ENABLE_SHARED)
 		set(SHARED_TARGETS)
-		foreach(lib ${HT_ADD_SHARED_TARGETS})
+		foreach(lib ${HT_ADD_LIBS_TARGETS})
 			set(SHARED_TARGETS ${SHARED_TARGETS} ${lib}-shared)
 		endforeach()
 		
