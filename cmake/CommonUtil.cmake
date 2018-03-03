@@ -241,23 +241,27 @@ function(HT_ADD_LIBS)
 	# message(STATUS "shared libs flags: ${HT_ADD_LIBS_DEPS}")
 
 	if (ENABLE_SHARED)
-		set(HT_ADD_SHARED_TARGETS)
-		foreach(lib ${SHARED_TARGETS})
-			set(HT_ADD_SHARED_TARGETS ${HT_ADD_SHARED_TARGETS} ${lib}-shared)
+		set(SHARED_TARGETS)
+		foreach(lib ${HT_ADD_SHARED_TARGETS})
+			set(SHARED_TARGETS ${SHARED_TARGETS} ${lib}-shared)
 		endforeach()
 		
 		set_property(TARGET obj${HT_ADD_LIBS_TARGET} PROPERTY POSITION_INDEPENDENT_CODE 1)
 		add_library(${HT_ADD_LIBS_TARGET}-shared SHARED $<TARGET_OBJECTS:obj${HT_ADD_LIBS_TARGET}>)
 		SET_TARGET_PROPERTIES(${HT_ADD_LIBS_TARGET}-shared PROPERTIES OUTPUT_NAME ${HT_ADD_LIBS_TARGET} CLEAN_DIRECT_OUTPUT 1)
 		# SET_TARGET_PROPERTIES(${HT_ADD_LIBS_TARGET}-shared PROPERTIES VERSION ${VERSION} SOVERSION ${VERSION})
-		target_link_libraries(${HT_ADD_LIBS_TARGET}-shared ${HT_ADD_LIBS_DEPS} ${HT_ADD_SHARED_TARGETS})
+		target_link_libraries(${HT_ADD_LIBS_TARGET}-shared ${HT_ADD_LIBS_DEPS} ${SHARED_TARGETS})
+
+		if (NOT HT_COMPONENT_INSTALL)
+			install(TARGETS ${HT_ADD_LIBS_TARGET}-shared LIBRARY DESTINATION lib)
+		endif ()
 	endif ()
 	
 	target_link_libraries(${HT_ADD_LIBS_TARGET} ${HT_ADD_LIBS_DEPS} ${HT_ADD_LIBS_TARGETS})
 endfunction()
 
 
-##### Buld static and Shared libs or as requested, default both
+##### Add build test-target for Shared targerts and/or Static targets
 	# HT_ADD_TEST(
 	#	NAME test-name 
 	#	SRCS sourceToCompile
