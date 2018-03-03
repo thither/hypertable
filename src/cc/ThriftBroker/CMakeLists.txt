@@ -49,12 +49,10 @@ HT_ADD_LIBS(
 HT_ADD_LIBS(
 	TARGET HyperThriftConfig 
 	SRCS Config.cc
-	DEPENDENCIES HyperThrift Hypertable)
-
-set(ThriftBroker_SRCS ThriftBroker.cc MetricsHandler.cc)
-
+	TARGETS HyperThrift Hypertable)
 
 # htThriftBroker
+set(ThriftBroker_SRCS ThriftBroker.cc MetricsHandler.cc)
 add_executable(htThriftBroker ${ThriftBroker_SRCS})
 target_link_libraries(htThriftBroker HyperThriftConfig HyperAppHelper)
 

@@ -205,15 +205,17 @@ endfunction()
 	# HT_ADD_LIBS(
 	#	TARGET libNameTarget 
 	#	SRCS   sourceToCompile
-	#	DEPENDENCIES dependenciesOfTheTraget
+	#	TARGETS   targets-dependant
+	#	DEPENDENCIES dependenciesOfTheTarget
 	# )
 function(HT_ADD_LIBS)
 	set(oneValueArgs TARGET)
-	set(multiValueArgs SRCS DEPENDENCIES)
+	set(multiValueArgs SRCS TARGETS DEPENDENCIES)
 	cmake_parse_arguments(HT_ADD_LIBS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
   
 	add_library(obj${HT_ADD_LIBS_TARGET} OBJECT ${HT_ADD_LIBS_SRCS})
 	add_library(${HT_ADD_LIBS_TARGET} STATIC $<TARGET_OBJECTS:obj${HT_ADD_LIBS_TARGET}>)
+	
 	
 	set(HT_ADD_LIBS_DEPS )
 	foreach(lib ${HT_ADD_LIBS_DEPENDENCIES})
@@ -239,13 +241,49 @@ function(HT_ADD_LIBS)
 	# message(STATUS "shared libs flags: ${HT_ADD_LIBS_DEPS}")
 
 	if (ENABLE_SHARED)
+		set(HT_ADD_SHARED_TARGETS)
+		foreach(lib ${SHARED_TARGETS})
+			set(HT_ADD_SHARED_TARGETS ${HT_ADD_SHARED_TARGETS} ${lib}-shared)
+		endforeach()
+		
 		set_property(TARGET obj${HT_ADD_LIBS_TARGET} PROPERTY POSITION_INDEPENDENT_CODE 1)
 		add_library(${HT_ADD_LIBS_TARGET}-shared SHARED $<TARGET_OBJECTS:obj${HT_ADD_LIBS_TARGET}>)
 		SET_TARGET_PROPERTIES(${HT_ADD_LIBS_TARGET}-shared PROPERTIES OUTPUT_NAME ${HT_ADD_LIBS_TARGET} CLEAN_DIRECT_OUTPUT 1)
-		SET_TARGET_PROPERTIES(${HT_ADD_LIBS_TARGET}-shared PROPERTIES VERSION ${VERSION} SOVERSION ${VERSION})
-		target_link_libraries(${HT_ADD_LIBS_TARGET}-shared ${HT_ADD_LIBS_DEPS})
+		# SET_TARGET_PROPERTIES(${HT_ADD_LIBS_TARGET}-shared PROPERTIES VERSION ${VERSION} SOVERSION ${VERSION})
+		target_link_libraries(${HT_ADD_LIBS_TARGET}-shared ${HT_ADD_LIBS_DEPS} ${HT_ADD_SHARED_TARGETS})
 	endif ()
 	
-	target_link_libraries(${HT_ADD_LIBS_TARGET} ${HT_ADD_LIBS_DEPS})
+	target_link_libraries(${HT_ADD_LIBS_TARGET} ${HT_ADD_LIBS_DEPS} ${HT_ADD_LIBS_TARGETS})
 endfunction()
 
+
+##### Buld static and Shared libs or as requested, default both
+	# HT_ADD_TEST(
+	#	NAME test-name 
+	#	SRCS sourceToCompile
+	#	TARGETS  targets
+	#	EXT_LIBS external dependencies
+	# )
+function(HT_ADD_TEST)
+	set(oneValueArgs NAME)
+	set(multiValueArgs SRCS TARGETS EXT_LIBS)
+	cmake_parse_arguments(HT_ADD_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+
+	if (ENABLE_SHARED AND (NOT HT_TEST_WITH OR HT_TEST_WITH STREQUAL "SHARED" OR HT_TEST_WITH STREQUAL "BOTH"))
+		add_executable(testShared-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_SRCS})
+		set(testTargets)
+		foreach(target ${HT_ADD_TEST_TARGETS})
+			set(testTargets ${testTargets} ${target}-shared)
+		endforeach()
+		target_link_libraries(testShared-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_EXT_LIBS} ${testTargets})
+	endif ()
+	if (HT_TEST_WITH STREQUAL "STATIC" OR HT_TEST_WITH STREQUAL "BOTH")
+		add_executable(testStatic-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_SRCS})
+		set(testTargets)
+		foreach(target ${HT_ADD_TEST_TARGETS})
+			set(testTargets ${testTargets} ${target})
+		endforeach()
+		target_link_libraries(testStatic-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_EXT_LIBS} ${testTargets})
+	endif ()
+	
+endfunction()

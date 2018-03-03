@@ -54,11 +54,14 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 HT_ADD_LIBS(
 	TARGET HyperComm 
 	SRCS ${AsyncComm_SRCS}
-	DEPENDENCIES HyperCommon)
+	TARGETS HyperCommon)
 
 # sampleClient
-add_executable(sampleClient sampleClient.cc)
-target_link_libraries(sampleClient HyperComm)
+HT_ADD_TEST(
+	NAME sampleClient
+	SRCS sampleClient.cc
+	TARGETS HyperComm HyperCommon Hypertable Hyperspace HyperFsBroker HyperThirdParty HyperTools
+)
 
 # testServer
 add_executable(testServer testServer.cc)

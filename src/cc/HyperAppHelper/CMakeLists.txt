@@ -29,7 +29,7 @@ Error.h
 HT_ADD_LIBS(
 	TARGET HyperAppHelper 
 	SRCS ${Helper_SRCS}
-	DEPENDENCIES Hypertable HyperCommon)
+	TARGETS Hypertable HyperCommon)
 
 # tests
 add_executable(unique_test tests/unique_test.cc)

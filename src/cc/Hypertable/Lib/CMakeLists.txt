@@ -179,16 +179,10 @@ bmz/bmz.c
 HT_ADD_LIBS(
 	TARGET Hypertable 
 	SRCS ${Hypertable_SRCS}
-	DEPENDENCIES Hyperspace HyperFsBroker m 
-				 ${MALLOC_LIBRARY} 
+	TARGETS Hyperspace HyperFsBroker
+	DEPENDENCIES m ${MALLOC_LIBRARY} 
 				 ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${EXPAT_LIBRARIES})
-#add_library(Hypertable ${Hypertable_SRCS})
 add_dependencies(Hypertable HyperComm Hyperspace HyperCommon)
-#target_link_libraries(Hypertable 
-#	${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES}
-#	${EXPAT_LIBRARIES}
-#	${MALLOC_LIBRARY} 
-#	Hyperspace HyperFsBroker HyperThirdParty m)
 
 # ColumnFamilySpec_test
 add_executable(ColumnFamilySpec_test tests/ColumnFamilySpec_test.cc)

@@ -83,10 +83,8 @@ Utility.cc
 HT_ADD_LIBS(
 	TARGET HyperFsBroker 
 	SRCS ${FsBroker_SRCS}
-	DEPENDENCIES HyperCommon HyperComm)
-#add_library(HyperFsBroker ${FsBroker_SRCS})
+	TARGETS HyperCommon HyperComm)
 add_dependencies(HyperFsBroker HyperCommon HyperComm)
-#target_link_libraries(HyperFsBroker HyperCommon HyperComm)
 
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)

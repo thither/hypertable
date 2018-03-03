@@ -26,9 +26,8 @@ CommandInterpreter.cc
 HT_ADD_LIBS(
 	TARGET HyperTools 
 	SRCS ${Hypertools_SRCS}
-	DEPENDENCIES HyperComm ${EDITLINE_LIBRARIES})
-#add_library(HyperTools ${Hypertools_SRCS})
-#target_link_libraries(HyperTools HyperComm ${EDITLINE_LIBRARIES})
+	TARGETS HyperComm
+	DEPENDENCIES ${EDITLINE_LIBRARIES})
 
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)

@@ -42,8 +42,6 @@ HT_ADD_LIBS(
 	SRCS ${ThirdParty_SRCS}
 	)	
 
-#add_library(HyperThirdParty ${ThirdParty_SRCS})
-
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)
 
