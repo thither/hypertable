@@ -240,7 +240,7 @@ function(HT_ADD_LIBS)
 	set(HT_ADD_LIBS_DEPS ${HT_ADD_LIBS_DEPS} "${HT_ADD_LIBS_STATIC_DEPS}")
 	# message(STATUS "shared libs flags: ${HT_ADD_LIBS_DEPS}")
 
-	if (ENABLE_SHARED)
+	if (HT_ENABLE_SHARED)
 		set(SHARED_TARGETS)
 		foreach(lib ${HT_ADD_LIBS_TARGETS})
 			set(SHARED_TARGETS ${SHARED_TARGETS} ${lib}-shared)
@@ -266,28 +266,31 @@ endfunction()
 	#	NAME test-name 
 	#	SRCS sourceToCompile
 	#	TARGETS  targets
-	#	EXT_LIBS external dependencies
+	#	EXT_DEPS external dependencies
 	# )
 function(HT_ADD_TEST)
 	set(oneValueArgs NAME)
-	set(multiValueArgs SRCS TARGETS EXT_LIBS)
+	set(multiValueArgs SRCS TARGETS EXT_DEPS)
 	cmake_parse_arguments(HT_ADD_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 
-	if (ENABLE_SHARED AND (NOT HT_TEST_WITH OR HT_TEST_WITH STREQUAL "SHARED" OR HT_TEST_WITH STREQUAL "BOTH"))
+	if (HT_ENABLE_SHARED AND (NOT HT_TEST_WITH OR HT_TEST_WITH STREQUAL "SHARED" OR HT_TEST_WITH STREQUAL "BOTH"))
 		add_executable(testShared-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_SRCS})
 		set(testTargets)
 		foreach(target ${HT_ADD_TEST_TARGETS})
 			set(testTargets ${testTargets} ${target}-shared)
 		endforeach()
-		target_link_libraries(testShared-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_EXT_LIBS} ${testTargets})
+		target_link_libraries(testShared-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_EXT_DEPS} ${testTargets})
+		add_test(${HT_ADD_TEST_NAME}-wShared testShared-${HT_ADD_TEST_NAME})
 	endif ()
+	
 	if (HT_TEST_WITH STREQUAL "STATIC" OR HT_TEST_WITH STREQUAL "BOTH")
 		add_executable(testStatic-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_SRCS})
 		set(testTargets)
 		foreach(target ${HT_ADD_TEST_TARGETS})
 			set(testTargets ${testTargets} ${target})
 		endforeach()
-		target_link_libraries(testStatic-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_EXT_LIBS} ${testTargets})
+		target_link_libraries(testStatic-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_EXT_DEPS} ${testTargets})		
+		add_test(${HT_ADD_TEST_NAME}-wStatic testStatic-${HT_ADD_TEST_NAME})
 	endif ()
 	
 endfunction()

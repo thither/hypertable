@@ -126,11 +126,11 @@ endif ()
 
 # Uncomment the following to build dynamic libraries
 set (BUILD_SHARED_LIBS OFF)
-if (ENABLE_SHARED)
-	set (ENABLE_SHARED ON)
+if (HT_ENABLE_SHARED)
+	set (HT_ENABLE_SHARED ON)
 	message(STATUS "Building shared and static libraries")
 else ()
-	message(STATUS "Building static libraries by default, opt -DENABLE_SHARED")
+	message(STATUS "Building static libraries by default, opt -DHT_ENABLE_SHARED=ON")
 endif ()
 
 # Locate required packages

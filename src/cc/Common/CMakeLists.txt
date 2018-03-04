@@ -98,17 +98,28 @@ add_executable(ht_wordstream ht_wordstream.cc)
 target_link_libraries(ht_wordstream HyperCommon)
 
 # tests
-add_executable(Base64_test tests/Base64_test.cc)
-target_link_libraries(Base64_test HyperCommon)
 
-add_executable(Crypto_test tests/Crypto_test.cc)
-target_link_libraries(Crypto_test HyperCommon)
+HT_ADD_TEST(
+	NAME Common-Base64
+	SRCS tests/Base64_test.cc
+	TARGETS  Hypertable
+)
+HT_ADD_TEST(
+	NAME Common-Crypto
+	SRCS tests/Crypto_test.cc
+	TARGETS Hypertable 
+)
+HT_ADD_TEST(
+	NAME Common-Exception
+	SRCS tests/exception_test.cc
+	TARGETS Hypertable 
+)
+
+
 
 add_executable(directory_test tests/directory_test.cc)
 target_link_libraries(directory_test HyperCommon)
-
-add_executable(exception_test tests/exception_test.cc)
-target_link_libraries(exception_test HyperCommon)
+add_test(Common-directory directory_test ${CMAKE_CURRENT_SOURCE_DIR}/tests/directory_test.golden)
 
 add_executable(escaper_test tests/escaper_test.cc)
 target_link_libraries(escaper_test HyperCommon)
@@ -218,7 +229,6 @@ target_link_libraries(failure_inducer_test HyperCommon)
 configure_file(${SRC_DIR}/tests/failure_inducer_test.golden
                ${DST_DIR}/failure_inducer_test.golden)
 
-add_test(Common-Exception exception_test)
 add_test(Common-Exception escaper_test)
 add_test(Common-HostSpecification HostSpecification_test)
 add_test(Common-ClusterDefinition ClusterDefinition_test)
@@ -230,9 +240,6 @@ add_test(Common-InetAddr inetaddr_test)
 add_test(Common-PageArena pagearena_test)
 add_test(Common-Config config_test)
 add_test(Common-Crontab env bash -c "${CMAKE_CURRENT_BINARY_DIR}/crontab_test > crontab_test.output; diff crontab_test.output ${CMAKE_CURRENT_SOURCE_DIR}/tests/crontab_test.golden")
-add_test(Common-Base64 Base64_test)
-add_test(Common-Crypto Crypto_test)
-add_test(Common-directory directory_test ${CMAKE_CURRENT_SOURCE_DIR}/tests/directory_test.golden)
 add_test(Common-Properties ${TEST_DIFF}
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/properties_test.golden ./properties_test)
 add_test(Common-init ${TEST_DIFF}

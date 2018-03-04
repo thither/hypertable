@@ -57,37 +57,47 @@ HT_ADD_LIBS(
 	TARGETS HyperCommon)
 
 # sampleClient
-HT_ADD_TEST(
-	NAME sampleClient
-	SRCS sampleClient.cc
-	TARGETS HyperComm HyperCommon Hypertable Hyperspace HyperFsBroker HyperThirdParty HyperTools
-)
+add_executable(sampleClient sampleClient.cc)
+target_link_libraries(sampleClient HyperComm)
 
 # testServer
 add_executable(testServer testServer.cc)
 target_link_libraries(testServer HyperComm)
 
 # commTest
-add_executable(commTest tests/commTest.cc tests/CommTestThreadFunction.cc
-               ${TEST_DEPENDENCIES})
-target_link_libraries(commTest HyperComm)
+HT_ADD_TEST(
+	NAME HyperComm
+	SRCS tests/commTest.cc tests/CommTestThreadFunction.cc ${TEST_DEPENDENCIES}
+	TARGETS Hypertable 
+)
 
 # commTestDatagram
-add_executable(commTestDatagram tests/commTestDatagram.cc
-               tests/CommTestDatagramThreadFunction.cc ${TEST_DEPENDENCIES})
-target_link_libraries(commTestDatagram HyperComm)
+HT_ADD_TEST(
+	NAME HyperComm-datagram
+	SRCS tests/commTestDatagram.cc tests/CommTestDatagramThreadFunction.cc ${TEST_DEPENDENCIES}
+	TARGETS Hypertable
+)
 
 # commTestTimeout
-add_executable(commTestTimeout tests/commTestTimeout.cc)
-target_link_libraries(commTestTimeout HyperComm)
+HT_ADD_TEST(
+	NAME HyperComm-timeout
+	SRCS tests/commTestTimeout.cc
+	TARGETS Hypertable 
+)
 
 # commTestTimer
-add_executable(commTestTimer tests/commTestTimer.cc)
-target_link_libraries(commTestTimer HyperComm)
+HT_ADD_TEST(
+	NAME HyperComm-timer
+	SRCS tests/commTestTimer.cc
+	TARGETS Hypertable 
+)
 
 # commTestReverseRequest
-add_executable(commTestReverseRequest tests/commTestReverseRequest.cc)
-target_link_libraries(commTestReverseRequest HyperComm)
+HT_ADD_TEST(
+	NAME HyperComm-reverse-request
+	SRCS tests/commTestReverseRequest.cc
+	TARGETS Hypertable 
+)
 
 configure_file(${SRC_DIR}/commTestTimeout.golden
                ${DST_DIR}/commTestTimeout.golden)
@@ -100,14 +110,8 @@ add_custom_command(SOURCE ${HYPERTABLE_SOURCE_DIR}/tests/data/words.gz
     COMMAND gzip ARGS -d < ${HYPERTABLE_SOURCE_DIR}/tests/data/words.gz
                          > ${DST_DIR}/words
     OUTPUT ${DST_DIR}/words)
-
 set(ADDITIONAL_MAKE_CLEAN_FILES ${DST_DIR}/words)
 
-add_test(HyperComm commTest)
-add_test(HyperComm-datagram commTestDatagram)
-add_test(HyperComm-timeout commTestTimeout)
-add_test(HyperComm-timer commTestTimer)
-add_test(HyperComm-reverse-request commTestReverseRequest)
 
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)
@@ -117,5 +121,5 @@ if (NOT HT_COMPONENT_INSTALL)
   install(TARGETS HyperComm
           RUNTIME DESTINATION bin
           LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib)
+		  ARCHIVE DESTINATION lib)
 endif ()
