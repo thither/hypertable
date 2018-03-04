@@ -68,8 +68,8 @@ set(Hdfs_FOUND OFF)
 	  endif ()
   endif ()
 	
-  message(STATUS "       distribution: ${HDFS_DIST}")
-  message(STATUS "       version: ${HDFS_VERSION}")
+  message(STATUS "    distribution: ${HDFS_DIST}")
+  message(STATUS "    version: ${HDFS_VERSION}")
 
 if(NOT Hdfs_FOUND AND FSBROKER_HDFS)
     message(FATAL_ERROR "Could NOT find HDFS libraries")

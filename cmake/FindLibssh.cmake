@@ -89,7 +89,7 @@ if (SSH_FOUND)
     message(STATUS "${TC_TRY_OUT}")
     message(FATAL_ERROR "Please fix the libssh installation and try again.")
   endif ()
-  message("          version: ${TC_TRY_OUT}")
+  message("       version: ${TC_TRY_OUT}")
   
   if(Libssh_LIB_DEPENDENCIES)
 	# Install dependencies

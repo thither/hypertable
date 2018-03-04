@@ -56,7 +56,7 @@ try_run(BDB_CHECK SHOULD_COMPILE
 string(REGEX REPLACE ".*\n([0-9.]+).*" "\\1" BDB_VERSION ${BDB_TRY_OUT})
 string(REGEX REPLACE ".*\n(BerkeleyDB .*)" "\\1" BDB_VERSION ${BDB_VERSION})
 
-message(STATUS "       version: ${BDB_VERSION}")
+message("       version: ${BDB_VERSION}")
 
 if (NOT BDB_CHECK STREQUAL "0")
   message(FATAL_ERROR "Please fix the Berkeley DB installation, "

@@ -70,6 +70,6 @@ if (TCMALLOC_FOUND)
   if (NOT TC_VERSION MATCHES "^[0-9]+.*")
     set(TC_VERSION "unknown -- make sure it's 1.1+")
   endif ()
-  message("          version: ${TC_VERSION}")
+  message("       version: ${TC_VERSION}")
 endif ()
 

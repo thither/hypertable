@@ -124,26 +124,35 @@ if (ASAN)
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
 endif ()
 
-# Uncomment the following to build dynamic libraries
-set (BUILD_SHARED_LIBS OFF)
-if (HT_ENABLE_SHARED)
+
+message(STATUS " ----------------------- BUILD TARGETS CONFIGURATIONS ----------------------- ")
+# set (BUILD_SHARED_LIBS OFF) set ON to try build executables against dynamic libraries
+# HT_TEST_WITH=NONE(tests skipped)/STATIC/SHARED/BOTH 
+if(HT_TEST_WITH STREQUAL "BOTH" OR HT_TEST_WITH STREQUAL "SHARED")
 	set (HT_ENABLE_SHARED ON)
+	message(STATUS "HT_TEST_WITH=BOTH/SHARED is setting HT_ENABLE_SHARED=ON")
+endif ()
+if (HT_ENABLE_SHARED)
+	set (BUILD_SHARED_LIBS OFF)
 	message(STATUS "Building shared and static libraries")
+	message(STATUS "Build linking with static libraries")
+elseif (NOT BUILD_SHARED_LIBS)
+	message(STATUS "Building static libraries by default, enable shared by opt -DHT_ENABLE_SHARED=ON")
+	message(STATUS "Build linking with static libraries")
 else ()
-	message(STATUS "Building static libraries by default, opt -DHT_ENABLE_SHARED=ON")
+	message(STATUS "Building only shared libraries, opt -DBUILD_SHARED_LIBS is ON")
+	message(STATUS "Build linking with shared libraries")
 endif ()
 
-# Locate required packages
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-include(CommonUtil)
+if (HT_ENABLE_SHARED AND NOT BUILD_SHARED_LIBS AND HT_TEST_WITH STREQUAL "BOTH")
+	message(STATUS "Tests are dual for shared and static libraries linking ")
+elseif ((HT_ENABLE_SHARED OR BUILD_SHARED_LIBS) AND (NOT HT_TEST_WITH OR HT_TEST_WITH STREQUAL "SHARED"))
+	message(STATUS "Tests are linked with shared libraries")
+elseif (HT_TEST_WITH STREQUAL "STATIC")
+	message(STATUS "Tests are linked with static libraries")
+endif ()
 
-# A more informative hypertable version string
-include(VersionHelper)
-
-# Verison install directory
-set(CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/${VERSION})
-set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
-
+	
 # Build support for all possible or only requested languages 
 if (NOT languages OR languages STREQUAL "all" OR languages STREQUAL "")
 	set(LANGS ON)
@@ -180,6 +189,22 @@ if (FSBROKER_HDFS AND hdfs_vers)
 else ()
 	set(HDFS_VERS OFF)
 endif ()
+
+message(STATUS " ---------------------------------------------------------------------------- ")
+
+
+
+
+# Locate required packages
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+include(CommonUtil)
+
+# A more informative hypertable version string
+include(VersionHelper)
+
+# Verison install directory
+set(CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/${VERSION})
+set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
 
 
 find_package(Threads REQUIRED)

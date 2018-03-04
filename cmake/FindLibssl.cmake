@@ -80,7 +80,7 @@ if (SSL_FOUND)
     message(STATUS "${TC_TRY_OUT}")
     message(FATAL_ERROR "Please fix the libssl installation and try again.")
   endif ()
-  message("          version: ${TC_TRY_OUT}")
+  message("       version: ${TC_TRY_OUT}")
   
   if(Libssl_LIB_DEPENDENCIES)
 	# Install dependencies
