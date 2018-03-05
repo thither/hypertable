@@ -56,27 +56,33 @@ set(ThriftBroker_SRCS ThriftBroker.cc MetricsHandler.cc)
 add_executable(htThriftBroker ${ThriftBroker_SRCS})
 target_link_libraries(htThriftBroker HyperThriftConfig HyperAppHelper)
 
-
+### FRAMED TRANSPORT TESTS
 # Basic regression test
-add_executable(client_test tests/client_test.cc)
-target_link_libraries(client_test HyperThrift HyperCommon Hypertable)
-add_test(ThriftClient-cpp client_test)
-
+HT_ADD_TEST(
+	NAME ThriftClient-cpp
+	SRCS tests/client_test.cc
+	TARGETS HyperThrift HyperCommon Hypertable 
+)
 # regression test for SerializedCellsWriter/SerializedCellsReader
-add_executable(serialized_test tests/serialized_test.cc)
-target_link_libraries(serialized_test HyperThrift HyperCommon Hypertable)
-add_test(ThriftClient-Serialized-cpp serialized_test)
+HT_ADD_TEST(
+	NAME ThriftClient-cpp-Serialized
+	SRCS tests/serialized_test.cc
+	TARGETS HyperThrift HyperCommon Hypertable 
+)
 
-# zlib transport tests
+### ZLIB TRANSPORT TESTS
 # Basic regression test
-add_executable(zclient_test tests/zclient_test.cc)
-target_link_libraries(zclient_test HyperThrift HyperCommon Hypertable)
-add_test(ThriftZClient-cpp zclient_test)
-
+HT_ADD_TEST(
+	NAME ThriftZClient-cpp
+	SRCS tests/zclient_test.cc
+	TARGETS HyperThrift HyperCommon Hypertable 
+)
 # regression test for SerializedCellsWriter/SerializedCellsReader
-add_executable(zserialized_test tests/zserialized_test.cc)
-target_link_libraries(zserialized_test HyperThrift HyperCommon Hypertable)
-add_test(ThriftZClient-Serialized-cpp zserialized_test)
+HT_ADD_TEST(
+	NAME ThriftZClient-cpp-Serialized
+	SRCS tests/zclient_test.cc
+	TARGETS HyperThrift HyperCommon Hypertable 
+)
 
 
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
