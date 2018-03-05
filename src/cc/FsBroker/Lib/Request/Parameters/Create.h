@@ -85,6 +85,8 @@ namespace Parameters {
     /// @return Block size
     int64_t get_block_size() { return m_blksz; }
 
+	virtual ~Create() {}
+
   private:
 
     uint8_t encoding_version() const override;

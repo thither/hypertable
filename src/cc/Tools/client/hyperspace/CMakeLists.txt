@@ -28,7 +28,7 @@ hyperspace.cc
 
 # ht_hyperspace - Hyperspace client program
 add_executable(ht_hyperspace ${hyperspace_SRCS})
-target_link_libraries(ht_hyperspace Hyperspace ${READLINE_LIBRARIES} Hypertable)
+target_link_libraries(ht_hyperspace Hyperspace Hypertable)
 
 # hyperspaceTest
 add_executable(hyperspaceTest test/hyperspaceTest.cc)

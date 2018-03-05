@@ -72,63 +72,62 @@ if (HT_DEPENDENCY_DIR)
   set(HT_DEPENDENCY_INCLUDE_DIR ${HT_DEPENDENCY_DIR}/include)
 endif ()
 
-# Enable testing
-enable_testing()
-
 # A simple test helper
 set(TEST_DIFF ${HYPERTABLE_SOURCE_DIR}/bin/src-utils/testdiff)
 
-# gcc warning settings
-if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-  if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-long-long -pthreads")
-    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-long-long -pthreads")
-  else (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-long-long")
-    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-long-long")
-  endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-endif ()
-
-# C flags
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unknown-pragmas")
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic")
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_LARGEFILE_SOURCE")
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_FILE_OFFSET_BITS=64")
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_REENTRANT")
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -fuse-linker-plugin -ffat-lto-objects ")
-# SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsection-anchors")
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -floop-interchange")
-
-# C++ flags
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LARGEFILE_SOURCE")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FILE_OFFSET_BITS=64")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_REENTRANT")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fuse-linker-plugin -ffat-lto-objects")
-# SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsection-anchors")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -floop-interchange")
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-terminate")
-
-if (ASAN)
-  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
-  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
-endif ()
 
 
 message(STATUS " ----------------------- BUILD TARGETS CONFIGURATIONS ----------------------- ")
+
+# Build optimization level
+if(HT_O_LEVEL)
+message(STATUS "Building Optimization Level: ${HT_O_LEVEL}")
+message(STATUS "   following arguments are ignored:")
+message(	"          HT_ENABLE_SHARED")
+message(	"          HT_TEST_WITH")
+message(    "          BUILD_WITH_STATIC")
+message(	"          BUILD_SHARED_LIBS")
+
+if(HT_O_LEVEL STREQUAL "1")
+	message("       Optimals for debugging")
+	set(HT_ENABLE_SHARED ON)
+	set(HT_TEST_WITH "SHARED")
+elseif(HT_O_LEVEL STREQUAL "2")
+	message("       Optimals for Integrations and Storage space")
+	# all executable linked with shared-libs, 
+	set(BUILD_SHARED_LIBS ON)
+	set(BUILD_WITH_STATIC OFF)
+elseif(HT_O_LEVEL STREQUAL "3")
+	message("       Optimals for Integrations and Storage space")
+	# enviroment with no-fat-static-lib and shared-libs, executable(projet's libs bult-in)
+	set(HT_ENABLE_SHARED ON)
+	set(BUILD_WITH_STATIC OFF)
+	set(HT_TEST_WITH "SHARED")
+elseif(HT_O_LEVEL STREQUAL "4")
+	message("       Optimals for Integrations and Performance")
+	# enviroment with fat-static-lib and shared-libs, executable(projet's libs bult-in)
+	set(HT_ENABLE_SHARED ON)
+	set(BUILD_WITH_STATIC OFF)
+	set(HT_TEST_WITH "SHARED")
+elseif(HT_O_LEVEL STREQUAL "5")
+	message("       Optimals for Integrations, Performance and Memory with testing")
+	# single stand-alone(as available) of executables and tests with shared and static libs
+	set(HT_ENABLE_SHARED ON)
+	set(BUILD_WITH_STATIC ON)
+	set(HT_TEST_WITH "BOTH")
+elseif(HT_O_LEVEL STREQUAL "6")
+	message("       Optimals for Integrations, Performance and Memory without testing")  
+	# single stand-alone(as available) executables with shared and static libs
+	set(HT_ENABLE_SHARED ON)
+	set(BUILD_WITH_STATIC ON)
+	set(HT_TEST_WITH "NONE")
+endif()
+else()
+	set(HT_O_LEVEL "3")
+endif()
 # set (BUILD_SHARED_LIBS OFF) set ON to try build executables against dynamic libraries
 # HT_TEST_WITH=NONE(tests skipped)/STATIC/SHARED/BOTH 
-if(HT_TEST_WITH STREQUAL "BOTH" OR HT_TEST_WITH STREQUAL "SHARED")
+if(NOT HT_ENABLE_SHARED AND (HT_TEST_WITH STREQUAL "BOTH" OR HT_TEST_WITH STREQUAL "SHARED"))
 	set (HT_ENABLE_SHARED ON)
 	message(STATUS "HT_TEST_WITH=BOTH/SHARED is setting HT_ENABLE_SHARED=ON")
 endif ()
@@ -146,12 +145,16 @@ endif ()
 
 if (HT_ENABLE_SHARED AND NOT BUILD_SHARED_LIBS AND HT_TEST_WITH STREQUAL "BOTH")
 	message(STATUS "Tests are dual for shared and static libraries linking ")
+	enable_testing() # Enable testing
 elseif ((HT_ENABLE_SHARED OR BUILD_SHARED_LIBS) AND (NOT HT_TEST_WITH OR HT_TEST_WITH STREQUAL "SHARED"))
 	message(STATUS "Tests are linked with shared libraries")
+	enable_testing() # Enable testing
 elseif (HT_TEST_WITH STREQUAL "STATIC")
 	message(STATUS "Tests are linked with static libraries")
+	enable_testing() # Enable testing
+else ()
+	message(STATUS "Tests are not performed")
 endif ()
-
 	
 # Build support for all possible or only requested languages 
 if (NOT languages OR languages STREQUAL "all" OR languages STREQUAL "")
@@ -166,6 +169,7 @@ else ()
 	endforeach()
 	set(LANGS OFF)
 endif ()
+
 # Build support for all possible or only requested FS BROKERS 
 if (NOT fsbrokers OR fsbrokers STREQUAL "all" OR fsbrokers STREQUAL "")
 	set(FSBROKERS ON)
@@ -192,6 +196,58 @@ endif ()
 
 message(STATUS " ---------------------------------------------------------------------------- ")
 
+
+# gcc warning settings
+if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+  if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-long-long -pthreads")
+    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-long-long -pthreads")
+  else (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-long-long")
+    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-long-long")
+  endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+endif ()
+
+# C flags
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unknown-pragmas")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_LARGEFILE_SOURCE")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_FILE_OFFSET_BITS=64")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_REENTRANT")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+
+# C++ flags
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LARGEFILE_SOURCE")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FILE_OFFSET_BITS=64")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_REENTRANT")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-terminate")
+
+if(${HT_O_LEVEL} MATCHES "[1-3]")
+	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
+	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+else()
+	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -fuse-linker-plugin -ffat-lto-objects ")
+	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fuse-linker-plugin -ffat-lto-objects")
+	# SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsection-anchors")
+	# SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsection-anchors")
+	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -floop-interchange")
+	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -floop-interchange")
+endif ()
+
+if (ASAN)
+  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+  SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+endif ()
 
 
 

@@ -66,6 +66,8 @@ namespace Parameters {
     /// @return Accurate flag
     bool get_accurate() { return m_accurate; }
 
+	virtual ~Length() {}
+
   private:
 
     uint8_t encoding_version() const override;

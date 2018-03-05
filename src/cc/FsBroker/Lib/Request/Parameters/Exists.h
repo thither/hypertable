@@ -60,6 +60,8 @@ namespace Parameters {
     /// @return File name
     const char *get_fname() { return m_fname.c_str(); }
 
+	virtual ~Exists() {}
+
   private:
 
     uint8_t encoding_version() const override;

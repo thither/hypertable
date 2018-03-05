@@ -220,20 +220,26 @@ namespace Lib {
     /// @param handler response handler
     /// @param timer Deadline timer
     void send_message(CommBufPtr &cbuf, DispatchHandler *handler, Timer *timer=0);
-
     std::mutex m_mutex;
     Comm *m_comm;
     ConnectionManagerPtr m_conn_mgr;
     InetAddr m_addr;
     uint32_t m_timeout_ms;
     std::unordered_map<uint32_t, ClientBufferedReaderHandler *> m_buffered_reader_map;
-	
-	// int m_dfsclient_retries = 0;
+
+	/** Tries to re-connect to FS Broker max retries time estimated to m_timeout_ms X hypretable.fsbroker.ClientRetries 
+		return True if re-connected, 
+		@param e_code last exception error code
+		@param e last exception
+		@param e_desc last error description (added to waiting for connection Exception)
+	*/
+	bool re_connect(int e_code, const Exception &e, const String &e_desc);
+	int m_dfsclient_retries = 0;
 	//  
-	// Might be the way around to fix broken fd of fsbroker comm failure cause 
+	// A way around to fix fsbroker comm failure cause 
 	// each fs method on exception catch could make a re-request (call again on it self follow clear current request's arguments)
-	// follow a re-connect(if the cause between e.code COMM_NOT_CONNECTED to COMM_SEND_ERROR) 
-	// and open a new fd replacing the previous(with clearing previous fd state) - lacking of file path&name for proceeding
+	// follow a re_connect(if the cause between e.code COMM_NOT_CONNECTED to COMM_SEND_ERROR) 
+	// if method is fd related than open a new fd  - lacking of file path&name for proceeding
 	// at success of a re-request m_dfsclient_retries would go back to zero state
 	// supporting configureation option can be hypretable.fsbroker.ClientRetries
 	// this will allow failure-tolerance to fsbrokers restarts at run time.

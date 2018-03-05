@@ -78,7 +78,6 @@ Client::Client(ConnectionManagerPtr &conn_mgr, const sockaddr_in &addr,
   conn_mgr->add(m_addr, m_timeout_ms, "FS Broker");
 }
 
-
 Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &cfg)
     : m_conn_mgr(conn_mgr) {
   m_comm = conn_mgr->get_comm();
@@ -115,12 +114,28 @@ Client::Client(const String &host, int port, uint32_t timeout_ms)
 	     "Timed out waiting for connection to FS Broker");
 }
 
-
 Client::~Client() {
   /** this causes deadlock in RangeServer shutdown
   if (m_conn_mgr)
     m_conn_mgr->remove(m_addr);
   */
+}
+
+bool Client::re_connect(int e_code, const Exception &e, const String &e_desc) {
+	if (m_dfsclient_retries < 10 && (
+		e_code == Error::COMM_NOT_CONNECTED ||
+		e_code == Error::COMM_BROKEN_CONNECTION ||
+		e_code == Error::COMM_CONNECT_ERROR ||
+		e_code == Error::COMM_SEND_ERROR)) {
+		if (m_dfsclient_retries == 10 && !m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms))
+			HT_THROW2F(e.code(), e, "Timed out waiting for connection to FS Broker - %s", e_desc.c_str());
+		else {
+			m_dfsclient_retries = 0;
+			return true;
+		}
+		m_dfsclient_retries++;
+	}
+	return false;
 }
 
 
@@ -135,7 +150,14 @@ Client::open(const String &name, uint32_t flags, DispatchHandler *handler) {
     send_message(cbuf, handler);
   }
   catch (Exception &e) {
-    HT_THROW2F(e.code(), e, "Error opening FS file: %s", name.c_str());
+	  if (Client::re_connect(e.code(), e, format("Error opening FS file: %s", name.c_str()))) {
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  open(name, flags, handler);
+		  return;
+	  }
+	  HT_THROW2F(e.code(), e, "Error opening FS file: %s", name.c_str());
   }
 }
 
@@ -161,10 +183,17 @@ Client::open(const String &name, uint32_t flags) {
     return fd;
   }
   catch (Exception &e) {
+	if(Client::re_connect(e.code(), e, format("Error opening FS file: %s", name.c_str()))) {
+		delete &sync_handler;
+		delete &event;
+		delete &header;
+		delete &params;
+		delete &cbuf;
+		return open(name, flags);
+	}
     HT_THROW2F(e.code(), e, "Error opening FS file: %s", name.c_str());
   }
 }
-
 
 int
 Client::open_buffered(const String &name, uint32_t flags, uint32_t buf_size,
@@ -219,7 +248,14 @@ Client::create(const String &name, uint32_t flags, int32_t bufsz,
     send_message(cbuf, handler);
   }
   catch (Exception &e) {
-    HT_THROW2F(e.code(), e, "Error creating FS file: %s:", name.c_str());
+	if (Client::re_connect(e.code(), e, format("Error creating FS file: %s:", name.c_str()))) {
+		delete &header;
+		delete &params;
+		delete &cbuf;
+		create(name, flags, bufsz, replication, blksz, handler);
+		return;
+	}
+	HT_THROW2F(e.code(), e, "Error creating FS file: %s:", name.c_str());
   }
 }
 
@@ -246,6 +282,14 @@ Client::create(const String &name, uint32_t flags, int32_t bufsz,
     return fd;
   }
   catch (Exception &e) {
+	if (Client::re_connect(e.code(), e, format("Error creating FS file: %s:", name.c_str()))) {
+		delete &sync_handler;
+		delete &event;
+		delete &header;
+		delete &params;
+		delete &cbuf;
+		return create(name, flags, bufsz, replication, blksz);
+	}
     HT_THROW2F(e.code(), e, "Error creating FS file: %s", name.c_str());
   }
 }
@@ -279,6 +323,13 @@ Client::close(int32_t fd, DispatchHandler *handler) {
     send_message(cbuf, handler);
   }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, format("Error closing FS fd: %d", (int)fd))) {
+		delete &header;
+		delete &params;
+		delete &cbuf;
+		close(fd, handler);
+		return;
+	}
     HT_THROW2F(e.code(), e, "Error closing FS fd: %d", (int)fd);
   }
 }
@@ -312,6 +363,15 @@ Client::close(int32_t fd) {
                Protocol::string_format_message(event).c_str());
   }
   catch(Exception &e) {
+	if (Client::re_connect(e.code(), e, format("Error closing FS fd: %d", (int)fd))) {
+		delete &sync_handler;
+		delete &header;
+		delete &event;
+		delete &params;
+		delete &cbuf;
+		close(fd);
+		return;
+	}
     HT_THROW2F(e.code(), e, "Error closing FS fd: %d", (int)fd);
   }
 }
@@ -531,9 +591,18 @@ Client::remove(const String &name, DispatchHandler *handler) {
   CommBufPtr cbuf( new CommBuf(header, params.encoded_length()) );
   params.encode(cbuf->get_data_ptr_address());
 
-  try { send_message(cbuf, handler); }
+  try { 
+	  send_message(cbuf, handler); 
+  }
   catch (Exception &e) {
-    HT_THROW2F(e.code(), e, "Error removing FS file: %s", name.c_str());
+	  if (Client::re_connect(e.code(), e, format("Error removing FS file: %s:", name.c_str()))) {
+		  delete &header;
+		  delete &params;
+		  delete &cbuf; 
+		  remove(name, handler);
+		  return;
+	  }
+	  HT_THROW2F(e.code(), e, "Error removing FS file: %s", name.c_str());
   }
 }
 
@@ -557,6 +626,14 @@ Client::remove(const String &name, bool force) {
     }
   }
   catch (Exception &e) {
+	if (Client::re_connect(e.code(), e, format("Error removing FS file: %s:", name.c_str()))) {
+		delete &sync_handler;
+		delete &event;
+		delete &params;
+		delete &cbuf;
+		remove(name, force);
+		return;
+	}
     HT_THROW2F(e.code(), e, "Error removing FS file: %s", name.c_str());
   }
 }
@@ -621,6 +698,13 @@ void Client::length(const String &name, bool accurate,
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, format("Error sending length request for FS file: %s", name.c_str()))) {
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  length(name, accurate, handler);
+		  return;
+	  }
     HT_THROW2F(e.code(), e, "Error sending length request for FS file: %s",
                name.c_str());
   }
@@ -645,6 +729,14 @@ int64_t Client::length(const String &name, bool accurate) {
     return decode_response_length(event);
   }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, format("Error getting length ofr FS file: %s", name.c_str()))) {
+		  delete &sync_handler;
+		  delete &event;
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  return length(name, accurate);
+	  }
     HT_THROW2F(e.code(), e, "Error getting length of FS file: %s",
                name.c_str());
   }
@@ -725,6 +817,13 @@ void Client::mkdirs(const String &name, DispatchHandler *handler) {
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, format("Error sending mkdirs request for FS directory: %s", name.c_str()))) {
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  mkdirs(name, handler);
+		  return;
+	  }
     HT_THROW2F(e.code(), e, "Error sending mkdirs request for FS "
                "directory: %s", name.c_str());
   }
@@ -748,6 +847,15 @@ Client::mkdirs(const String &name) {
                Protocol::string_format_message(event).c_str());
   }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, format("Error mkdirs FS directory %s", name.c_str()))) {
+		  delete &sync_handler;
+		  delete &event;
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  mkdirs(name);
+		  return;
+	  }
     HT_THROW2F(e.code(), e, "Error mkdirs FS directory %s", name.c_str());
   }
 }
@@ -822,6 +930,14 @@ void Client::rmdir(const String &name, DispatchHandler *handler) {
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, 
+		  format("Error sending rmdir request for FS directory: %s", name.c_str()))) {
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  rmdir(name, handler);
+		  return;
+	  }
     HT_THROW2F(e.code(), e, "Error sending rmdir request for FS directory: "
                "%s", name.c_str());
   }
@@ -848,6 +964,15 @@ Client::rmdir(const String &name, bool force) {
     }
   }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, format("Error removing FS directory: %s", name.c_str()))) {
+		  delete &sync_handler;
+		  delete &event;
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  rmdir(name, force);
+		  return;
+	  }
     HT_THROW2F(e.code(), e, "Error removing FS directory: %s", name.c_str());
   }
 }
@@ -861,6 +986,14 @@ void Client::readdir(const String &name, DispatchHandler *handler) {
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, format(
+		  "Error sending readdir request for FS directory: %s", name.c_str()))) {
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  readdir(name, handler);
+		  return;
+	  }
     HT_THROW2F(e.code(), e, "Error sending readdir request for FS directory"
                ": %s", name.c_str());
   }
@@ -885,6 +1018,16 @@ void Client::readdir(const String &name, std::vector<Dirent> &listing) {
     decode_response_readdir(event, listing);
   }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, format(
+		  "Error reading directory entries for FS directory: %s", name.c_str()))) {
+		  delete &sync_handler;
+		  delete &event;
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  readdir(name, listing);
+		  return;
+	  }
     HT_THROW2F(e.code(), e, "Error reading directory entries for FS "
                "directory: %s", name.c_str());
   }
@@ -914,6 +1057,14 @@ void Client::exists(const String &name, DispatchHandler *handler) {
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, format(
+		  "sending 'exists' request for FS path: %s", name.c_str()))) {
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  exists(name, handler);
+		  return;
+	  }
     HT_THROW2F(e.code(), e, "sending 'exists' request for FS path: %s",
                name.c_str());
   }
@@ -938,6 +1089,15 @@ bool Client::exists(const String &name) {
     return decode_response_exists(event);
   }
   catch (Exception &e) {
+	  if (Client::re_connect(e.code(), e, format(
+		  "Error checking existence of FS path: %s", name.c_str()))) {
+		  delete &sync_handler;
+		  delete &event;
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+		  return exists(name);
+	  }
     HT_THROW2F(e.code(), e, "Error checking existence of FS path: %s",
                name.c_str());
   }

@@ -60,6 +60,8 @@ namespace Parameters {
     /// @return File descriptor
     int32_t get_fd() { return m_fd; }
 
+	virtual ~Close() {}
+
   private:
 
     uint8_t encoding_version() const override;
