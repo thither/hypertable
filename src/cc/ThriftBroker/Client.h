@@ -24,65 +24,77 @@
 #include <protocol/TBinaryProtocol.h>
 #include <transport/TSocket.h>
 #include <transport/TTransportUtils.h>
+#include <transport/TZlibTransport.h>
 
 #include "gen-cpp/HqlService.h"
 
 #include <memory>
 
 namespace Hypertable {
-namespace Thrift {
+ namespace Thrift {
 
-using namespace apache::thrift;
-using namespace apache::thrift::protocol;
-using namespace apache::thrift::transport;
+	 using namespace apache::thrift;
+	 using namespace apache::thrift::protocol;
+	 using namespace apache::thrift::transport;
 
-// helper to initialize base class of Client
-struct ClientHelper {
-  boost::shared_ptr<TSocket> socket;
-  boost::shared_ptr<TTransport> transport;
-  boost::shared_ptr<TProtocol> protocol;
+	 // helper to initialize base class of Client
+	 struct ClientHelper {
+		 boost::shared_ptr<TSocket> socket;
+		 boost::shared_ptr<TTransport> transport;
+		 boost::shared_ptr<TProtocol> protocol;
 
-  ClientHelper(const std::string &host, int port, int timeout_ms)
-    : socket(new TSocket(host, port)),
-      transport(new TFramedTransport(socket)),
-      protocol(new TBinaryProtocol(transport)) {
+		 ClientHelper(const std::string &host, bool zClient, int port, int timeout_ms)
+			 : socket(new TSocket(host, port)),
+			 transport(new TFramedTransport(socket)),
+			 protocol(new TBinaryProtocol((zClient? new TZlibTransport(transport): transport)){
+			 socket->setConnTimeout(timeout_ms);
+		 socket->setSendTimeout(timeout_ms);
+		 socket->setRecvTimeout(timeout_ms);
+		 }
+	 };
 
-    socket->setConnTimeout(timeout_ms);
-    socket->setSendTimeout(timeout_ms);
-    socket->setRecvTimeout(timeout_ms);
-  }
-};
+	 /**
+	 * A client for the ThriftBroker.
+	 */
+	 class Client : private ClientHelper, public ThriftGen::HqlServiceClient {
+	 public:
+		 Client(const std::string &host, int port, int timeout_ms = 300000,
+			 bool open = true)
+			 : ClientHelper(host, port, false, timeout_ms), HqlServiceClient(protocol),
+			 m_do_close(false) {
 
-  /**
-   * A client for the ThriftBroker.
-   */
-  class Client : private ClientHelper, public ThriftGen::HqlServiceClient {
-  public:
-    Client(const std::string &host, int port, int timeout_ms = 300000,
-           bool open = true)
-      : ClientHelper(host, port, timeout_ms), HqlServiceClient(protocol),
-        m_do_close(false) {
+			 if (open) {
+				 transport->open();
+				 m_do_close = true;
+			 }
+		 }
+		 Client(const std::string &host, int port, bool zClient, int timeout_ms = 300000,
+			 bool open = true)
+			 : ClientHelper(host, port, true, timeout_ms), HqlServiceClient(protocol),
+			 m_do_close(false) {
 
-      if (open) {
-        transport->open();
-        m_do_close = true;
-      }
-    }
+			 if (open) {
+				 transport->open();
+				 m_do_close = true;
+			 }
+		 }
 
-    virtual ~Client() {
-      if (m_do_close) {
-        transport->close();
-        m_do_close = false;
-      }
-    }
+		 virtual ~Client() {
+			 if (m_do_close) {
+				 transport->close();
+				 m_do_close = false;
+			 }
+		 }
 
-  private:
-    bool m_do_close;
-  };
+	 private:
+		 bool m_do_close;
+	 };
 
-  /// Smart pointer to client
-  typedef std::shared_ptr<Client> ClientPtr;
+	 /// Smart pointer to client
+	 typedef std::shared_ptr<Client> ClientPtr;
 
-}} // namespace Hypertable::Thrift
+
+ }
+} // namespace Hypertable::Thrift
 
 #endif // Hypertable_ThriftBroker_Client_h

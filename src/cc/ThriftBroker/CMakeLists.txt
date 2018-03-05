@@ -67,6 +67,18 @@ add_executable(serialized_test tests/serialized_test.cc)
 target_link_libraries(serialized_test HyperThrift HyperCommon Hypertable)
 add_test(ThriftClient-Serialized-cpp serialized_test)
 
+# zlib transport tests
+# Basic regression test
+add_executable(zclient_test tests/zclient_test.cc)
+target_link_libraries(zclient_test HyperThrift HyperCommon Hypertable)
+add_test(ThriftZClient-cpp zclient_test)
+
+# regression test for SerializedCellsWriter/SerializedCellsReader
+add_executable(zserialized_test tests/zserialized_test.cc)
+target_link_libraries(zserialized_test HyperThrift HyperCommon Hypertable)
+add_test(ThriftZClient-Serialized-cpp zserialized_test)
+
+
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
   install(TARGETS HyperThrift HyperThriftConfig htThriftBroker
           RUNTIME DESTINATION bin

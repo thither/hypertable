@@ -56,6 +56,7 @@
 #include <transport/TServerSocket.h>
 #include <transport/TSocket.h>
 #include <transport/TTransportUtils.h>
+#include <transport/TZlibTransport.h>
 
 #include <boost/shared_ptr.hpp>
 
@@ -3180,8 +3181,9 @@ int main(int argc, char **argv) {
 
     boost::shared_ptr<TTransportFactory> transportFactory(new TFramedTransportFactory());
 
-    TThreadedServer server(hql_service_processor_factory, serverTransport,
-                           transportFactory, protocolFactory);
+    TThreadedServer server(hql_service_processor_factory, 
+		(get_bool("thrift-zlib") ? new TZlibTransport(serverTransport) : serverTransport),
+		transportFactory, protocolFactory);
 
     HT_INFO("Starting the server...");
 
