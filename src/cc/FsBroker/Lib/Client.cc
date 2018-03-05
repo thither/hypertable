@@ -130,7 +130,7 @@ bool Client::re_connect(int e_code, const Exception &e, const String &e_desc) {
 
 		lock_guard<mutex> lock(m_mutex);
 		if (m_dfsclient_retries == 10 && !m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms))
-			HT_THROW2F(e.code(), e, "Timed out waiting for connection to FS Broker - %s", e_desc.c_str());
+			HT_THROW2F(e.code(), e, "Timed out waiting for connection to FS Broker, tried %d times - %s", m_dfsclient_retries, e_desc.c_str());
 		else {
 			m_dfsclient_retries = 0;
 			return true;
