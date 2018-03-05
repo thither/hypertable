@@ -127,6 +127,8 @@ bool Client::re_connect(int e_code, const Exception &e, const String &e_desc) {
 		e_code == Error::COMM_BROKEN_CONNECTION ||
 		e_code == Error::COMM_CONNECT_ERROR ||
 		e_code == Error::COMM_SEND_ERROR)) {
+
+		lock_guard<mutex> lock(m_mutex);
 		if (m_dfsclient_retries == 10 && !m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms))
 			HT_THROW2F(e.code(), e, "Timed out waiting for connection to FS Broker - %s", e_desc.c_str());
 		else {
