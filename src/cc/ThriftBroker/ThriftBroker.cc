@@ -3180,20 +3180,18 @@ int main(int argc, char **argv) {
 		serverTransport.reset(new TServerSocket(port));
 	}
 
-	if (get_bool("thrift-zlib")) {
+	if (get_str("transport") == "framed") {
 		boost::shared_ptr<TTransportFactory> transportFactory(new TFramedTransportFactory());
 		TThreadedServer server(hql_service_processor_factory, serverTransport, transportFactory, protocolFactory);
 		HT_INFO("Starting the framed server...");
 		server.serve();
 	}
-	else {
+	else if (get_str("transport") == "zlib") {
 		boost::shared_ptr<TTransportFactory> transportFactory(new TZlibTransportFactory());
 		TThreadedServer server(hql_service_processor_factory, serverTransport, transportFactory, protocolFactory);
 		HT_INFO("Starting the zlib server...");
 		server.serve();
 	}
-
-
 
     g_metrics_handler->start_collecting();
     g_metrics_handler.reset();

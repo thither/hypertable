@@ -556,6 +556,8 @@ void DefaultPolicy::init_options() {
         "Enable slow query logging")
     ("ThriftBroker.SlowQueryLog.LatencyThreshold", i32()->default_value(10000),
         "Latency threshold above which a query is considered slow")
+	("ThriftBroker.Transport", str()->default_value("framed"),
+		"Thrift Broker transport - framed/zlib")
     ;
   alias("Hypertable.RangeServer.CommitLog.RollLimit",
         "Hypertable.CommitLog.RollLimit");
