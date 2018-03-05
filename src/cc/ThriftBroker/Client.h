@@ -43,14 +43,17 @@ namespace Hypertable {
 		 boost::shared_ptr<TTransport> transport;
 		 boost::shared_ptr<TProtocol> protocol;
 
-		 ClientHelper(const std::string &host, bool zClient, int port, int timeout_ms)
-			 : socket(new TSocket(host, port)),
-			 transport(new TFramedTransport(socket)),
-			 protocol(new TBinaryProtocol((zClient? new TZlibTransport(transport): transport)){
-			 socket->setConnTimeout(timeout_ms);
-		 socket->setSendTimeout(timeout_ms);
-		 socket->setRecvTimeout(timeout_ms);
-		 }
+		 ClientHelper(const std::string &ttp, const std::string &host, int port, int timeout_ms):
+			 socket(new TSocket(host, port)), 
+			 transport(ttp == "zlib" ?
+							static_cast<boost::shared_ptr<TTransport>>(new TZlibTransport(socket)) :
+							static_cast<boost::shared_ptr<TTransport>>(new TFramedTransport(socket))),
+			 protocol(new TBinaryProtocol(transport)){
+
+			socket->setConnTimeout(timeout_ms);
+			socket->setSendTimeout(timeout_ms);
+			socket->setRecvTimeout(timeout_ms);
+		 };
 	 };
 
 	 /**
@@ -60,7 +63,7 @@ namespace Hypertable {
 	 public:
 		 Client(const std::string &host, int port, int timeout_ms = 300000,
 			 bool open = true)
-			 : ClientHelper(host, port, false, timeout_ms), HqlServiceClient(protocol),
+			 : ClientHelper("", host, port, timeout_ms), HqlServiceClient(protocol),
 			 m_do_close(false) {
 
 			 if (open) {
@@ -68,9 +71,9 @@ namespace Hypertable {
 				 m_do_close = true;
 			 }
 		 }
-		 Client(const std::string &host, int port, bool zClient, int timeout_ms = 300000,
+		 Client(const std::string &ttp, const std::string &host, int port, int timeout_ms = 300000,
 			 bool open = true)
-			 : ClientHelper(host, port, true, timeout_ms), HqlServiceClient(protocol),
+			 : ClientHelper(ttp, host, port, timeout_ms), HqlServiceClient(protocol),
 			 m_do_close(false) {
 
 			 if (open) {
