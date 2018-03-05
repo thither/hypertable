@@ -34,8 +34,8 @@ HT_FASTLIB_SET(
 			  /usr/local/include/thrift
 			  /usr/include/thrift
 			  /opt/local/include/thrift
-	STATIC libthrift.a libthriftnb.a 
-	SHARED thrift thriftnb
+	STATIC libthrift.a libthriftnb.a  libthriftz.a 
+	SHARED thrift thriftnb thriftz
 	INCLUDE Thrift.h
 )
 

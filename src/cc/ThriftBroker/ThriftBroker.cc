@@ -3171,23 +3171,29 @@ int main(int argc, char **argv) {
     boost::shared_ptr<TProcessorFactory> hql_service_processor_factory(new HqlServiceProcessorFactory(hql_service_factory));
 
     boost::shared_ptr<TServerTransport> serverTransport;
-
+	
     if (has("thrift-timeout")) {
       int timeout_ms = get_i32("thrift-timeout");
       serverTransport.reset( new TServerSocket(port, timeout_ms, timeout_ms) );
-    }
-    else
-      serverTransport.reset( new TServerSocket(port) );
+    } 
+	else { 
+		serverTransport.reset(new TServerSocket(port));
+	}
 
-    boost::shared_ptr<TTransportFactory> transportFactory(new TFramedTransportFactory());
+	if (get_bool("thrift-zlib")) {
+		boost::shared_ptr<TTransportFactory> transportFactory(new TFramedTransportFactory());
+		TThreadedServer server(hql_service_processor_factory, serverTransport, transportFactory, protocolFactory);
+		HT_INFO("Starting the framed server...");
+		server.serve();
+	}
+	else {
+		boost::shared_ptr<TTransportFactory> transportFactory(new TZlibTransportFactory());
+		TThreadedServer server(hql_service_processor_factory, serverTransport, transportFactory, protocolFactory);
+		HT_INFO("Starting the zlib server...");
+		server.serve();
+	}
 
-    TThreadedServer server(hql_service_processor_factory, 
-		(get_bool("thrift-zlib") ? new TZlibTransport(serverTransport) : serverTransport),
-		transportFactory, protocolFactory);
 
-    HT_INFO("Starting the server...");
-
-    server.serve();
 
     g_metrics_handler->start_collecting();
     g_metrics_handler.reset();
