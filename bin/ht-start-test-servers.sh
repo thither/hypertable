@@ -36,6 +36,7 @@ usage_exit() {
   echo "  --heapcheck-rangeserver  Pass --heapcheck option to ht-start-rangeserver.sh"
   echo "  --valgrind-rangeserver   Pass --valgrind option to ht-start-rangeserver.sh"
   echo "  --valgrind-thriftbroker  Pass --valgrind option to ht-start-thriftbroker.sh"
+  echo "  --opt--Any  			   Pass --Any option to ht start all-servers"
   echo
   echo "Starts all Hypertable processes on localhost.  By default, the local filesystem"
   echo "broker is started.  Alternatively, the environment varibale HT_TEST_FS can be"
@@ -61,6 +62,7 @@ while [ $# -gt 0 ]; do
     --clear)              clear=1;;
     -h|--help)            usage_exit;;
     --val*|--no*|--heap*) opts[${#opts[*]}]=$1;;
+    --opt-*) 			  tmp=$1;opts[${#opts[*]}]=${tmp:5};;
     *)                    break;;
   esac
   shift

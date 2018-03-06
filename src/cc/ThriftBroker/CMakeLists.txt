@@ -63,7 +63,7 @@ HT_ADD_TEST(
 	NAME ThriftClientZ-cpp
 	SRCS tests/zclient_test.cc
 	TARGETS HyperThrift HyperCommon Hypertable 
-	PRE_CMD "env  bash -c ${INSTALL_DIR}/bin/ht-start-test-servers.sh --clear --thrift-transport=zlib;"
+	PRE_CMD "env  bash -c ${INSTALL_DIR}/bin/ht-start-test-servers.sh --clear --opt--thrift-transport=zlib;"
 )
 # regression test for SerializedCellsWriter/SerializedCellsReader
 HT_ADD_TEST(
