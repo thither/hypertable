@@ -56,6 +56,23 @@ set(ThriftBroker_SRCS ThriftBroker.cc MetricsHandler.cc)
 add_executable(htThriftBroker ${ThriftBroker_SRCS})
 target_link_libraries(htThriftBroker HyperThriftConfig HyperAppHelper)
 
+
+### ZLIB TRANSPORT TESTS
+# Basic regression test
+HT_ADD_TEST(
+	NAME ThriftClientZ-cpp
+	SRCS tests/zclient_test.cc
+	TARGETS HyperThrift HyperCommon Hypertable 
+	PRE_CMD "env  bash -c ${INSTALL_DIR}/bin/ht-start-test-servers.sh --clear --thrift-transport=zlib;"
+)
+# regression test for SerializedCellsWriter/SerializedCellsReader
+HT_ADD_TEST(
+	NAME ThriftClientZ-cpp-Serialized
+	SRCS tests/zclient_test.cc
+	TARGETS HyperThrift HyperCommon Hypertable 	
+	POST_CMD "env  bash -c ${INSTALL_DIR}/bin/ht-start-test-servers.sh --clear;"
+)
+
 ### FRAMED TRANSPORT TESTS
 # Basic regression test
 HT_ADD_TEST(
@@ -69,21 +86,6 @@ HT_ADD_TEST(
 	SRCS tests/serialized_test.cc
 	TARGETS HyperThrift HyperCommon Hypertable 
 )
-
-### ZLIB TRANSPORT TESTS
-# Basic regression test
-HT_ADD_TEST(
-	NAME ThriftZClient-cpp
-	SRCS tests/zclient_test.cc
-	TARGETS HyperThrift HyperCommon Hypertable 
-)
-# regression test for SerializedCellsWriter/SerializedCellsReader
-HT_ADD_TEST(
-	NAME ThriftZClient-cpp-Serialized
-	SRCS tests/zclient_test.cc
-	TARGETS HyperThrift HyperCommon Hypertable 
-)
-
 
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
   install(TARGETS HyperThrift HyperThriftConfig htThriftBroker

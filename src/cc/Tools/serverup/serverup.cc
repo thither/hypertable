@@ -87,6 +87,7 @@ namespace {
           ("host", str(), "Specifies the hostname of the server(s)")
           ("display-address", boo()->default_value(false),
            "Displays hostname and port of the server(s), then exits")
+          ("thrift-transport", str(), "thrift-transport")
           ;
       cmdline_hidden_desc().add_options()("server-name", str(), "");
       cmdline_positional_desc().add("server-name", -1);
@@ -331,9 +332,9 @@ namespace {
 
     String table_id;
     InetAddr addr(get_str("thrift-host"), get_i16("thrift-port"));
-
+	
     try {
-      Thrift::Client client(get_str("thrift-host"), get_i16("thrift-port"));
+      Thrift::Client client(get_str("thrift-transport"), get_str("thrift-host"), get_i16("thrift-port"));
       ThriftGen::Namespace ns = client.open_namespace("sys");
       client.get_table_id(table_id, ns, "METADATA");
       client.namespace_close(ns);

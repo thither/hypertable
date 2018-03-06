@@ -270,8 +270,12 @@ endfunction()
 	# )
 function(HT_ADD_TEST)
 	set(oneValueArgs NAME)
-	set(multiValueArgs SRCS TARGETS EXT_DEPS ARGS)
+	set(multiValueArgs SRCS TARGETS EXT_DEPS ARGS POST_CMD PRE_CMD)
 	cmake_parse_arguments(HT_ADD_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+	
+	if(HT_ADD_TEST_PRE_CMD)
+		add_test(Test-Env-Pre-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_PRE_CMD})
+	endif ()
 
 	if (HT_ENABLE_SHARED AND (BUILD_SHARED_LIBS OR (NOT HT_TEST_WITH OR HT_TEST_WITH STREQUAL "SHARED" OR HT_TEST_WITH STREQUAL "BOTH")))
 		add_executable(testShared-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_SRCS})
@@ -293,4 +297,8 @@ function(HT_ADD_TEST)
 		add_test(${HT_ADD_TEST_NAME}-wStatic testStatic-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_ARGS})
 	endif ()
 	
+	if(HT_ADD_TEST_POST_CMD)
+		add_test(Test-Env-Post-${HT_ADD_TEST_NAME} ${HT_ADD_TEST_POST_CMD})
+	endif ()
+
 endfunction()

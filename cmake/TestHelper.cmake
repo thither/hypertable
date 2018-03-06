@@ -40,7 +40,6 @@ add_custom_command(
   DEPENDS   ${INSTALLED_SERVERS}
   COMMENT   "Starting test servers"
 )
-
 add_custom_target(runtestservers DEPENDS ${TEST_SERVERS_STARTED})
 
 macro(add_test_target target dir)
@@ -54,3 +53,4 @@ endmacro()
 add_test_target(alltests ${HYPERTABLE_BINARY_DIR})
 add_test_target(coretests ${HYPERTABLE_BINARY_DIR}/src)
 add_test_target(moretests ${HYPERTABLE_BINARY_DIR}/tests/integration)
+
