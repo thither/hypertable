@@ -28,6 +28,7 @@
 #define FsBroker_Lib_Client_h
 
 #include <FsBroker/Lib/ClientBufferedReaderHandler.h>
+#include <FsBroker/Lib/OpenFileMap.h>
 
 #include <AsyncComm/Comm.h>
 #include <AsyncComm/ConnectionManager.h>
@@ -48,6 +49,26 @@ namespace Lib {
 
   /// @addtogroup FsBrokerLib
   /// @{
+
+	class FsClientOpenFD : public OpenFileData {
+	public:
+		FsClientOpenFD(const String &fname, int _fd, int _flags) : fd(_fd), flags(_flags), name(fname) { }
+		virtual ~FsClientOpenFD() {}
+		int  fd;
+		uint32_t flags;
+		String name;
+		uint64_t pos;
+	};
+
+	class FsClientOpenFDPtr : public OpenFileDataPtr {
+	public:
+		FsClientOpenFDPtr() : OpenFileDataPtr() { }
+		FsClientOpenFDPtr(FsClientOpenFD *ofdl)
+			: OpenFileDataPtr(ofdl) { }
+		FsClientOpenFD *operator->() const {
+			return (FsClientOpenFD *)get();
+		}
+	};
 
   /** Proxy class for FS broker.  As specified in the general contract for a
    * Filesystem, commands that operate on the same file descriptor are
@@ -108,9 +129,10 @@ namespace Lib {
      */
     bool wait_for_connection(uint32_t max_wait_ms) {
       if (m_conn_mgr)
-	return m_conn_mgr->wait_for_connection(m_addr, max_wait_ms);
+			return m_conn_mgr->wait_for_connection(m_addr, max_wait_ms);
       return true;
     }
+	bool wait_for_connection(int e_code, const String &e_desc);
 
     void open(const String &name, uint32_t flags, DispatchHandler *handler) override;
     int open(const String &name, uint32_t flags) override;
@@ -233,7 +255,6 @@ namespace Lib {
 		@param e last exception
 		@param e_desc last error description (added to waiting for connection Exception)
 	*/
-	bool re_connect(int e_code, const Exception &e, const String &e_desc);
 	int m_dfsclient_retries = 0;
 	//  
 	// A way around to fix fsbroker comm failure cause 
@@ -243,6 +264,9 @@ namespace Lib {
 	// at success of a re-request m_dfsclient_retries would go back to zero state
 	// supporting configureation option can be hypretable.fsbroker.ClientRetries
 	// this will allow failure-tolerance to fsbrokers restarts at run time.
+
+	OpenFileMap m_files_map;
+	// std::shared_ptr<FsClientOpenFileTrack> m_files_map;
   };
 
   /// Smart pointer to Client

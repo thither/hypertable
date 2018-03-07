@@ -121,16 +121,21 @@ Client::~Client() {
   */
 }
 
-bool Client::re_connect(int e_code, const Exception &e, const String &e_desc) {
+bool 
+Client::wait_for_connection(int e_code, const String &e_desc) {
 	if (m_dfsclient_retries < 10 && (
 		e_code == Error::COMM_NOT_CONNECTED ||
 		e_code == Error::COMM_BROKEN_CONNECTION ||
 		e_code == Error::COMM_CONNECT_ERROR ||
-		e_code == Error::COMM_SEND_ERROR)) {
+		e_code == Error::COMM_SEND_ERROR ||
+		e_code == Error::FSBROKER_BAD_FILE_HANDLE ||
+		e_code == Error::FSBROKER_IO_ERROR)) {
 
 		lock_guard<mutex> lock(m_mutex);
 		if (m_dfsclient_retries == 10 && !m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms))
-			HT_THROW2F(e.code(), e, "Timed out waiting for connection to FS Broker, tried %d times - %s", m_dfsclient_retries, e_desc.c_str());
+			HT_THROW(e_code,
+				format("Timed out waiting for connection to FS Broker, tried %d times - %s", 
+														m_dfsclient_retries, e_desc.c_str()));
 		else {
 			m_dfsclient_retries = 0;
 			return true;
@@ -152,7 +157,7 @@ Client::open(const String &name, uint32_t flags, DispatchHandler *handler) {
     send_message(cbuf, handler);
   }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format("Error opening FS file: %s", name.c_str()))) {
+	  if (wait_for_connection(e.code(), format("Error opening FS file: %s", name.c_str()))) {
 		  delete &header;
 		  delete &params;
 		  delete &cbuf;
@@ -182,10 +187,13 @@ Client::open(const String &name, uint32_t flags) {
 
     int32_t fd;
     decode_response_open(event, &fd);
+
+	FsClientOpenFDPtr ofd(new FsClientOpenFD(name, fd, flags));
+	m_files_map.create(fd, ofd);
     return fd;
   }
   catch (Exception &e) {
-	if(Client::re_connect(e.code(), e, format("Error opening FS file: %s", name.c_str()))) {
+	if(wait_for_connection(e.code(), format("Error opening FS file: %s", name.c_str()))) {
 		delete &sync_handler;
 		delete &event;
 		delete &header;
@@ -214,6 +222,8 @@ Client::open_buffered(const String &name, uint32_t flags, uint32_t buf_size,
           new ClientBufferedReaderHandler(this, fd, buf_size, outstanding,
                                           start_offset, end_offset);
     }
+	FsClientOpenFDPtr ofd(new FsClientOpenFD(name, fd, flags));
+	m_files_map.create(fd, ofd);
     return fd;
   }
   catch (Exception &e) {
@@ -250,7 +260,7 @@ Client::create(const String &name, uint32_t flags, int32_t bufsz,
     send_message(cbuf, handler);
   }
   catch (Exception &e) {
-	if (Client::re_connect(e.code(), e, format("Error creating FS file: %s:", name.c_str()))) {
+	if (wait_for_connection(e.code(), format("Error creating FS file: %s:", name.c_str()))) {
 		delete &header;
 		delete &params;
 		delete &cbuf;
@@ -281,10 +291,13 @@ Client::create(const String &name, uint32_t flags, int32_t bufsz,
 
     int32_t fd;
     decode_response_create(event, &fd);
+
+	FsClientOpenFDPtr ofd(new FsClientOpenFD(name, fd, flags));
+	m_files_map.create(fd, ofd);
     return fd;
   }
   catch (Exception &e) {
-	if (Client::re_connect(e.code(), e, format("Error creating FS file: %s:", name.c_str()))) {
+	if (wait_for_connection(e.code(), format("Error creating FS file: %s:", name.c_str()))) {
 		delete &sync_handler;
 		delete &event;
 		delete &header;
@@ -322,16 +335,10 @@ Client::close(int32_t fd, DispatchHandler *handler) {
   delete reader_handler;
 
   try {
+	m_files_map.remove(fd);
     send_message(cbuf, handler);
   }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format("Error closing FS fd: %d", (int)fd))) {
-		delete &header;
-		delete &params;
-		delete &cbuf;
-		close(fd, handler);
-		return;
-	}
     HT_THROW2F(e.code(), e, "Error closing FS fd: %d", (int)fd);
   }
 }
@@ -358,6 +365,7 @@ Client::close(int32_t fd) {
   delete reader_handler;
 
   try {
+	m_files_map.remove(fd);
     send_message(cbuf, &sync_handler);
 
     if (!sync_handler.wait_for_reply(event))
@@ -365,15 +373,6 @@ Client::close(int32_t fd) {
                Protocol::string_format_message(event).c_str());
   }
   catch(Exception &e) {
-	if (Client::re_connect(e.code(), e, format("Error closing FS fd: %d", (int)fd))) {
-		delete &sync_handler;
-		delete &header;
-		delete &event;
-		delete &params;
-		delete &cbuf;
-		close(fd);
-		return;
-	}
     HT_THROW2F(e.code(), e, "Error closing FS fd: %d", (int)fd);
   }
 }
@@ -556,6 +555,22 @@ Client::seek(int32_t fd, uint64_t offset, DispatchHandler *handler) {
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
+	 if (wait_for_connection(e.code(), format("Error seeking to %llu on FS fd %d", (Llu)offset, (int)fd))) {
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+
+		  FsClientOpenFDPtr ofd;
+		  bool efd = m_files_map.remove(fd, ofd);
+		  if (efd) {
+			  fd = open(ofd->name, ofd->flags);
+			  if (fd != -1) {
+				  seek(fd, offset, handler);
+				  return;
+			  }
+		  }
+	}
+
     HT_THROW2F(e.code(), e, "Error seeking to %llu on FS fd %d",
                (Llu)offset, (int)fd);
   }
@@ -564,25 +579,48 @@ Client::seek(int32_t fd, uint64_t offset, DispatchHandler *handler) {
 
 void
 Client::seek(int32_t fd, uint64_t offset) {
-  DispatchHandlerSynchronizer sync_handler;
-  EventPtr event;
-  CommHeader header(Request::Handler::Factory::FUNCTION_SEEK);
-  header.gid = fd;
-  Request::Parameters::Seek params(fd, offset);
-  CommBufPtr cbuf( new CommBuf(header, params.encoded_length()) );
-  params.encode(cbuf->get_data_ptr_address());
+	DispatchHandlerSynchronizer sync_handler;
+	EventPtr event;
+	CommHeader header(Request::Handler::Factory::FUNCTION_SEEK);
+	header.gid = fd;
+	Request::Parameters::Seek params(fd, offset);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
 
-  try {
-    send_message(cbuf, &sync_handler);
+	int e_code = 0;
+	String e_desc;
+	try { send_message(cbuf, &sync_handler); }
+	catch (Exception &e) { 
+		e_code = e.code();
+		e_desc = format("Error seeking to %llu on FS fd %d", (Llu)offset, (int)fd);
+	}
+	if (!e_code) {
+		if (!sync_handler.wait_for_reply(event)) {
+			e_code = Protocol::response_code(event.get());
+			e_desc = (String)format("Error seek %d: %s", (int)e_code, Protocol::string_format_message(event).c_str());
+		}
+		else { return; }
+	}
 
-    if (!sync_handler.wait_for_reply(event))
-      HT_THROW(Protocol::response_code(event.get()),
-               Protocol::string_format_message(event).c_str());
-  }
-  catch (Exception &e) {
-    HT_THROW2F(e.code(), e, "Error seeking to %llu on FS fd %d",
-               (Llu)offset, (int)fd);
-  }
+	if (wait_for_connection(e_code, e_desc)) {
+		delete &sync_handler;
+		delete &event;
+		delete &header;
+		delete &params;
+		delete &cbuf;
+
+		FsClientOpenFDPtr ofd;
+		bool efd = m_files_map.remove(fd, ofd);
+		if (efd) {
+			fd = open(ofd->name, ofd->flags);
+			if (fd != -1) {
+				seek(fd, offset);
+				return;
+			}
+		}
+	}
+	if(e_code)
+		HT_THROW(e_code, e_desc);
 }
 
 
@@ -597,7 +635,7 @@ Client::remove(const String &name, DispatchHandler *handler) {
 	  send_message(cbuf, handler); 
   }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format("Error removing FS file: %s:", name.c_str()))) {
+	  if (wait_for_connection(e.code(), format("Error removing FS file: %s:", name.c_str()))) {
 		  delete &header;
 		  delete &params;
 		  delete &cbuf; 
@@ -628,7 +666,7 @@ Client::remove(const String &name, bool force) {
     }
   }
   catch (Exception &e) {
-	if (Client::re_connect(e.code(), e, format("Error removing FS file: %s:", name.c_str()))) {
+	if (wait_for_connection(e.code(), format("Error removing FS file: %s:", name.c_str()))) {
 		delete &sync_handler;
 		delete &event;
 		delete &params;
@@ -700,7 +738,7 @@ void Client::length(const String &name, bool accurate,
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format("Error sending length request for FS file: %s", name.c_str()))) {
+	  if (wait_for_connection(e.code(), format("Error sending length request for FS file: %s", name.c_str()))) {
 		  delete &header;
 		  delete &params;
 		  delete &cbuf;
@@ -731,7 +769,7 @@ int64_t Client::length(const String &name, bool accurate) {
     return decode_response_length(event);
   }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format("Error getting length ofr FS file: %s", name.c_str()))) {
+	  if (wait_for_connection(e.code(), format("Error getting length ofr FS file: %s", name.c_str()))) {
 		  delete &sync_handler;
 		  delete &event;
 		  delete &header;
@@ -769,8 +807,24 @@ Client::pread(int32_t fd, size_t len, uint64_t offset,
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
-    HT_THROW2F(e.code(), e, "Error sending pread request at byte %llu "
-               "on FS fd %d", (Llu)offset, (int)fd);
+	  int e_code = e.code();
+	  String e_desc = format("Error sending pread request at byte %llu on FS fd %d",
+															(Llu)offset, (int)fd);
+	  if (wait_for_connection(e_code, e_desc)) {
+		  delete &header;
+		  delete &params;
+		  delete &cbuf;
+
+		  FsClientOpenFDPtr ofd;
+		  bool efd = m_files_map.remove(fd, ofd);
+		  if (efd) {
+			  fd = open(ofd->name, ofd->flags);
+			  if (fd != -1) {
+				  return pread(fd, len, offset, verify_checksum, handler);
+			  }
+		  }
+	  }
+    HT_THROW2(e_code, e, e_desc);
   }
 }
 
@@ -785,25 +839,46 @@ Client::pread(int32_t fd, void *dst, size_t len, uint64_t offset, bool verify_ch
   CommBufPtr cbuf( new CommBuf(header, params.encoded_length()) );
   params.encode(cbuf->get_data_ptr_address());
 
-  try {
-    send_message(cbuf, &sync_handler);
-
-    if (!sync_handler.wait_for_reply(event))
-      HT_THROW(Protocol::response_code(event.get()),
-               Protocol::string_format_message(event).c_str());
-
-    uint32_t length;
-    uint64_t off;
-    const void *data;
-    decode_response_pread(event, &data, &off, &length);
-    HT_ASSERT(length <= len);
-    memcpy(dst, data, length);
-    return length;
-  }
+  int e_code = 0;
+  String e_desc;
+  try { send_message(cbuf, &sync_handler); }
   catch (Exception &e) {
-    HT_THROW2F(e.code(), e, "Error preading at byte %llu on FS fd %d",
-               (Llu)offset, (int)fd);
+	  e_code = e.code();
+	  e_desc = format("Error preading at byte %llu on FS fd %d", (Llu)offset, (int)fd);
   }
+  if (!e_code) {
+	  if (!sync_handler.wait_for_reply(event)) {
+		  e_code = Protocol::response_code(event.get());
+		  e_desc = format("Error seek %d: %s", (int)e_code, Protocol::string_format_message(event).c_str());
+	  }
+	  else {
+		  uint32_t length;
+		  uint64_t off;
+		  const void *data;
+		  decode_response_pread(event, &data, &off, &length);
+		  HT_ASSERT(length <= len);
+		  memcpy(dst, data, length);
+		  return length;  
+	  }
+  }
+  if (wait_for_connection(e_code, e_desc)) {
+	  delete &sync_handler;
+	  delete &event;
+	  delete &header;
+	  delete &params;
+	  delete &cbuf;
+
+	  FsClientOpenFDPtr ofd;
+	  bool efd = m_files_map.remove(fd, ofd);
+	  if (efd) {
+		  fd = open(ofd->name, ofd->flags);
+		  if (fd != -1) {
+			  return pread(fd, dst, len, offset, verify_checksum);
+		  }
+	  }
+  }
+  if (e_code){ HT_THROW(e_code, e_desc); }
+  return (uint32_t)-1;
 }
 
 void Client::decode_response_pread(EventPtr &event, const void **buffer,
@@ -819,7 +894,7 @@ void Client::mkdirs(const String &name, DispatchHandler *handler) {
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format("Error sending mkdirs request for FS directory: %s", name.c_str()))) {
+	  if (wait_for_connection(e.code(), format("Error sending mkdirs request for FS directory: %s", name.c_str()))) {
 		  delete &header;
 		  delete &params;
 		  delete &cbuf;
@@ -849,7 +924,7 @@ Client::mkdirs(const String &name) {
                Protocol::string_format_message(event).c_str());
   }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format("Error mkdirs FS directory %s", name.c_str()))) {
+	  if (wait_for_connection(e.code(), format("Error mkdirs FS directory %s", name.c_str()))) {
 		  delete &sync_handler;
 		  delete &event;
 		  delete &header;
@@ -932,8 +1007,7 @@ void Client::rmdir(const String &name, DispatchHandler *handler) {
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, 
-		  format("Error sending rmdir request for FS directory: %s", name.c_str()))) {
+	  if (wait_for_connection(e.code(), format("Error sending rmdir request for FS directory: %s", name.c_str()))) {
 		  delete &header;
 		  delete &params;
 		  delete &cbuf;
@@ -966,7 +1040,7 @@ Client::rmdir(const String &name, bool force) {
     }
   }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format("Error removing FS directory: %s", name.c_str()))) {
+	  if (wait_for_connection(e.code(), format("Error removing FS directory: %s", name.c_str()))) {
 		  delete &sync_handler;
 		  delete &event;
 		  delete &header;
@@ -988,7 +1062,7 @@ void Client::readdir(const String &name, DispatchHandler *handler) {
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format(
+	  if (wait_for_connection(e.code(), format(
 		  "Error sending readdir request for FS directory: %s", name.c_str()))) {
 		  delete &header;
 		  delete &params;
@@ -1020,7 +1094,7 @@ void Client::readdir(const String &name, std::vector<Dirent> &listing) {
     decode_response_readdir(event, listing);
   }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format(
+	  if (wait_for_connection(e.code(), format(
 		  "Error reading directory entries for FS directory: %s", name.c_str()))) {
 		  delete &sync_handler;
 		  delete &event;
@@ -1059,7 +1133,7 @@ void Client::exists(const String &name, DispatchHandler *handler) {
 
   try { send_message(cbuf, handler); }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format(
+	  if (wait_for_connection(e.code(), format(
 		  "sending 'exists' request for FS path: %s", name.c_str()))) {
 		  delete &header;
 		  delete &params;
@@ -1091,7 +1165,7 @@ bool Client::exists(const String &name) {
     return decode_response_exists(event);
   }
   catch (Exception &e) {
-	  if (Client::re_connect(e.code(), e, format(
+	  if (wait_for_connection(e.code(), format(
 		  "Error checking existence of FS path: %s", name.c_str()))) {
 		  delete &sync_handler;
 		  delete &event;
