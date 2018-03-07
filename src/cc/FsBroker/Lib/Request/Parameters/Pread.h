@@ -79,8 +79,6 @@ namespace Parameters {
     /// @return Verify checksum flag
     bool get_verify_checksum() { return m_verify_checksum; }
 
-	virtual ~Pread() {}
-
   private:
 
     uint8_t encoding_version() const override;

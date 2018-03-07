@@ -72,8 +72,6 @@ namespace Parameters {
     /// @return Buffer size
     int32_t get_buffer_size() { return m_bufsz; }
 
-	virtual ~Open() {}
-
   private:
 
     uint8_t encoding_version() const override;

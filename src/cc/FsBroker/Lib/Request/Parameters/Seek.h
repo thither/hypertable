@@ -65,8 +65,6 @@ namespace Parameters {
     /// @return File offset
     uint64_t get_offset() { return m_offset; }
 
-	virtual ~Seek() {}
-
   private:
 
     uint8_t encoding_version() const override;

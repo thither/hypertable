@@ -60,8 +60,6 @@ namespace Parameters {
     /// @return Directory name
     const char *get_dirname() { return m_dirname.c_str(); }
 
-	virtual ~Rmdir() {}
-
   private:
 
     uint8_t encoding_version() const override;
