@@ -69,19 +69,20 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$clear" ]; then
-  $INSTALL_DIR/bin/ht-start-fsbroker.sh $HT_TEST_FS
-  $INSTALL_DIR/bin/ht destroy-database "$@"
+	$INSTALL_DIR/bin/ht-start-fsbroker.sh $HT_TEST_FS
+	$INSTALL_DIR/bin/ht destroy-database "$@"
+	
+	PIDS1=`ps auxww | fgrep "$INSTALL_DIR/bin/ht" | grep -v "ht-start-test-servers.sh" | fgrep -v grep | tr -s "[ ]" | cut -f2 -d' '`
+	PIDS2=`ps auxww | fgrep "org.hypertable.FsBroker.hadoop.main" | fgrep -v grep | tr -s "[ ]" | cut -f2 -d' '`
+	if [ -n "$PIDS1" ] || [ -n "$PIDS2" ]; then
+		COUNT=`echo "$PIDS1 $PIDS2" | wc -w`
+		echo "Sending SIGKILL to $COUNT processes ..."
+		kill -9 `echo "$PIDS1 $PIDS2"`
+	fi
 else
   $INSTALL_DIR/bin/ht stop servers "$@"
 fi
   
-PIDS1=`ps auxww | fgrep "$INSTALL_DIR/bin/ht" | grep -v "ht-start-test-servers.sh" | fgrep -v grep | tr -s "[ ]" | cut -f2 -d' '`
-PIDS2=`ps auxww | fgrep "org.hypertable.FsBroker.hadoop.main" | fgrep -v grep | tr -s "[ ]" | cut -f2 -d' '`
-if [ -n "$PIDS1" ] || [ -n "$PIDS2" ]; then
-   COUNT=`echo "$PIDS1 $PIDS2" | wc -w`
-   echo "Sending SIGKILL to $COUNT processes ..."
-   kill -9 `echo "$PIDS1 $PIDS2"`
-fi
 
 $INSTALL_DIR/bin/ht start all-servers "${opts[@]}" $HT_TEST_FS "$@"
 sleep 3
