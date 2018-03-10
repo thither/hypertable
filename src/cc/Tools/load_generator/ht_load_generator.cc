@@ -102,6 +102,7 @@ namespace {
          "Generate load via Thrift interface instead of C++ client library")
         ("version", "Show version information and exit")
         ("overwrite-delete-flag", str(), "Force delete flag (DELETE_ROW, DELETE_CELL, DELETE_COLUMN_FAMILY)")
+		("thrift-transport", str()->default_value("framed"), "ThriftBroker.Transport")
         ;
       alias("delete-percentage", "DataGenerator.DeletePercentage");
       alias("max-bytes", "DataGenerator.MaxBytes");

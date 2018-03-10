@@ -11,7 +11,7 @@ echo "======================="
 \rm -rf $HT_HOME/run/monitoring
 \rm -rf $HT_HOME/log/*
 
-# start the cluster and load it with data
+# start the cluster and load it with data  #  --opt--thrift-transport=zlib 
 $HT_HOME/bin/ht-start-test-servers.sh --clear
 sleep 5
 
