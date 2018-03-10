@@ -20,9 +20,11 @@ $HT_HOME/bin/ht shell --no-prompt < $SCRIPT_DIR/create-table.hql
 
 # and write a few cells, just so that the ThriftBroker generates and caches
 # its internal handles
+# if test-servers started with --opt--thrift-transport=zlib 
+# ht_load_generator require --thrift-transport=zlib  
 $HT_HOME/bin/ht ht_load_generator update --spec-file=${SCRIPT_DIR}/data.spec \
         --table=LoadTest --thrift --max-keys=10 2>&1
-
+		
 if [ $? -ne "0" ];
 then
     echo "load generator failed"
