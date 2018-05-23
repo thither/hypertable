@@ -28,6 +28,30 @@ Configuration options with cmake:
         (default is the available setup of hadoop)
         
         -Dhdfs_vers=apache-2.7.5,apache-1.1.0,apache-1.1.1,apache-1.2.1
+        
+  Optimizations of compilation, cmake configuration arguments HT_ENABLE_SHARED, BUILD_WITH_STATIC, HT_TEST_WITH and HT_O_LEVEL(predefined combinations of arguments) compiler flags -O3 with LTO support starts with HT_O_LEVEL=4 default optimization level is 3:
+        
+        -DHT_O_LEVEL=[1-6]
+        
+   1: Optimals for debugging (fast)                 
+        (HT_ENABLE_SHARED=ON HT_TEST_WITH=SHARED)
+        
+   2: Optimals for Integrations and Storage space   
+        (BUILD_SHARED_LIBS=ON BUILD_WITH_STATIC=OFF)
+        
+   3: Optimals for Integrations and Storage space 
+        (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=OFF HT_TEST_WITH=SHARED)
+        
+   4: Optimals for Integrations and Performance     
+        (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=OFF HT_TEST_WITH=SHARED +Flags -O3 LTO)
+        
+   5: Optimals for Integrations, Performance and Memory with testing
+        (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=ON HT_TEST_WITH=BOTH +Flags -O3 LTO)
+        
+   6: Optimals for Integrations, Performance and Memory without testing
+        (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=ON HT_TEST_WITH=NONE +Flags -O3 LTO)
+        
+        
 
 To configuration options of "languages" and "fsbrokers", follow apply:
    - default is "all" and "none" should be used for None,
