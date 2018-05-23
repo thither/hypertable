@@ -29,7 +29,7 @@ Configuration options with cmake:
         
         -Dhdfs_vers=apache-2.7.5,apache-1.1.0,apache-1.1.1,apache-1.2.1
         
-  Optimizations of compilation, cmake configuration arguments HT_ENABLE_SHARED, BUILD_WITH_STATIC, HT_TEST_WITH and HT_O_LEVEL(predefined combinations of arguments) compiler flags -O3 with LTO support starts with HT_O_LEVEL=4 default optimization level is 3:
+  Compilation Optimizations, cmake arguments HT_ENABLE_SHARED, BUILD_WITH_STATIC, HT_TEST_WITH and HT_O_LEVEL(predefined arguments combinations) with HT_O_LEVEL=4 compiler flags -O3 with LTO support are added,  default optimization level is 3:
         
         -DHT_O_LEVEL=[1-6]
         
