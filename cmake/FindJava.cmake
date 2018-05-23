@@ -54,7 +54,7 @@ if (JAVAC_RETURN STREQUAL "0")
   message(STATUS "Java Compiler: ${JAVAC_OUT}")
   message(STATUS "Java headers at: ${JAVA_INCLUDE_PATH}")
   
-  if (NOT(JAVAC_OUT MATCHES "^javac 9." OR JAVAC_OUT MATCHES "^javac 9."))
+  if (NOT(JAVAC_OUT MATCHES "^javac 10." OR JAVAC_OUT MATCHES "^javac 9."))
 	string(REGEX MATCH "1\\.[6-9]\\..*" JAVAC_VERSION ${JAVAC_OUT})
 	if (NOT JAVAC_VERSION)
 		message(STATUS "    Expected JDK 1.6 or greater. Skipping Java build")
