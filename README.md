@@ -39,16 +39,16 @@ Configuration options with cmake:
    2: Optimals for Integrations and Storage space   
         (BUILD_SHARED_LIBS=ON BUILD_WITH_STATIC=OFF)
         
-   3: Optimals for Integrations and Storage space 
+   3: Optimals for Integrations and Storage space   
         (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=OFF HT_TEST_WITH=SHARED)
         
-   4: Optimals for Integrations and Performance     
+   4: Optimals for Integrations and Performance   
         (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=OFF HT_TEST_WITH=SHARED +Flags -O3 LTO)
         
-   5: Optimals for Integrations, Performance and Memory with testing
+   5: Optimals for Integrations, Performance and Memory with testing   
         (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=ON HT_TEST_WITH=BOTH +Flags -O3 LTO)
         
-   6: Optimals for Integrations, Performance and Memory without testing
+   6: Optimals for Integrations, Performance and Memory without testing   
         (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=ON HT_TEST_WITH=NONE +Flags -O3 LTO)
         
         
