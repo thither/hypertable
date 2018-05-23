@@ -13,9 +13,9 @@
     <distro.version>apache-hadoop-@HDFS_VER@</distro.version>
   </properties>
   
-  <name>Hypertable ${distro.version} FsBroker</name>
+  <name>Hypertable @HDFS_VER@ FsBroker</name>
   <groupId>org.hypertable</groupId>
-  <artifactId>ht-fsbroker-${distro.version}</artifactId>
+  <artifactId>ht-fsbroker-@HDFS_VER@</artifactId>
   <version>@VERSION@</version>
   <packaging>jar</packaging>
   

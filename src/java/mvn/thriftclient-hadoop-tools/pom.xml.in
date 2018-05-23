@@ -6,7 +6,7 @@
     <groupId>org.hypertable</groupId>
     <artifactId>uber</artifactId>
     <version>@VERSION@</version>
-	<relativePath>../../</relativePath>
+	<relativePath>../</relativePath>
   </parent>
 
   <groupId>org.hypertable</groupId>

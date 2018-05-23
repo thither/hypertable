@@ -13,9 +13,9 @@
     <distro.version>@HDFS_VER@</distro.version>
   </properties>
   
-  <name>Hypertable ${distro.version} FsBroker</name>
+  <name>Hypertable @HDFS_VER@ FsBroker</name>
   <groupId>org.hypertable</groupId>
-  <artifactId>fsbroker-cdh-${distro.version}</artifactId>
+  <artifactId>fsbroker-cdh-@HDFS_VER@</artifactId>
   <version>@VERSION@</version>
   <packaging>jar</packaging>
 
