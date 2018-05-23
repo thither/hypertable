@@ -277,13 +277,14 @@ mark_as_advanced(
 
 
 ## IF HYPERPYTHON NOT DEPRECATED
+if(LANG_PY_HYPERPYTHON)
 if(LANGS OR LANG_PY2)
 	FIND_BOOST_LIBRARY(BOOST_PYTHON2_LIB python ${Boost_PARENT} false)
 	if (BOOST_PYTHON2_LIB)	
 		set(BOOST_PYTHON2_LIB ${BOOST_PYTHON2_LIB})
 		HT_INSTALL_LIBS(lib ${BOOST_PYTHON2_LIB})	
 	elseif (LANG_PY2)		
-		message(FATAL_ERROR "Language python3 require libboost_python(2)")
+		message(FATAL_ERROR "Language python2 require libboost_python(2)")
 	endif ()
 endif ()
 
@@ -295,4 +296,5 @@ if(LANGS OR LANG_PY3)
 	elseif (LANG_PY3)		
 		message(FATAL_ERROR "Language python3 require libboost_python3")
 	endif ()
+endif ()
 endif ()
