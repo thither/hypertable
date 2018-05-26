@@ -32,12 +32,16 @@ HT_ADD_LIBS(
 	TARGETS Hypertable HyperCommon)
 
 # tests
-add_executable(unique_test tests/unique_test.cc)
-target_link_libraries(unique_test HyperAppHelper Hypertable HyperComm HyperCommon)
-add_test(HyperAppHelper-Unique unique_test)
-add_executable(error_test tests/error_test.cc)
-target_link_libraries(error_test HyperAppHelper HyperCommon)
-add_test(HyperAppHelper-Error error_test)
+HT_ADD_TEST(
+	NAME HyperAppHelper-Unique
+	SRCS tests/unique_test.cc
+	TARGETS HyperAppHelper Hypertable HyperComm HyperCommon
+)
+HT_ADD_TEST(
+	NAME HyperAppHelper-Error
+	SRCS tests/error_test.cc
+	TARGETS HyperAppHelper HyperAppHelper HyperCommon
+)
 
 configure_file(${HYPERTABLE_SOURCE_DIR}/conf/hypertable.cfg
                ${DST_DIR}/hypertable.cfg)

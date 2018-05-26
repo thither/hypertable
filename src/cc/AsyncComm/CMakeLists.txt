@@ -84,6 +84,8 @@ HT_ADD_TEST(
 	SRCS tests/commTestTimeout.cc
 	TARGETS Hypertable 
 )
+configure_file(${SRC_DIR}/commTestTimeout.golden  ${DST_DIR}/commTestTimeout.golden)
+
 
 # commTestTimer
 HT_ADD_TEST(
@@ -91,6 +93,7 @@ HT_ADD_TEST(
 	SRCS tests/commTestTimer.cc
 	TARGETS Hypertable 
 )
+configure_file(${SRC_DIR}/commTestTimer.golden ${DST_DIR}/commTestTimer.golden)
 
 # commTestReverseRequest
 HT_ADD_TEST(
@@ -98,13 +101,11 @@ HT_ADD_TEST(
 	SRCS tests/commTestReverseRequest.cc
 	TARGETS Hypertable 
 )
+configure_file(${SRC_DIR}/commTestReverseRequest.golden ${DST_DIR}/commTestReverseRequest.golden)
 
-configure_file(${SRC_DIR}/commTestTimeout.golden
-               ${DST_DIR}/commTestTimeout.golden)
-configure_file(${SRC_DIR}/commTestTimer.golden ${DST_DIR}/commTestTimer.golden)
+
+
 configure_file(${SRC_DIR}/datafile.txt ${DST_DIR}/datafile.txt)
-configure_file(${SRC_DIR}/commTestReverseRequest.golden
-               ${DST_DIR}/commTestReverseRequest.golden)
 
 add_custom_command(SOURCE ${HYPERTABLE_SOURCE_DIR}/tests/data/words.gz
     COMMAND gzip ARGS -d < ${HYPERTABLE_SOURCE_DIR}/tests/data/words.gz
