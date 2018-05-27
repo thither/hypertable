@@ -305,13 +305,16 @@ HT_ADD_TEST(
 configure_file(${SRC_DIR}/asyncApiTest.golden ${DST_DIR}/asyncApiTest.golden)
 
 # scanner_abrupt_end_test
-#HT_ADD_TEST(
+add_executable(scanner_abrupt_end_test tests/scanner_abrupt_end_test.cc)
+target_link_libraries(scanner_abrupt_end_test Hypertable)#HT_ADD_TEST(
 #	NAME Client-scanner_abrupt_end
 #	SRCS tests/scanner_abrupt_end_test.cc
 #	TARGETS Hypertable
 #)
 
 # future_abrupt_end_test
+add_executable(future_abrupt_end_test tests/future_abrupt_end_test.cc)
+target_link_libraries(future_abrupt_end_test Hypertable)
 #HT_ADD_TEST(
 #	NAME Client-future_abrupt_end
 #	SRCS tests/future_abrupt_end_test.cc
@@ -319,6 +322,8 @@ configure_file(${SRC_DIR}/asyncApiTest.golden ${DST_DIR}/asyncApiTest.golden)
 #)
 
 # future_mutator_cancel_test
+add_executable(future_mutator_cancel_test tests/future_mutator_cancel_test.cc)
+target_link_libraries(future_mutator_cancel_test Hypertable)
 #HT_ADD_TEST(
 #	NAME Client-future_mutator_cancel
 #	SRCS tests/future_mutator_cancel_test.cc
@@ -364,12 +369,14 @@ HT_ADD_TEST(
 )
 
 # MutatorNoLogSyncTest
+add_executable(MutatorNoLogSyncTest tests/MutatorNoLogSyncTest.cc)
+target_link_libraries(MutatorNoLogSyncTest Hypertable)
 #HT_ADD_TEST(
 #	NAME MutatorNoLogSyncTest
 #	SRCS tests/MutatorNoLogSyncTest.cc
 #	TARGETS Hypertable
 #)
-#configure_file (${SRC_DIR}/MutatorNoLogSyncTest.cfg ${DST_DIR}/MutatorNoLogSyncTest.cfg)
+configure_file (${SRC_DIR}/MutatorNoLogSyncTest.cfg ${DST_DIR}/MutatorNoLogSyncTest.cfg)
 
 # periodic_flush_test
 HT_ADD_TEST(
