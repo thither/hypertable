@@ -50,7 +50,10 @@ Configuration options with cmake:
         
    6: Optimals for Integrations, Performance and Memory without testing   
         (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=ON HT_TEST_WITH=NONE +Flags -O3 LTO)
-        
+       
+   -- result of flags from level=4, -flto -fuse-linker-plugin -ffat-lto-objects -O3, the static libraries file size of libHyperRanger.a for example is	200,920,572 bytes
+
+
         
 
 To configuration options of "languages" and "fsbrokers", follow apply:
