@@ -26,7 +26,7 @@ add_executable(ht_hypertable ${hypertable_SRCS})
 target_link_libraries(ht_hypertable Hypertable)
 
 
-set(SRC_DIR "${HYPERTABLE_SOURCE_DIR}/src/cc/Tools/client/hypertable")
+set(SRC_DIR "${HYPERTABLE_SOURCE_DIR}/src/cc/Tools/client/hypertable/test")
 set(DST_DIR "${HYPERTABLE_BINARY_DIR}/src/cc/Tools/client/hypertable")
 
 configure_file(${HYPERTABLE_SOURCE_DIR}/conf/hypertable.cfg
@@ -40,37 +40,37 @@ HT_ADD_TEST(
 	TARGETS Hypertable HyperComm
 	ENV "INSTALL_DIR=${INSTALL_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test/hypertable_test.sh "
 )
-configure_file(${SRC_DIR}/test/hypertable_test.golden
+configure_file(${SRC_DIR}/hypertable_test.golden
                ${DST_DIR}/hypertable_test.golden)
-configure_file(${SRC_DIR}/test/hypertable_test.hql
+configure_file(${SRC_DIR}/hypertable_test.hql
                ${DST_DIR}/hypertable_test.hql)
-configure_file(${SRC_DIR}/test/hypertable_test.tsv
+configure_file(${SRC_DIR}/hypertable_test.tsv
                ${DST_DIR}/hypertable_test.tsv)
-configure_file(${SRC_DIR}/test/hypertable_test.tsv.gz 
+configure_file(${SRC_DIR}/hypertable_test.tsv.gz 
                ${DST_DIR}/hypertable_test.tsv.gz COPYONLY)
-configure_file(${SRC_DIR}/test/indices_test.golden
+configure_file(${SRC_DIR}/indices_test.golden
                ${DST_DIR}/indices_test.golden)
-configure_file(${SRC_DIR}/test/indices_test.hql
+configure_file(${SRC_DIR}/indices_test.hql
                ${DST_DIR}/indices_test.hql)
-configure_file(${SRC_DIR}/test/indices_test_products.tsv
+configure_file(${SRC_DIR}/indices_test_products.tsv
                ${DST_DIR}/indices_test_products.tsv COPYONLY)
-configure_file(${SRC_DIR}/test/hypertable_unknown_cf.tsv
+configure_file(${SRC_DIR}/hypertable_unknown_cf.tsv
                ${DST_DIR}/hypertable_unknown_cf.tsv)
-configure_file(${SRC_DIR}/test/hypertable_ts.tsv
+configure_file(${SRC_DIR}/hypertable_ts.tsv
                ${DST_DIR}/hypertable_ts.tsv)
-configure_file(${SRC_DIR}/test/foobar.tsv
+configure_file(${SRC_DIR}/foobar.tsv
                ${DST_DIR}/foobar.tsv)
-configure_file(${SRC_DIR}/test/single_cell_test.tsv
+configure_file(${SRC_DIR}/single_cell_test.tsv
                ${DST_DIR}/single_cell_test.tsv)
-configure_file(${SRC_DIR}/test/hypertable_select_gz_test.golden
+configure_file(${SRC_DIR}/hypertable_select_gz_test.golden
                ${DST_DIR}/hypertable_select_gz_test.golden)
-configure_file(${SRC_DIR}/test/offset_test.golden
+configure_file(${SRC_DIR}/offset_test.golden
                ${DST_DIR}/offset_test.golden)
-configure_file(${SRC_DIR}/test/offset_test.hql
+configure_file(${SRC_DIR}/offset_test.hql
                ${DST_DIR}/offset_test.hql)
-configure_file(${SRC_DIR}/test/timeorder_test.golden
+configure_file(${SRC_DIR}/timeorder_test.golden
                ${DST_DIR}/timeorder_test.golden)
-configure_file(${SRC_DIR}/test/timeorder_test.hql
+configure_file(${SRC_DIR}/timeorder_test.hql
                ${DST_DIR}/timeorder_test.hql)
 
 
@@ -81,33 +81,33 @@ HT_ADD_TEST(
 	TARGETS Hypertable HyperFsBroker HyperComm
 	ENV "INSTALL_DIR=${INSTALL_DIR} "
 )
-configure_file(${SRC_DIR}/test/hypertable_ldi_select_test.golden
+configure_file(${SRC_DIR}/hypertable_ldi_select_test.golden
                ${DST_DIR}/hypertable_ldi_select_test.golden)
-configure_file(${SRC_DIR}/test/hypertable_ldi_stdin_test_load.hql
+configure_file(${SRC_DIR}/hypertable_ldi_stdin_test_load.hql
                ${DST_DIR}/hypertable_ldi_stdin_test_load.hql)
-configure_file(${SRC_DIR}/test/hypertable_ldi_stdin_test_select.hql
+configure_file(${SRC_DIR}/hypertable_ldi_stdin_test_select.hql
                ${DST_DIR}/hypertable_ldi_stdin_test_select.hql)
-configure_file(${SRC_DIR}/test/hypertable_escape_test.tsv
+configure_file(${SRC_DIR}/hypertable_escape_test.tsv
                ${DST_DIR}/hypertable_escape_test.tsv COPYONLY)
-configure_file(${SRC_DIR}/test/hypertable_escape_test.golden
+configure_file(${SRC_DIR}/hypertable_escape_test.golden
                ${DST_DIR}/hypertable_escape_test.golden COPYONLY)
 
 
 # field_separator_test
 add_test(Alternate-field-separator env INSTALL_DIR=${INSTALL_DIR}
 			bash ${CMAKE_CURRENT_SOURCE_DIR}/test/field_separator_test.sh)
-configure_file(${SRC_DIR}/test/field_separator_test.hql 
+configure_file(${SRC_DIR}/field_separator_test.hql 
 			   ${DST_DIR}/field_separator_test.hql COPYONLY)
-configure_file(${SRC_DIR}/test/field_separator_test.tsv 
+configure_file(${SRC_DIR}/field_separator_test.tsv 
 			   ${DST_DIR}/field_separator_test.tsv COPYONLY)
 
 
 # delete_test
 add_test(Delete-tsv-test env INSTALL_DIR=${INSTALL_DIR}
 			bash ${CMAKE_CURRENT_SOURCE_DIR}/test/delete_test.sh)
-configure_file(${SRC_DIR}/test/delete_test.hql
+configure_file(${SRC_DIR}/delete_test.hql
                ${DST_DIR}/delete_test.hql COPYONLY)
-configure_file(${SRC_DIR}/test/delete_test.tsv
+configure_file(${SRC_DIR}/delete_test.tsv
                ${DST_DIR}/delete_test.tsv COPYONLY)
 
 
