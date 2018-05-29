@@ -36,13 +36,13 @@ elseif (CMAKE_SYSTEM_PROCESSOR_x86 AND ${CMAKE_SYSTEM_PROCESSOR_x86} EQUAL 64)
   set(Tcmalloc_header_NAMES ${Tcmalloc_header_NAMES} unwind.h)
 endif ()
 
-# ${Tcmalloc_static_NAMES}
+# 
 HT_FASTLIB_SET(
 	NAME "TCMALLOC" 
 	REQUIRED FALSE 
 	LIB_PATHS 
 	INC_PATHS 
-	STATIC 
+	STATIC ${Tcmalloc_static_NAMES}
 	SHARED ${Tcmalloc_NAMES}
 	INCLUDE ${Tcmalloc_header_NAMES}
 )

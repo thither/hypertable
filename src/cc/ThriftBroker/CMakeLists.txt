@@ -61,15 +61,17 @@ target_link_libraries(htThriftBroker HyperThriftConfig HyperAppHelper)
 # Basic regression test
 HT_ADD_TEST(
 	NAME ThriftClientZ-cpp
-	SRCS tests/zclient_test.cc
+	SRCS tests/client_test.cc
 	TARGETS HyperThrift HyperCommon Hypertable 
+	ARGS zlib
 	PRE_CMD env bash ${INSTALL_DIR}/bin/ht-start-test-servers.sh --clear --opt--thrift-transport=zlib
 )
 # regression test for SerializedCellsWriter/SerializedCellsReader
 HT_ADD_TEST(
 	NAME ThriftClientZ-cpp-Serialized
-	SRCS tests/zclient_test.cc
+	SRCS tests/client_test.cc
 	TARGETS HyperThrift HyperCommon Hypertable 	
+	ARGS zlib
 	POST_CMD env bash ${INSTALL_DIR}/bin/ht-start-test-servers.sh --clear
 )
 
@@ -78,12 +80,14 @@ HT_ADD_TEST(
 HT_ADD_TEST(
 	NAME ThriftClient-cpp
 	SRCS tests/client_test.cc
+	ARGS framed
 	TARGETS HyperThrift HyperCommon Hypertable 
 )
 # regression test for SerializedCellsWriter/SerializedCellsReader
 HT_ADD_TEST(
 	NAME ThriftClient-cpp-Serialized
 	SRCS tests/serialized_test.cc
+	ARGS framed
 	TARGETS HyperThrift HyperCommon Hypertable 
 )
 

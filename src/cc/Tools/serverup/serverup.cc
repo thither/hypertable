@@ -334,7 +334,12 @@ namespace {
     InetAddr addr(get_str("thrift-host"), get_i16("thrift-port"));
 	
     try {
-      Thrift::Client client(get_str("thrift-transport"), get_str("thrift-host"), get_i16("thrift-port"));
+	  Thrift::Transport ttp;
+	  if (strcmp(get_str("thrift-transport").c_str(), "zlib") == 0)
+		  ttp = Thrift::Transport::ZLIB;
+	  else
+		  ttp = Thrift::Transport::FRAMED;
+      Thrift::Client client(ttp, get_str("thrift-host"), get_i16("thrift-port"));
       ThriftGen::Namespace ns = client.open_namespace("sys");
       client.get_table_id(table_id, ns, "METADATA");
       client.namespace_close(ns);

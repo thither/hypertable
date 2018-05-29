@@ -17,8 +17,6 @@
 # 02110-1301, USA.
 #
 
-set(SRC_DIR "${HYPERTABLE_SOURCE_DIR}/src/cc/Common")
-set(DST_DIR "${HYPERTABLE_BINARY_DIR}/src/cc/Common")
 
 if (APPLE)
   set(Fmemopen_SRCS fmemopen.c)
@@ -100,6 +98,8 @@ configure_file(${HYPERTABLE_SOURCE_DIR}/tests/data/words.gz
                ${HYPERTABLE_BINARY_DIR}/src/cc/Common/words.gz COPYONLY)
 
 # tests
+set(SRC_DIR "${HYPERTABLE_SOURCE_DIR}/src/cc/Common")
+set(DST_DIR "${HYPERTABLE_BINARY_DIR}/src/cc/Common")
 
 HT_ADD_TEST(
 	NAME Common-Base64

@@ -88,7 +88,7 @@ main.cc
 
 # htHyperspace
 add_executable(htHyperspace ${Master_SRCS})
-target_link_libraries(htHyperspace Hyperspace ${BDB_LIBRARIES} ${MALLOC_LIBRARY})
+target_link_libraries(htHyperspace Hyperspace ${BDB_LIBRARIES})
 
 # BerkeleyDbFilesystem test
 HT_ADD_TEST(
