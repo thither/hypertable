@@ -62,15 +62,12 @@ endif ()
 
 if (BOOST_DIR_SEARCH)
   file(TO_CMAKE_PATH ${BOOST_DIR_SEARCH} BOOST_DIR_SEARCH)
-  set(Boost_INCLUDE_DIR ${BOOST_DIR_SEARCH}/include)
+  set(BOOST_DIR_SEARCH ${BOOST_DIR_SEARCH}/include)
 endif ()
 
 if (WIN32)
   set(BOOST_DIR_SEARCH
-    C:/boost
-    D:/boost
-  )
-  set(Boost_INCLUDE_DIR
+    ${BOOST_DIR_SEARCH}
     C:/boost/include
     D:/boost/include
   )
@@ -196,7 +193,7 @@ if (Boost_INCLUDE_DIR)
   FIND_BOOST_LIBRARY(BOOST_IOSTREAMS_LIB iostreams ${Boost_PARENT} true)
   FIND_BOOST_LIBRARY(BOOST_FILESYSTEM_LIB filesystem ${Boost_PARENT} true)
   
- ## FIND_BOOST_LIBRARY(BOOST_CHRONO_LIB chrono ${Boost_PARENT} false)
+  FIND_BOOST_LIBRARY(BOOST_CHRONO_LIB chrono ${Boost_PARENT} false)
 
   if(Boost_HAS_SYSTEM_LIB)
     FIND_BOOST_LIBRARY(BOOST_SYSTEM_LIB system ${Boost_PARENT} true)
@@ -211,7 +208,7 @@ if (Boost_INCLUDE_DIR)
     message(STATUS "Boost program options lib: ${BOOST_PROGRAM_OPTIONS_LIB}")
     message(STATUS "Boost filesystem lib: ${BOOST_FILESYSTEM_LIB}")
     message(STATUS "Boost iostreams lib: ${BOOST_IOSTREAMS_LIB}")
-    ## message(STATUS "Boost chrono lib: ${BOOST_CHRONO_LIB}")
+    message(STATUS "Boost chrono lib: ${BOOST_CHRONO_LIB}")
 
     if(Boost_HAS_SYSTEM_LIB)
       message(STATUS "Boost system lib: ${BOOST_SYSTEM_LIB}")
@@ -246,19 +243,11 @@ if (Boost_INCLUDE_DIR)
     set(BOOST_LIBS ${BOOST_LIBS} ${BOOST_SYSTEM_LIB} ${BOOST_SYSTEM_MT_LIB})
   endif()
 
-  
-  
-HT_FASTLIB_SET(
-	NAME "BOOST_CHRONO" 
-	REQUIRED TRUE 
-	LIB_PATHS  ${BOOST_DIR_SEARCH}
-	STATIC libboost_chrono.a
-	SHARED boost_chrono
-)
-set(BOOST_LIBS ${BOOST_LIBS} ${BOOST_CHRONO_LIBRARIES})
+  if (NOT ${BOOST_CHRONO_LIB} MATCHES "NOTFOUND$")
+    set(BOOST_LIBS ${BOOST_LIBS} ${BOOST_CHRONO_LIB})
+  endif ()
 
-
-message(STATUS "Boost libs: ${BOOST_LIBS}")
+  message(STATUS "Boost libs: ${BOOST_LIBS}")
 
   if (EXISTS ${Boost_INCLUDE_DIR})
     set(Boost_INCLUDE_DIRS ${Boost_INCLUDE_DIR})
@@ -285,6 +274,30 @@ endif ()
 mark_as_advanced(
   Boost_INCLUDE_DIR
 )
+
+
+## IF HYPERPYTHON NOT DEPRECATED
+if(LANG_PY_HYPERPYTHON)
+if(LANGS OR LANG_PY2)
+	FIND_BOOST_LIBRARY(BOOST_PYTHON2_LIB python ${Boost_PARENT} false)
+	if (BOOST_PYTHON2_LIB)	
+		set(BOOST_PYTHON2_LIB ${BOOST_PYTHON2_LIB})
+		HT_INSTALL_LIBS(lib ${BOOST_PYTHON2_LIB})	
+	elseif (LANG_PY2)		
+		message(FATAL_ERROR "Language python2 require libboost_python(2)")
+	endif ()
+endif ()
+
+if(LANGS OR LANG_PY3)
+	FIND_BOOST_LIBRARY(BOOST_PYTHON3_LIB python3 ${Boost_PARENT} false)
+	if (BOOST_PYTHON3_LIB)	
+		set(BOOST_PYTHON3_LIB ${BOOST_PYTHON3_LIB})
+		HT_INSTALL_LIBS(lib ${BOOST_PYTHON3_LIB})
+	elseif (LANG_PY3)		
+		message(FATAL_ERROR "Language python3 require libboost_python3")
+	endif ()
+endif ()
+endif ()
 
 #set(BOOST_LIBS "")
 
@@ -345,27 +358,3 @@ mark_as_advanced(
 #	SHARED boost_chrono
 #)
 #set(BOOST_LIBS ${BOOST_LIBS} ${boost_chrono_LIBRARIES})
-
-
-## IF HYPERPYTHON NOT DEPRECATED
-if(LANG_PY_HYPERPYTHON)
-if(LANGS OR LANG_PY2)
-	FIND_BOOST_LIBRARY(BOOST_PYTHON2_LIB python ${Boost_PARENT} false)
-	if (BOOST_PYTHON2_LIB)	
-		set(BOOST_PYTHON2_LIB ${BOOST_PYTHON2_LIB})
-		HT_INSTALL_LIBS(lib ${BOOST_PYTHON2_LIB})	
-	elseif (LANG_PY2)		
-		message(FATAL_ERROR "Language python2 require libboost_python(2)")
-	endif ()
-endif ()
-
-if(LANGS OR LANG_PY3)
-	FIND_BOOST_LIBRARY(BOOST_PYTHON3_LIB python3 ${Boost_PARENT} false)
-	if (BOOST_PYTHON3_LIB)	
-		set(BOOST_PYTHON3_LIB ${BOOST_PYTHON3_LIB})
-		HT_INSTALL_LIBS(lib ${BOOST_PYTHON3_LIB})
-	elseif (LANG_PY3)		
-		message(FATAL_ERROR "Language python3 require libboost_python3")
-	endif ()
-endif ()
-endif ()
