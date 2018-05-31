@@ -94,21 +94,16 @@ configure_file(${SRC_DIR}/hypertable_escape_test.golden
 
 
 # field_separator_test
+configure_file(${SRC_DIR}/field_separator_test.tsv
+               ${DST_DIR}/field_separator_test.tsv COPYONLY)
 add_test(Alternate-field-separator env INSTALL_DIR=${INSTALL_DIR}
-			bash ${CMAKE_CURRENT_SOURCE_DIR}/test/field_separator_test.sh)
-configure_file(${SRC_DIR}/field_separator_test.hql 
-			   ${DST_DIR}/field_separator_test.hql COPYONLY)
-configure_file(${SRC_DIR}/field_separator_test.tsv 
-			   ${DST_DIR}/field_separator_test.tsv COPYONLY)
-
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/field_separator_test.sh)
 
 # delete_test
-add_test(Delete-tsv-test env INSTALL_DIR=${INSTALL_DIR}
-			bash ${CMAKE_CURRENT_SOURCE_DIR}/test/delete_test.sh)
-configure_file(${SRC_DIR}/delete_test.hql
-               ${DST_DIR}/delete_test.hql COPYONLY)
 configure_file(${SRC_DIR}/delete_test.tsv
                ${DST_DIR}/delete_test.tsv COPYONLY)
+add_test(Delete-tsv-test env INSTALL_DIR=${INSTALL_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/delete_test.sh)
 
 
 

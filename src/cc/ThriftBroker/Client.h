@@ -21,10 +21,11 @@
 #define Hypertable_ThriftBroker_Client_h
 
 // Note: do NOT add any hypertable dependencies in this file
-#include <protocol/TBinaryProtocol.h>
+
 #include <transport/TSocket.h>
 #include <transport/TTransportUtils.h>
 #include <transport/TZlibTransport.h>
+#include <protocol/TBinaryProtocol.h>
 
 #include "gen-cpp/HqlService.h"
 
@@ -33,7 +34,6 @@
 namespace Hypertable {
 	namespace Thrift {
 
-		using namespace apache::thrift;
 		using namespace apache::thrift::protocol;
 		using namespace apache::thrift::transport;
 

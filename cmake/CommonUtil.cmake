@@ -138,13 +138,15 @@ function(HT_FASTLIB_SET)
 		STATIC ${HT_FASTLIB_SET_STATIC}
 		SHARED ${HT_FASTLIB_SET_SHARED}
 	)
-	if (INCLUDE_DIRS AND LIBRARY)
-		include_directories(${INCLUDE_DIRS})
+	if ((NOT HT_FASTLIB_SET_INCLUDE OR INCLUDE_DIRS) AND LIBRARY)
 		set("${HT_FASTLIB_SET_NAME}_FOUND" TRUE)
 		set("${HT_FASTLIB_SET_NAME}_LIBRARIES" ${LIBRARY})
 		
 		message(STATUS "Found lib ${HT_FASTLIB_SET_NAME}: ${${HT_FASTLIB_SET_NAME}_LIBRARIES}")
-		message("       Include path: ${INCLUDE_DIRS}")
+		if(INCLUDE_DIRS)
+			message("       Include path: ${INCLUDE_DIRS}")
+			include_directories(${INCLUDE_DIRS})
+		endif ()
 		
 		HT_INSTALL_LIBS(lib ${${HT_FASTLIB_SET_NAME}_LIBRARIES})
 	else ()
