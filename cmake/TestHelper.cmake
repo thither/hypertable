@@ -54,3 +54,6 @@ add_test_target(alltests ${HYPERTABLE_BINARY_DIR})
 add_test_target(coretests ${HYPERTABLE_BINARY_DIR}/src)
 add_test_target(moretests ${HYPERTABLE_BINARY_DIR}/tests/integration)
 
+add_custom_target(clear-test-env)
+add_custom_command(TARGET clear-test-env COMMAND ${INSTALL_DIR}/bin/ht-destroy-database.sh)
+
