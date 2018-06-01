@@ -80,6 +80,7 @@ HT_ADD_TEST(
 	SRCS test/hypertable_ldi_select_test.cc
 	TARGETS Hypertable HyperFsBroker HyperComm
 	ENV "INSTALL_DIR=${INSTALL_DIR} "
+	POST_CMD env bash ${INSTALL_DIR}/bin/ht-start-test-servers.sh --clear
 )
 configure_file(${SRC_DIR}/hypertable_ldi_select_test.golden
                ${DST_DIR}/hypertable_ldi_select_test.golden)
