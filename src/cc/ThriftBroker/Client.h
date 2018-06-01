@@ -34,10 +34,13 @@
 namespace Hypertable {
 	namespace Thrift {
 
+		using namespace apache::thrift;
 		using namespace apache::thrift::protocol;
 		using namespace apache::thrift::transport;
 
-		// Client Transport Choices
+		// Client Transport Choices		
+		// in case name "Transport" collide with apache::thrift ns 
+		// HyperThriftTransport can be a good choice
 		enum Transport
 		{
 			FRAMED = 1,
