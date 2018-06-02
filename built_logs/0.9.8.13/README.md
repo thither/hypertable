@@ -107,7 +107,6 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
          7,441,344   libHyperThriftConfig.so
          934,124     libHyperTools.a
          5,337,864   libHyperTools.so
-         460,608     libjemalloc.so.2
          246,605     libsigar-amd64-linux.so
          12,178,800  libstdc++.so.6
          1,041,152   java/ht-common-0.9.8.13-bundled.jar
