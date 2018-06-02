@@ -1,8 +1,10 @@
 Summary supporting the release candidate version 0.9.8.13
 
 Built environment on Ubuntu 18.04(bionic) with static linking:
-    -- with dev-env tree 793d54c: https://github.com/kashirin-alex/environments-builder/tree/793d54c
-	-- cmake, make and tests log: https://github.com/kashirin-alex/hypertable/tree/0.9.8.13-rc/built_logs/0.9.8.13/built.log
+   
+   -- with dev-env tree 793d54c: https://github.com/kashirin-alex/environments-builder/tree/793d54c
+   
+   -- cmake, make and tests log: https://github.com/kashirin-alex/hypertable/tree/0.9.8.13-rc/built_logs/0.9.8.13/built.log
 	
     -- output# ./ht_system_info
          libHyperThirdParty-sigar-1.6.4
