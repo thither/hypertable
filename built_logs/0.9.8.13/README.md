@@ -116,6 +116,7 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
     py/ht-package (serialized_cells linked with libHyperCommon.a, libHyperThrift.a)
     
         -- #output ldd /usr/local/lib/python2.7/site-packages/hypertable/thrift_client/serialized_cells.so
+        size 217,376  serialized_cells.so
         linux-vdso.so.1 
         /lib64/ld-linux-x86-64.so.2 
         libstdc++.so.6               /usr/local/lib/libstdc++.so.6
@@ -128,6 +129,7 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
         libc.so.6                    /lib/x86_64-linux-gnu/libc.so.6
 	
         -- #output ldd /opt/pypy2/site-packages/hypertable/thrift_client/serialized_cells.pypy-41.so
+        size 201,368  serialized_cells.so
         linux-vdso.so.1  
         /lib64/ld-linux-x86-64.so.2  
         libstdc++.so.6               /usr/local/lib/libstdc++.so.6 
