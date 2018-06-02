@@ -54,7 +54,7 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
          14,956,800 htThriftBroker
     
     bin/ linking 
-         -- output#  ldd htRangeServer (all executables are the same)
+         output#  ldd htRangeServer (all executables are the same)
          -- to note libz, liblzma and libbz2 are linked by libboost_iostreams
          libz.so.1                          /usr/local/lib/libz.so.1
          liblzma.so.5                       /usr/local/lib/liblzma.so.5
@@ -114,29 +114,30 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
          36,190,682  java/ht-fsbroker-0.9.8.13-apache-hadoop-2.7.6-bundled.jar
    
     py/ht-package (serialized_cells linked with libHyperCommon.a, libHyperThrift.a)
-    
-        -- #output ldd /usr/local/lib/python2.7/site-packages/hypertable/thrift_client/serialized_cells.so
-        size 217,376  serialized_cells.so
-        linux-vdso.so.1 
-        /lib64/ld-linux-x86-64.so.2 
-        libstdc++.so.6               /usr/local/lib/libstdc++.so.6
-        libpython2.7.so.1.0          /usr/local/lib/libpython2.7.so.1.0
-        libgcc_s.so.1                /usr/local/lib/libgcc_s.so.1
-        libutil.so.1                 /lib/x86_64-linux-gnu/libutil.so.1
-        libpthread.so.0              /lib/x86_64-linux-gnu/libpthread.so.0
-        libm.so.6                    /lib/x86_64-linux-gnu/libm.so.6
-        libdl.so.2                   /lib/x86_64-linux-gnu/libdl.so.2
-        libc.so.6                    /lib/x86_64-linux-gnu/libc.so.6
+        Python 2.7.15:
+            size 217,376  serialized_cells.so
+        output# ldd /usr/local/lib/python2.7/site-packages/hypertable/thrift_client/serialized_cells.so
+            linux-vdso.so.1 
+            /lib64/ld-linux-x86-64.so.2 
+            libstdc++.so.6               /usr/local/lib/libstdc++.so.6
+            libpython2.7.so.1.0          /usr/local/lib/libpython2.7.so.1.0
+            libgcc_s.so.1                /usr/local/lib/libgcc_s.so.1
+            libutil.so.1                 /lib/x86_64-linux-gnu/libutil.so.1
+            libpthread.so.0              /lib/x86_64-linux-gnu/libpthread.so.0
+            libm.so.6                    /lib/x86_64-linux-gnu/libm.so.6
+            libdl.so.2                   /lib/x86_64-linux-gnu/libdl.so.2
+            libc.so.6                    /lib/x86_64-linux-gnu/libc.so.6
 	
-        -- #output ldd /opt/pypy2/site-packages/hypertable/thrift_client/serialized_cells.pypy-41.so
-        size 201,368  serialized_cells.so
-        linux-vdso.so.1  
-        /lib64/ld-linux-x86-64.so.2  
-        libstdc++.so.6               /usr/local/lib/libstdc++.so.6 
-        libgcc_s.so.1                /usr/local/lib/libgcc_s.so.1 
-        libpthread.so.0              /lib/x86_64-linux-gnu/libpthread.so.0 
-        libm.so.6                    /lib/x86_64-linux-gnu/libm.so.6 
-        libc.so.6                    /lib/x86_64-linux-gnu/libc.so.6 
+	PyPy2 6.0:
+            size 201,368  serialized_cells.so
+        output# ldd /opt/pypy2/site-packages/hypertable/thrift_client/serialized_cells.pypy-41.so
+            linux-vdso.so.1  
+            /lib64/ld-linux-x86-64.so.2  
+            libstdc++.so.6               /usr/local/lib/libstdc++.so.6 
+            libgcc_s.so.1                /usr/local/lib/libgcc_s.so.1 
+            libpthread.so.0              /lib/x86_64-linux-gnu/libpthread.so.0 
+            libm.so.6                    /lib/x86_64-linux-gnu/libm.so.6 
+            libc.so.6                    /lib/x86_64-linux-gnu/libc.so.6 
 
  
  
