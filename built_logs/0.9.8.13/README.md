@@ -1,7 +1,7 @@
 Summary supporting the release candidate version 0.9.8.13
-
+-
 Built environment on Ubuntu 18.04(bionic) with static linking:
-   
+
    -- with dev-env tree 793d54c: https://github.com/kashirin-alex/environments-builder/tree/793d54c
    
    -- cmake, make and tests log: https://github.com/kashirin-alex/hypertable/tree/0.9.8.13-rc/built_logs/0.9.8.13/built.log
@@ -114,6 +114,7 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
          36,190,682  java/ht-fsbroker-0.9.8.13-apache-hadoop-2.7.6-bundled.jar
    
     py/ht-package (serialized_cells linked with libHyperCommon.a, libHyperThrift.a)
+    
         -- #output ldd /usr/local/lib/python2.7/site-packages/hypertable/thrift_client/serialized_cells.so
         linux-vdso.so.1 
         /lib64/ld-linux-x86-64.so.2 
@@ -125,6 +126,7 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
         libm.so.6                    /lib/x86_64-linux-gnu/libm.so.6
         libdl.so.2                   /lib/x86_64-linux-gnu/libdl.so.2
         libc.so.6                    /lib/x86_64-linux-gnu/libc.so.6
+	
         -- #output ldd /opt/pypy2/site-packages/hypertable/thrift_client/serialized_cells.pypy-41.so
         linux-vdso.so.1  
         /lib64/ld-linux-x86-64.so.2  
