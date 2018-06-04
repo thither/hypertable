@@ -11,7 +11,10 @@ with open(README_RST) as readme:
 ht_home = '/opt/hypertable/@VERSION@'
 include_dirs = ['/usr/local/include', ht_home+'/include', '/usr/include']
 if 'PyPy' in sys.version:
-    include_dirs.append('/opt/pypy2/include/')
+    if sys.version_info.major == 2:
+        include_dirs.append('@PYPY2_INCLUDE_DIR@')
+    if sys.version_info.major == 3:
+        include_dirs.append('@PYPY3_INCLUDE_DIR@')
 
 extra_objects = []
 for l in [
@@ -35,7 +38,7 @@ setup(
     description='Python Extension for Hypertable',
     long_description=long_description,
 
-    #install_requires=['thrift==@THRIFT_VERSION@'],  # # OR pack with the PACKAGE
+    # install_requires=['thrift==@THRIFT_VERSION@'],  # # OR pack with the PACKAGE
 
     url='http://hypertable.com/documentation/developer_guide/python/',
     license='GPLv3',
@@ -46,9 +49,11 @@ setup(
               'hypertable.thrift_client.hyperthrift.gen',
               'hypertable.thrift_client.hyperthrift.gen2',
               ],
-	maintainer='Kashirin Alex',
-	maintainer_email='kashirin.alex@gmail.com',
-    ext_modules=[srs])
+    maintainer='Kashirin Alex',
+    maintainer_email='kashirin.alex@gmail.com',
+    ext_modules=[srs]
+)
+
 
 # /
 # setup.py

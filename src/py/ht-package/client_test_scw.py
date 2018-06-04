@@ -1,3 +1,5 @@
+# -- coding: utf-8 --
+
 from hypertable.thrift_client.thriftclient import ThriftClient
 from hypertable.thrift_client.serialized_cells import Writer
 

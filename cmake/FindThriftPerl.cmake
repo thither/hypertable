@@ -41,6 +41,9 @@ if (PERLTHRIFT_FOUND)
   install(FILES ${PERLFILES} DESTINATION lib/perl)
   install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/perl/lib/Thrift
           DESTINATION lib/perl USE_SOURCE_PERMISSIONS)
+  install( CODE "execute_process(COMMAND (yes | perl -MCPAN -e 'install Bit::Vector'))")
+  install( CODE "execute_process(COMMAND (yes | perl -MCPAN -e 'install Class::Accessor'))")
+
 else ()
     message(STATUS "Thrift for perl not found. "
                  "ThriftBroker support for perl will be disabled")

@@ -46,7 +46,7 @@ endif ()
 
 
 
-add_test(ThriftClient-ruby ruby -I ${INSTALL_DIR}/lib/rb ${CMAKE_CURRENT_SOURCE_DIR}/client_test.rb)
+add_test(ThriftClient-ruby ruby -I ${INSTALL_DIR}/lib/rb ${INSTALL_DIR}/lib/rb/client_test.rb)
 
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
   install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable DESTINATION lib/rb)
