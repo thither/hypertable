@@ -2,7 +2,7 @@ Summary supporting the release candidate version 0.9.8.13
 -
 Built environment on Ubuntu 18.04(bionic) with static linking:
 
-   -- with dev-env tree b034372: https://github.com/kashirin-alex/environments-builder/tree/b034372
+   -- with dev-env tree 84c7ea0: https://github.com/kashirin-alex/environments-builder/tree/84c7ea0
    
    -- cmake, make and tests log: https://github.com/kashirin-alex/hypertable/tree/0.9.8.13-rc/built_logs/0.9.8.13/built.log
 	
