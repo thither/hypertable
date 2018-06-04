@@ -42,6 +42,10 @@ if (RUBYTHRIFT_FOUND)
   install(FILES ${RUBYFILES} DESTINATION lib/rb)
   install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/rb/lib/thrift
           DESTINATION lib/rb USE_SOURCE_PERMISSIONS)
+		  
+  # a fix for: Unable to load thrift_native extension. Defaulting to pure Ruby libraries.
+  install( CODE "execute_process(COMMAND gem install thrift)")
+
 else ()
   message(STATUS "Thrift for ruby not found. "
                  "ThriftBroker support for ruby will be disabled")
