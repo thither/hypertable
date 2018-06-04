@@ -6,7 +6,10 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
    
    -- cmake, make and tests log: https://github.com/kashirin-alex/hypertable/tree/0.9.8.13-rc/built_logs/0.9.8.13/built.log
 	
+|
+
     -- output# ./ht_system_info
+
          libHyperThirdParty-sigar-1.6.4
          {CpuInfo: vendor='Intel' model='Core(TM) i7-4770 CPU @ 3.40GHz' mhz=3900 cache_size=8192 
 	  total_sockets=8 total_cores=8 cores_per_socket=16}
@@ -17,9 +20,11 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
          ..
          {System: install_dir='/opt/hypertable/0.9.8.13' exe_name='ht_system_info'}
          ..
-    
 
-    bin/ file sizes:
+|
+
+    /opt/hypertable/0.9.8.13/bin/ file sizes:
+ 
          4,611,192 ht_expand_hostspec
          4,995,024 ht_system_info
          5,237,744 ht_prepend_md5
@@ -54,9 +59,12 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
         13,980,928 ht_load_generator
         14,335,040 htThriftBroker
 
-    bin/ linking 
-         output#  ldd htRangeServer (all executables are the same)
-         -- to note libz, liblzma and libbz2 are linked by libboost_iostreams
+|
+
+    /opt/hypertable/0.9.8.13/bin/ linking 
+    output#  ldd htRangeServer (all executables are the same)
+    -- to note libz, liblzma and libbz2 are linked by libboost_iostreams
+	 
          libz.so.1                          /usr/local/lib/libz.so.1
          liblzma.so.5                       /usr/local/lib/liblzma.so.5
          libbz2.so.1.0                      /usr/local/lib/libbz2.so.1.0
@@ -76,7 +84,9 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
          linux-vdso.so.1 
          /lib64/ld-linux-x86-64.so.2 
 
-    lib/ file sizes:
+|
+
+    /opt/hypertable/0.9.8.13/lib/ file sizes:
              45,720 libboost_chrono.so.1.66.0 
             135,528 libboost_filesystem.so.1.66.0 
             166,280 libboost_iostreams.so.1.66.0 
@@ -116,7 +126,9 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
           9,856,562 java/ht-thriftclient-0.9.8.13-v0.10.0-bundled.jar
          57,750,326 java/ht-thriftclient-hadoop-tools-0.9.8.13-v0.10.0-bundled.jar
 
-    lib/ shared library linking
+|
+
+    /opt/hypertable/0.9.8.13/lib/ shared library linking
         output#  LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/opt/hypertable/0.9.8.13/lib/ ldd /opt/hypertable/0.9.8.13/lib/libHyperRanger.so
         libHyperComm.so        /opt/hypertable/0.9.8.13/lib/libHyperComm.so
         libHyperCommon.so      /opt/hypertable/0.9.8.13/lib/libHyperCommon.so
@@ -143,6 +155,8 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
         libdl.so.2      /lib/x86_64-linux-gnu/libdl.so.2
         /lib64/ld-linux-x86-64.so.2 
         linux-vdso.so.1 
+
+|
 
     py/ht-package (serialized_cells linked with libHyperCommon.a, libHyperThrift.a)
         Python 2.7.15:
