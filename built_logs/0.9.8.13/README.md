@@ -62,8 +62,9 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
 |
 
     /opt/hypertable/0.9.8.13/bin/ linking 
-    output#  ldd htRangeServer (all executables are the same)
-    -- to note libz, liblzma and libbz2 are linked by libboost_iostreams
+    
+        output#  ldd htRangeServer (all executables are the same)
+        -- to note libz, liblzma and libbz2 are linked by libboost_iostreams
 	 
          libz.so.1                          /usr/local/lib/libz.so.1
          liblzma.so.5                       /usr/local/lib/liblzma.so.5
@@ -87,6 +88,7 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
 |
 
     /opt/hypertable/0.9.8.13/lib/ file sizes:
+    
              45,720 libboost_chrono.so.1.66.0 
             135,528 libboost_filesystem.so.1.66.0 
             166,280 libboost_iostreams.so.1.66.0 
@@ -129,7 +131,9 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
 |
 
     /opt/hypertable/0.9.8.13/lib/ shared library linking
+    
         output#  LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/opt/hypertable/0.9.8.13/lib/ ldd /opt/hypertable/0.9.8.13/lib/libHyperRanger.so
+	
         libHyperComm.so        /opt/hypertable/0.9.8.13/lib/libHyperComm.so
         libHyperCommon.so      /opt/hypertable/0.9.8.13/lib/libHyperCommon.so
         libHyperFsBroker.so    /opt/hypertable/0.9.8.13/lib/libHyperFsBroker.so
@@ -161,7 +165,9 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
     py/ht-package (serialized_cells linked with libHyperCommon.a, libHyperThrift.a)
         Python 2.7.15:
             size 217,376  serialized_cells.so
-        output# ldd /usr/local/lib/python2.7/site-packages/hypertable/thrift_client/serialized_cells.so
+	    
+            output# ldd /usr/local/lib/python2.7/site-packages/hypertable/thrift_client/serialized_cells.so
+	    
             linux-vdso.so.1 
             /lib64/ld-linux-x86-64.so.2 
             libstdc++.so.6               /usr/local/lib/libstdc++.so.6
@@ -175,7 +181,9 @@ Built environment on Ubuntu 18.04(bionic) with static linking:
 	
 	PyPy2 6.0:
             size 201,368  serialized_cells.so
-        output# ldd /opt/pypy2/site-packages/hypertable/thrift_client/serialized_cells.pypy-41.so
+	    
+            output# ldd /opt/pypy2/site-packages/hypertable/thrift_client/serialized_cells.pypy-41.so
+	    
             linux-vdso.so.1  
             /lib64/ld-linux-x86-64.so.2  
             libstdc++.so.6               /usr/local/lib/libstdc++.so.6 
