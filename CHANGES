@@ -17,6 +17,11 @@ Version 0.9.8.13:
 	new build option linked with static libraries, except libc, libstdc++, libgcc_s and libboost all supported
  	cmake tests can be performed in dual builds on the different linking methods
 	fix for cronolog current log sym-relinking
+	thrift generate perl GenThrift and pregenerated are no longer used
+	fixes ThriftClient setup and tests for perl, ruby
+	fix setup.py.in inlcude_path is by a found PyPy2/PyPy3 headers path
+	compatabillity fixes relating to shared tests between py2/py3
+	
 	
 	
 Version 0.9.8.12:
