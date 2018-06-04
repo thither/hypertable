@@ -45,7 +45,7 @@ endif ()
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
   install(DIRECTORY Hypertable DESTINATION lib/perl)
   install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/perl/ThriftClient/gen-perl/Hypertable/ThriftGen 
-					${HYPERTABLE_BINARY_DIR}/src/perl/ThriftClient/gen-perl/Hypertable/ThriftGen 
+					${HYPERTABLE_BINARY_DIR}/src/perl/ThriftClient/gen-perl/Hypertable/ThriftGen2 
 		DESTINATION lib/perl/Hypertable)
   install(FILES client_test.pl DESTINATION lib/perl)
 endif ()
