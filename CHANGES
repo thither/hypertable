@@ -6,17 +6,22 @@ Version 0.9.8.13:
 	std::map require U__STRICT_ANSI__ flag (gcc 8.1.0) PageArenaAllocator doesn't need mapped_type 
 	fixes to warnings for memset with non-trivial type
 	ThriftClient with Zlib transport
-	new option for configuration file ThriftBroker.Transport=framed(default)/zlib
+	added new option for configuration file ThriftBroker.Transport=framed(default)/zlib
 	added --thrift-transport=framed(default)/zlib option for ht-start-*service.sh
 	added Hypertable::Thrift::Transport enum for ZLIB, FRAMED 
 	added overloader for Hypertable::Thrift::Client(Transport, std::string, int, int)
-	supporting tests for ThriftClient over zlib transport
-	libSigar, still required by hadoop/java, is now part of ThirdParty and included in libHyperThirdParty.so/a  
-	cmake new methods for more optimal build linking CommonUtil.cmake
-	new cmake options for optimizations -DHT_O_LEVEL=[1-6]
-	new build option linked with static libraries, except libc, libstdc++, libgcc_s and libboost all supported
+	added supporting tests for ThriftClient over zlib transport
+	changed libSigar, still required by hadoop/java, is now part of ThirdParty and included in libHyperThirdParty.so/a  
+	added cmake new methods for more optimal build linking CommonUtil.cmake
+	added new cmake options for optimizations -DHT_O_LEVEL=[1-6]
+	added new build option linked with static libraries, except libc, libstdc++, libgcc_s and libboost all supported
  	cmake tests can be performed in dual builds on the different linking methods
 	fix for cronolog current log sym-relinking
+	thrift generate perl GenThrift and pregenerated are no longer used
+	fixes ThriftClient setup and tests for perl, ruby
+	fix setup.py.in inlcude_path is by a found PyPy2/PyPy3 headers path
+	compatabillity fixes relating to shared tests between py2/py3
+	
 	
 	
 Version 0.9.8.12:
