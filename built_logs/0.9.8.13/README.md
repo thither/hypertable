@@ -2,8 +2,15 @@ Summary supporting the release candidate version 0.9.8.13
 -
 Built environment on Ubuntu 18.04(bionic) with static linking:
 
-   -- with dev-env tree f58ee11: https://github.com/kashirin-alex/environments-builder/tree/f58ee11
+   -- Build was made with dev-env tree 10a9ef6: https://github.com/kashirin-alex/environments-builder/tree/10a9ef6  
+   issued with 
+   	
+    nohup bash ~/builder/build-env.sh --target all --sources all &> '/root/builder/built.log' &
+    
+   Build's cmake configuration arguments
    
+    cmake `src_path` -DHT_O_LEVEL=5 -DTHRIFT_SOURCE_DIR=$BUILDS_PATH/thrift -DCMAKE_INSTALL_PREFIX=/opt/hypertable -DCMAKE_BUILD_TYPE=Release;
+    
    -- cmake, make and tests log: https://github.com/kashirin-alex/hypertable/tree/0.9.8.13-rc/built_logs/0.9.8.13/built.log
 	
 |
