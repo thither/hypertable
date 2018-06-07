@@ -58,8 +58,6 @@
 #include <transport/TTransportUtils.h>
 #include <transport/TZlibTransport.h>
 
-#include <boost/shared_ptr.hpp>
-
 #include <iostream>
 #include <iomanip>
 #include <map>
@@ -185,15 +183,8 @@ std::cout << std::chrono::duration_cast<std::chrono::seconds>(start_time.time_si
 namespace Hypertable { namespace ThriftBroker {
 
 using namespace apache::thrift;
-using namespace apache::thrift::protocol;
-using namespace apache::thrift::transport;
-using namespace apache::thrift::server;
-using namespace apache::thrift::concurrency;
-
 using namespace Config;
 using namespace ThriftGen;
-using namespace boost;
-using namespace std;
 
 
 class SharedMutatorMapKey {
@@ -3161,35 +3152,36 @@ int main(int argc, char **argv) {
     g_metrics_handler = std::make_shared<MetricsHandler>(properties, g_slow_query_log);
     g_metrics_handler->start_collecting();
 
-    boost::shared_ptr<ThriftBroker::Context> context(new ThriftBroker::Context());
+	std::shared_ptr<ThriftBroker::Context> context(new ThriftBroker::Context());
 
     g_context = context.get();
 
-    ::uint16_t port = get_i16("port");
-    boost::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
-    boost::shared_ptr<HqlServiceIfFactory> hql_service_factory(new ThriftBrokerIfFactory());
-    boost::shared_ptr<TProcessorFactory> hql_service_processor_factory(new HqlServiceProcessorFactory(hql_service_factory));
+	std::shared_ptr<protocol::TProtocolFactory> protocolFactory(new protocol::TBinaryProtocolFactory());
+	std::shared_ptr<HqlServiceIfFactory> hql_service_factory(new ThriftBrokerIfFactory());
+	std::shared_ptr<TProcessorFactory> hql_service_processor_factory(new HqlServiceProcessorFactory(hql_service_factory));
 
-    boost::shared_ptr<TServerTransport> serverTransport;
-	
+	std::shared_ptr<server::TServerTransport> serverTransport;
+
+	::uint16_t port = get_i16("port");
     if (has("thrift-timeout")) {
       int timeout_ms = get_i32("thrift-timeout");
-      serverTransport.reset( new TServerSocket(port, timeout_ms, timeout_ms) );
+      serverTransport.reset( new transport::TServerSocket(port, timeout_ms, timeout_ms) );
     } 
 	else { 
-		serverTransport.reset(new TServerSocket(port));
+		serverTransport.reset(new transport::TServerSocket(port));
 	}
 
-	if (get_str("thrift-transport") == "framed") {
-		boost::shared_ptr<TTransportFactory> transportFactory(new TFramedTransportFactory());
-		TThreadedServer server(hql_service_processor_factory, serverTransport, transportFactory, protocolFactory);
-		HT_INFO("Starting the framed server...");
+
+	if (strcmp(get_str("thrift-transport").c_str(), "framed") == 0){
+		std::shared_ptr<transport::TTransportFactory> transportFactory(new transport::TFramedTransportFactory());
+		server::TThreadedServer server(hql_service_processor_factory, serverTransport, transportFactory, protocolFactory);
+		HT_INFO("Starting the server with framed transport...");
 		server.serve();
 	}
-	else if (get_str("thrift-transport") == "zlib") {
-		boost::shared_ptr<TTransportFactory> transportFactory(new TZlibTransportFactory());
-		TThreadedServer server(hql_service_processor_factory, serverTransport, transportFactory, protocolFactory);
-		HT_INFO("Starting the zlib server...");
+	else if (strcmp(get_str("thrift-transport").c_str(), "zlib") == 0){
+		std::shared_ptr<transport::TTransportFactory> transportFactory(new transport::TZlibTransportFactory());
+		server::TThreadedServer server(hql_service_processor_factory, serverTransport, transportFactory, protocolFactory);
+		HT_INFO("Starting the server with zlib transport...");
 		server.serve();
 	}
 

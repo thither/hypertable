@@ -35,8 +35,6 @@ namespace Hypertable {
 	namespace Thrift {
 
 		using namespace apache::thrift;
-		using namespace apache::thrift::protocol;
-		using namespace apache::thrift::transport;
 
 		// Client Transport Choices		
 		// in case name "Transport" collide with apache::thrift ns 
@@ -50,24 +48,24 @@ namespace Hypertable {
 
 		// helper to initialize base class of Client
 		struct ClientHelper {
-			boost::shared_ptr<TSocket> socket;
-			boost::shared_ptr<TTransport> transport;
-			boost::shared_ptr<TProtocol> protocol;
+			std::shared_ptr<transport::TSocket> socket;
+			std::shared_ptr<transport::TTransport> m_transport;
+			std::shared_ptr<protocol::TProtocol> m_protocol;
 
 			// Thrift client transport selector
-			inline TTransport* select_transport(Transport ttp){
+			inline transport::TTransport* select_transport(Transport ttp){
 				switch (ttp) {
 				case Transport::ZLIB:
-					return new TZlibTransport(socket);
+					return new transport::TZlibTransport(socket);
 				default:
-					return new TFramedTransport(socket);
+					return new transport::TFramedTransport(socket);
 				}
 			}
 
 			ClientHelper(Transport ttp, const std::string &host, int port, int timeout_ms) :
-				socket(new TSocket(host, port)), 
-				transport(static_cast<boost::shared_ptr<TTransport>>(select_transport(ttp))),
-				protocol(new TBinaryProtocol(transport)) {
+				socket(new transport::TSocket(host, port)),
+				m_transport(static_cast<std::shared_ptr<transport::TTransport>>(select_transport(ttp))),
+				m_protocol(new protocol::TBinaryProtocol(m_transport)) {
 
 				socket->setConnTimeout(timeout_ms);
 				socket->setSendTimeout(timeout_ms);
@@ -83,28 +81,28 @@ namespace Hypertable {
 		public:
 			Client(const std::string &host, int port, int timeout_ms = 300000,
 				bool open = true)
-				: ClientHelper(Transport::FRAMED, host, port, timeout_ms), HqlServiceClient(protocol),
+				: ClientHelper(Transport::FRAMED, host, port, timeout_ms), HqlServiceClient(m_protocol),
 				m_do_close(false) {
 
 				if (open) {
-					transport->open();
+					m_transport->open();
 					m_do_close = true;
 				}
 			}
 			Client(Transport ttp, const std::string &host, int port, int timeout_ms = 300000,
 				bool open = true)
-				: ClientHelper(ttp, host, port, timeout_ms), HqlServiceClient(protocol),
+				: ClientHelper(ttp, host, port, timeout_ms), HqlServiceClient(m_protocol),
 				m_do_close(false) {
 
 				if (open) {
-					transport->open();
+					m_transport->open();
 					m_do_close = true;
 				}
 			}
 
 			virtual ~Client() {
 				if (m_do_close) {
-					transport->close();
+					m_transport->close();
 					m_do_close = false;
 				}
 			}
