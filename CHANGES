@@ -4,6 +4,7 @@ Version master:
 
    Updated for Thrift 0.11.0 no backward capabilitites 
    fixed ThriftBroker any shared_ptr switched to thrift::stdcxx::shared_ptr
+   add new cmake option -DBOOST_NO_CXX11_SMART_PTR=1 for thrift to use Boost
    changed ThriftBroker does not need to inlcude boost
    changed ThriftBroker only apache::thrift namespace used from apache::
    changed ThriftClient protocol and transport ptrs renamed with prefixed of m_ was on-course with apache::thrift namespaces
