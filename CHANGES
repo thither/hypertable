@@ -7,11 +7,13 @@ Version master:
    add new cmake option -DBOOST_NO_CXX11_SMART_PTR=1 for thrift to use Boost
    changed ThriftBroker does not need to inlcude boost
    changed ThriftBroker only apache::thrift namespace used from apache::
-   changed ThriftClient protocol and transport ptrs renamed with prefixed of m_ was on-course with apache::thrift namespaces
    removed std namespace from ThriftBroker's MetricsHandler
+   added utilization of ThriftBroker.Workers configuration option 
+   changed ThriftClient protocol and transport ptrs renamed with prefixed m_ as apache::thrift namespaces on-course 
    Updated for Ceph 13.2.0 FsBroker 
    added options to link staticly with libboost, libstdc++ and libgcc 
-   
+   added new cmake option -DHT_NOT_STATIC_CORE=1
+
 Version 0.9.8.13:
 (2018-06-01)
 
