@@ -242,7 +242,7 @@ else()
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -floop-interchange")
 	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -floop-interchange")
 
-	if(BUILD_WITH_STATIC)
+	if(BUILD_WITH_STATIC AND NOT HT_NOT_STATIC_CORE)
 		SET(CORE_LIBS "-static-libgcc -static-libstdc++")
 	endif()
 endif ()

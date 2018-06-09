@@ -196,7 +196,9 @@ function(HT_FIND_LIB)
 				  /usr/lib  
 				  /lib 
 		)
-		set("${HT_FIND_LIB_OUTPUT}" ${${HT_FIND_LIB_OUTPUT}} ${HT_FOUND_${lib}})
+		if(HT_FOUND_${lib})
+			set("${HT_FIND_LIB_OUTPUT}" ${${HT_FIND_LIB_OUTPUT}} ${HT_FOUND_${lib}})
+		endif()
     endforeach()
 	set("${HT_FIND_LIB_OUTPUT}" ${${HT_FIND_LIB_OUTPUT}} PARENT_SCOPE)
 	# message(STATUS "HT_FOUND_LIB: ${HT_FIND_LIB_OUTPUT} ${${HT_FIND_LIB_OUTPUT}}")

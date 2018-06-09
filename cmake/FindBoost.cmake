@@ -20,17 +20,10 @@
 # The following variables are set if Boost is found.  If Boost is not
 # found, Boost_FOUND is set to false.
 #  Boost_FOUND        - True when the Boost include directory is found.
-#  Boost_INCLUDE_DIRS - the path to where the boost include files are.
-#  Boost_LIBRARY_DIRS - The path to where the boost library files are.
+#  BOOST_INCLUDE_DIRS - the path to where the boost include files are.
 #  Boost_LIB_DIAGNOSTIC_DEFINITIONS - Only set if using Windows.
-#  BOOST_LIBS - Our default boost libs
-#  BOOST_THREAD_LIB - The name of the boost thread library
-#  BOOST_PROGRAM_OPTIONS_LIB - The name of the boost program options library
-#  BOOST_FILESYSTEM_LIB - The name of the boost filesystem library
-#  BOOST_IOSTREAMS_LIB - The name of the boost program options library
-#  BOOST_PYTHON_LIB - The name of the boost python library
-#  BOOST_SYSTEM_LIB - The name of the boost system library
-#  BOOST_CHRONO_LIB - The name of the boost system library
+#  BOOST_LIBRARIES - Our default boost libs
+
 # ----------------------------------------------------------------------------
 #
 # Usage:
@@ -44,37 +37,14 @@
 # TODO(llu) refactor into FindBoostLibs.cmake that uses stock FindBoost, which
 # is greatly improved in cmake 2.6+
 
-if (NOT Boost_FIND_QUIETLY)
-  message(STATUS "Looking for required boost libraries...")
-endif ()
+set(BOOST_LIBNAMES 
+ system 
+ filesystem 
+ iostreams 
+ program_options 
+ thread 
+ chrono)
 
-if (WIN32)
-  set(Boost_LIB_DIAGNOSTIC_DEFINITIONS "-DBOOST_LIB_DIAGNOSTIC")
-endif ()
-
-# Hypertable Dependency Directory
-if (NOT HT_DEPENDENCY_DIR)
-  set(BOOST_DIR_SEARCH $ENV{BOOST_ROOT})
-else ()
-  set(BOOST_DIR_SEARCH ${HT_DEPENDENCY_DIR})
-  set(Boost_INCLUDE_DIR ${HT_DEPENDENCY_DIR}/include)
-endif ()
-
-if (BOOST_DIR_SEARCH)
-  file(TO_CMAKE_PATH ${BOOST_DIR_SEARCH} BOOST_DIR_SEARCH)
-  set(BOOST_DIR_SEARCH ${BOOST_DIR_SEARCH}/include)
-endif ()
-
-if (WIN32)
-  set(BOOST_DIR_SEARCH
-    ${BOOST_DIR_SEARCH}
-    C:/boost/include
-    D:/boost/include
-  )
-endif ()
-
-# Add in some path suffixes. These will have to be updated whenever a new
-# Boost version comes out.
 set(SUFFIX_FOR_PATH
  boost-1_44
  boost-1_43
@@ -93,74 +63,101 @@ set(SUFFIX_FOR_PATH
  boost-1_34_0
 )
 
-#
-# Look for an installation.
-#
-if (NOT Boost_INCLUDE_DIR)
-  find_path(Boost_INCLUDE_DIR
-    NAMES boost/config.hpp
-    PATH_SUFFIXES ${SUFFIX_FOR_PATH}
-    # Look in other places.
-    PATHS ${BOOST_DIR_SEARCH} /usr/include /usr/local/include /opt/local/include
-    # Help the user find it if we cannot.
-    DOC "The ${BOOST_INCLUDE_PATH_DESCRIPTION}"
-  )
+# Hypertable Dependency Directory
+if (NOT HT_DEPENDENCY_DIR)
+  set(BOOST_DIR_SEARCH $ENV{BOOST_ROOT})
+else ()
+  set(BOOST_DIR_SEARCH ${HT_DEPENDENCY_DIR})
 endif ()
 
-macro(FIND_BOOST_PARENT root includedir)
-  # Look for the boost library path.
-  # Note that the user may not have installed any libraries
-  # so it is quite possible the library path may not exist.
-  set(${root} ${includedir})
-
-  if (${root} MATCHES "boost-[0-9]+")
-    get_filename_component(${root} ${${root}} PATH)
-  endif ()
-
-  if (${root} MATCHES "/include$")
-    # Strip off the trailing "/include" in the path.
-    get_filename_component(${root} ${${root}} PATH)
-  endif ()
-endmacro(FIND_BOOST_PARENT root includedir)
-
-macro(FIND_BOOST_LIBRARY lib libname libroot required)
-  set(${lib}_NAMES
-    # "libboost_${libname}.a"
-    "boost_${libname}"
-    "boost_${libname}-mt"
-    "boost_${libname}-gcc45-mt"
-    "boost_${libname}-gcc44-mt"
-    "boost_${libname}-gcc43-mt"
-    "boost_${libname}-gcc42-mt"
-    "boost_${libname}-gcc41-mt"
-    "boost_${libname}-gcc34-mt"
-    "boost_${libname}-xgcc40-mt"
+if (WIN32)
+  set(BOOST_DIR_SEARCH
+    ${BOOST_DIR_SEARCH}
+    C:/boost
+    D:/boost
   )
-  if (NOT "${ARGN}" STREQUAL "MT_ONLY")
-    set(${lib}_NAMES ${${lib}_NAMES} "boost_${libname}")
-  endif ()
-
-  find_library(${lib} NO_DEFAULT_PATH
-    NAMES ${${lib}_NAMES}
-    PATHS "${libroot}/lib" "${libroot}/lib64" /lib /usr/lib /usr/local/lib /opt/local/lib
-  )
-  if (required AND ${lib} MATCHES "NOTFOUND$")
-    message(FATAL_ERROR "required boost library: ${lib} not found")
-  endif ()
-
-  mark_as_advanced(${lib})
-endmacro()
+  set(Boost_LIB_DIAGNOSTIC_DEFINITIONS "-DBOOST_LIB_DIAGNOSTIC")
+endif ()
 
 
-# Assume we didn't find it.
-set(Boost_FOUND 0)
+# Add in some path suffixes. These will have to be updated whenever a new
+# Boost version comes out.
+set(BOOST_LIBDIR_SEARCH "")
+set(BOOST_DIR_SEARCH ${BOOST_DIR_SEARCH} /usr/local/lib64 /usr/local/lib /usr/lib64 /usr/lib /lib64 /lib)
+foreach(path ${BOOST_DIR_SEARCH})
+	foreach(path_suf ${SUFFIX_FOR_PATH})
+		set(BOOST_LIBDIR_SEARCH ${BOOST_LIBDIR_SEARCH} ${path}/${path_suf})
+	endforeach()
+endforeach()
+set(BOOST_LIBDIR_SEARCH ${BOOST_LIBDIR_SEARCH} /usr/local/lib64 /usr/local/lib /usr/lib64 /usr/lib /lib64 /lib)
 
-# Now try to get the include and library path.
-if (Boost_INCLUDE_DIR)
+
+set(BOOST_INCDIR_SEARCH "")
+foreach(path_suf ${SUFFIX_FOR_PATH})
+	set(BOOST_INCDIR_SEARCH ${BOOST_INCDIR_SEARCH} /usr/local/${path_suf}/include /usr/${path_suf}/include)
+endforeach()
+set(BOOST_INCDIR_SEARCH ${BOOST_INCDIR_SEARCH} /usr/local /usr)
+
+
+
+# VARIATIONS FOR LIBRARY NAMES
+
+	## IF HYPERPYTHON NOT DEPRECATED / NEED ATTENTION
+if(LANG_PY_HYPERPYTHON)
+	if(LANGS OR LANG_PY2)
+		set(BOOST_LIBNAMES ${BOOST_LIBNAMES} "python")
+	endif ()
+	if(LANGS OR LANG_PY3)
+		set(BOOST_LIBNAMES ${BOOST_LIBNAMES} "python3")
+	endif ()
+endif ()
+
+SET(BOOST_STATIC_NAMES "")
+SET(BOOST_SHARED_NAMES "")
+foreach(libname ${BOOST_LIBNAMES})
+	if(NOT HT_NOT_STATIC_CORE)
+		set(BOOST_STATIC_NAMES ${BOOST_STATIC_NAMES}
+			"libboost_${libname}.a"
+			"libboost_${libname}-mt.a"
+			"libboost_${libname}-gcc45-mt.a"
+			"libboost_${libname}-gcc44-mt.a"
+			"libboost_${libname}-gcc43-mt.a"
+			"libboost_${libname}-gcc42-mt.a"
+			"libboost_${libname}-gcc41-mt.a"
+			"libboost_${libname}-gcc34-mt.a"
+			"libboost_${libname}-xgcc40-mt.a"
+		)	
+	endif ()
+	set(BOOST_SHARED_NAMES ${BOOST_SHARED_NAMES}
+		"libboost_${libname}"
+		"libboost_${libname}-mt"
+		"libboost_${libname}-gcc45-mt"
+		"libboost_${libname}-gcc44-mt"
+		"libboost_${libname}-gcc43-mt"
+		"libboost_${libname}-gcc42-mt"
+		"libboost_${libname}-gcc41-mt"
+		"libboost_${libname}-gcc34-mt"
+		"libboost_${libname}-xgcc40-mt"
+	)	
+endforeach()
+
+
+
+HT_FASTLIB_SET(
+	NAME "BOOST" 
+	LIB_PATHS ${BOOST_INCDIR_SEARCH}
+	INC_PATHS ${BOOST_LIBDIR_SEARCH}
+	STATIC ${BOOST_STATIC_NAMES}
+	SHARED ${BOOST_SHARED_NAMES}
+	INCLUDE boost/config.hpp
+)
+
+
+if (BOOST_INCLUDE_DIR)
   try_run(BOOST_CHECK SHOULD_COMPILE
           ${HYPERTABLE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp
           ${HYPERTABLE_SOURCE_DIR}/cmake/CheckBoost.cc
-          CMAKE_FLAGS -DINCLUDE_DIRECTORIES:STRING=${Boost_INCLUDE_DIR}
+          CMAKE_FLAGS -DINCLUDE_DIRECTORIES:STRING=${BOOST_INCLUDE_DIR}
           COMPILE_DEFINITIONS -v
           OUTPUT_VARIABLE BOOST_TRY_OUT)
   string(REGEX REPLACE ".*\n([0-9_]+).*" "\\1" BOOST_VERSION ${BOOST_TRY_OUT})
@@ -168,194 +165,8 @@ if (Boost_INCLUDE_DIR)
          ${BOOST_TRY_OUT})
 
   if (GCC_VERSION)
-    message(STATUS "GCC version: ${GCC_VERSION}")
+    message("       GCC version: ${GCC_VERSION}")
   endif ()
-
-  message(STATUS "Boost version: ${BOOST_VERSION}")
-
-  if (NOT BOOST_CHECK STREQUAL "0")
-    message(FATAL_ERROR "Boost version not compatible")
-  endif ()
-
-  if (BOOST_VERSION MATCHES "1_34")
-    set(Boost_HAS_SYSTEM_LIB false)
-  else ()
-    set(Boost_HAS_SYSTEM_LIB true)
-  endif()
-
-  FIND_BOOST_PARENT(Boost_PARENT ${Boost_INCLUDE_DIR})
-
-  # Add boost libraries here
-  FIND_BOOST_LIBRARY(BOOST_THREAD_LIB thread ${Boost_PARENT} true)
-  get_filename_component(Boost_LIBRARY_DIR ${BOOST_THREAD_LIB} PATH)
-  FIND_BOOST_LIBRARY(BOOST_PROGRAM_OPTIONS_LIB program_options
-                     ${Boost_PARENT} true)
-  FIND_BOOST_LIBRARY(BOOST_IOSTREAMS_LIB iostreams ${Boost_PARENT} true)
-  FIND_BOOST_LIBRARY(BOOST_FILESYSTEM_LIB filesystem ${Boost_PARENT} true)
-  
-  FIND_BOOST_LIBRARY(BOOST_CHRONO_LIB chrono ${Boost_PARENT} false)
-
-  if(Boost_HAS_SYSTEM_LIB)
-    FIND_BOOST_LIBRARY(BOOST_SYSTEM_LIB system ${Boost_PARENT} true)
-  endif()
-
-  if (APPLE)
-    FIND_BOOST_LIBRARY(BOOST_SYSTEM_MT_LIB system-mt ${Boost_PARENT} false)
-  endif()
-
-  if (NOT Boost_FIND_QUIETLY)
-    message(STATUS "Boost thread lib: ${BOOST_THREAD_LIB}")
-    message(STATUS "Boost program options lib: ${BOOST_PROGRAM_OPTIONS_LIB}")
-    message(STATUS "Boost filesystem lib: ${BOOST_FILESYSTEM_LIB}")
-    message(STATUS "Boost iostreams lib: ${BOOST_IOSTREAMS_LIB}")
-    message(STATUS "Boost chrono lib: ${BOOST_CHRONO_LIB}")
-
-    if(Boost_HAS_SYSTEM_LIB)
-      message(STATUS "Boost system lib: ${BOOST_SYSTEM_LIB}")
-    endif()
-
-    message(STATUS "Boost lib dir: ${Boost_LIBRARY_DIR}")
-  endif ()
-  
-  # BOOST_LIBS is our default boost libs.
-  set(BOOST_LIBS ${BOOST_IOSTREAMS_LIB} ${BOOST_PROGRAM_OPTIONS_LIB}
-      ${BOOST_FILESYSTEM_LIB} ${BOOST_THREAD_LIB})
-	  
-#  set(libs   libiconv libicuuc libicudata libicui18n libicuio libicutu libicutest)
-#  foreach(lib ${libs})
-#	find_library(add_${lib}LIB NO_DEFAULT_PATH
-#		NAMES ${lib}.a
-#		PATHS /usr/local/lib /opt/local/lib /usr/lib /lib
-#	)
-#	set(BOOST_LIBS ${BOOST_LIBS} ${add_${lib}LIB})
-#  endforeach()
-#  
-#  set(libs thread signals unit_test_framework log math_c99 iostreams wave atomic wserialization stacktrace_addr2line math_c99f serialization 
-#			locale math_c99l test_exec_monitor exception fiber stacktrace_basic prg_exec_monitor filesystem math_tr1l date_time coroutine 
-#			program_options math_tr1f system container regex chrono random log_setup stacktrace_noop math_tr1 timer type_erasure graph context )
-#  foreach(lib ${libs})
-#	FIND_BOOST_LIBRARY(add_${lib}LIB ${lib} ${Boost_PARENT} false)
-#	set(BOOST_LIBS ${BOOST_LIBS} ${add_${lib}LIB})
-#  endforeach()
-  
-  
-  if(Boost_HAS_SYSTEM_LIB)
-    set(BOOST_LIBS ${BOOST_LIBS} ${BOOST_SYSTEM_LIB} ${BOOST_SYSTEM_MT_LIB})
-  endif()
-
-  if (NOT ${BOOST_CHRONO_LIB} MATCHES "NOTFOUND$")
-    set(BOOST_LIBS ${BOOST_LIBS} ${BOOST_CHRONO_LIB})
-  endif ()
-
-  message(STATUS "Boost libs: ${BOOST_LIBS}")
-
-  if (EXISTS ${Boost_INCLUDE_DIR})
-    set(Boost_INCLUDE_DIRS ${Boost_INCLUDE_DIR})
-    # We have found boost. It is possible that the user has not
-    # compiled any libraries so we set Boost_FOUND to be true here.
-    set(Boost_FOUND 1)
-  endif ()
-
-  if (Boost_LIBRARY_DIR AND EXISTS "${Boost_LIBRARY_DIR}")
-    set(Boost_LIBRARY_DIRS ${Boost_LIBRARY_DIR})
-  endif ()
+  message("       Boost version: ${BOOST_VERSION}")
 endif ()
 
-if (NOT Boost_FOUND)
-  if (Boost_FIND_REQUIRED)
-    message(FATAL_ERROR "Required boost libraries not found")
-  elseif (NOT Boost_FIND_QUIETLY)
-    message(STATUS "Required boost libraries not found")
-  endif ()
-else ()
-	HT_INSTALL_LIBS(lib ${BOOST_LIBS})
-endif ()
-
-mark_as_advanced(
-  Boost_INCLUDE_DIR
-)
-
-
-## IF HYPERPYTHON NOT DEPRECATED
-if(LANG_PY_HYPERPYTHON)
-if(LANGS OR LANG_PY2)
-	FIND_BOOST_LIBRARY(BOOST_PYTHON2_LIB python ${Boost_PARENT} false)
-	if (BOOST_PYTHON2_LIB)	
-		set(BOOST_PYTHON2_LIB ${BOOST_PYTHON2_LIB})
-		HT_INSTALL_LIBS(lib ${BOOST_PYTHON2_LIB})	
-	elseif (LANG_PY2)		
-		message(FATAL_ERROR "Language python2 require libboost_python(2)")
-	endif ()
-endif ()
-
-if(LANGS OR LANG_PY3)
-	FIND_BOOST_LIBRARY(BOOST_PYTHON3_LIB python3 ${Boost_PARENT} false)
-	if (BOOST_PYTHON3_LIB)	
-		set(BOOST_PYTHON3_LIB ${BOOST_PYTHON3_LIB})
-		HT_INSTALL_LIBS(lib ${BOOST_PYTHON3_LIB})
-	elseif (LANG_PY3)		
-		message(FATAL_ERROR "Language python3 require libboost_python3")
-	endif ()
-endif ()
-
-endif ()
-
-set(BOOST_LIBS "")
-
-if(Boost_HAS_SYSTEM_LIB)
-HT_FASTLIB_SET(
-	NAME "boost_system" 
-	REQUIRED TRUE 
-	LIB_PATHS ${BOOST_DIR_SEARCH}
-	INC_PATHS ${Boost_INCLUDE_DIR}
-	STATIC libboost_system.a
-	SHARED boost_system
-)
-set(BOOST_LIBS ${BOOST_LIBS} ${boost_system_LIBRARIES})
-endif()
-
-HT_FASTLIB_SET(
-	NAME "boost_filesystem" 
-	REQUIRED TRUE 
-	LIB_PATHS ${BOOST_DIR_SEARCH}
-	STATIC libboost_filesystem.a
-	SHARED boost_filesystem
-)
-set(BOOST_LIBS ${BOOST_LIBS} ${boost_filesystem_LIBRARIES})
-
-HT_FASTLIB_SET(
-	NAME "boost_iostreams" 
-	REQUIRED TRUE 
-	LIB_PATHS ${BOOST_DIR_SEARCH}
-	STATIC libboost_iostreams.a
-	SHARED boost_iostreams
-)
-set(BOOST_LIBS ${BOOST_LIBS} ${boost_iostreams_LIBRARIES})
-
-HT_FASTLIB_SET(
-	NAME "boost_program_options" 
-	REQUIRED TRUE 
-	LIB_PATHS ${BOOST_DIR_SEARCH}
-	STATIC libboost_program_options.a
-	SHARED boost_program_options
-)
-set(BOOST_LIBS ${BOOST_LIBS} ${boost_program_options_LIBRARIES})
-
-HT_FASTLIB_SET(
-	NAME "boost_thread" 
-	REQUIRED TRUE 
-	LIB_PATHS ${BOOST_DIR_SEARCH}
-	STATIC libboost_thread.a
-	SHARED boost_thread
-)
-set(BOOST_LIBS ${BOOST_LIBS} ${boost_thread_LIBRARIES})
-
-HT_FASTLIB_SET(
-	NAME "boost_chrono" 
-	REQUIRED TRUE 
-	LIB_PATHS ${BOOST_DIR_SEARCH}
-	INC_PATHS ${Boost_INCLUDE_DIR}
-	STATIC libboost_chrono.a
-	SHARED boost_chrono
-)
-set(BOOST_LIBS ${BOOST_LIBS} ${boost_chrono_LIBRARIES})
