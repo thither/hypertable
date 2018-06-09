@@ -49,14 +49,14 @@
 #include <Common/System.h>
 #include <Common/Time.h>
 
+#include <server/TThreadPoolServer.h>
 #include <concurrency/ThreadManager.h>
-#include <protocol/TBinaryProtocol.h>
-#include <server/TThreadedServer.h>
-#include <transport/TBufferTransports.h>
+#include <concurrency/PlatformThreadFactory.h>
 #include <transport/TServerSocket.h>
 #include <transport/TSocket.h>
-#include <transport/TTransportUtils.h>
+#include <transport/TBufferTransports.h>
 #include <transport/TZlibTransport.h>
+#include <protocol/TBinaryProtocol.h>
 
 #include <iostream>
 #include <iomanip>
@@ -1888,7 +1888,7 @@ public:
     ThriftGen::Namespace id;
     LOG_API_START("namespace =" << ns);
     try {
-      id = get_cached_object_id( dynamic_pointer_cast<ClientObject>(m_context.client->open_namespace(ns)) );
+      id = get_cached_object_id(std::dynamic_pointer_cast<ClientObject>(m_context.client->open_namespace(ns)));
     } RETHROW("namespace " << ns)
     LOG_API_FINISH_E(" id=" << id);
     return id;
@@ -3111,18 +3111,16 @@ class ThriftBrokerIfFactory : public HqlServiceIfFactory {
 public:
   virtual ~ThriftBrokerIfFactory() {}
 
-  HqlServiceIf* getHandler(const ::apache::thrift::TConnectionInfo& connInfo) override {
-    typedef ::apache::thrift::transport::TSocket TTransport;
-    String remotePeer =
-      dynamic_cast<TTransport*>(connInfo.transport.get())->getPeerAddress();
+  HqlServiceIf* getHandler(const TConnectionInfo& connInfo) override {
     g_metrics_handler->connection_increment();
-    return ServerHandlerFactory::getHandler(remotePeer);
+    return ServerHandlerFactory::getHandler(
+		std::dynamic_pointer_cast<transport::TSocket>(connInfo.transport)
+		->getPeerAddress());
   }
 
   void releaseHandler( ::Hypertable::ThriftGen::ClientServiceIf *service) override {
-    ServerHandler* serverHandler = dynamic_cast<ServerHandler*>(service);
     g_metrics_handler->connection_decrement();
-    return ServerHandlerFactory::releaseHandler(serverHandler);
+    return ServerHandlerFactory::releaseHandler(dynamic_cast<ServerHandler*>(service));
   }
 };
 
@@ -3153,37 +3151,60 @@ int main(int argc, char **argv) {
     g_metrics_handler->start_collecting();
 
 	std::shared_ptr<ThriftBroker::Context> context(new ThriftBroker::Context());
-
     g_context = context.get();
 
-	std::shared_ptr<protocol::TProtocolFactory> protocolFactory(new protocol::TBinaryProtocolFactory());
-	std::shared_ptr<HqlServiceIfFactory> hql_service_factory(new ThriftBrokerIfFactory());
-	std::shared_ptr<TProcessorFactory> hql_service_processor_factory(new HqlServiceProcessorFactory(hql_service_factory));
+	stdcxx::shared_ptr<protocol::TProtocolFactory> protocolFactory(
+		new protocol::TBinaryProtocolFactory());
+	stdcxx::shared_ptr<HqlServiceIfFactory> hql_service_factory(
+		new ThriftBrokerIfFactory());
+	stdcxx::shared_ptr<TProcessorFactory> hql_service_processor_factory(
+		new HqlServiceProcessorFactory(hql_service_factory));
 
-	std::shared_ptr<server::TServerTransport> serverTransport;
-
+	stdcxx::shared_ptr<server::TServerTransport> serverTransport;
 	::uint16_t port = get_i16("port");
     if (has("thrift-timeout")) {
       int timeout_ms = get_i32("thrift-timeout");
-      serverTransport.reset( new transport::TServerSocket(port, timeout_ms, timeout_ms) );
+      serverTransport.reset(new transport::TServerSocket(port, timeout_ms, timeout_ms));
     } 
 	else { 
 		serverTransport.reset(new transport::TServerSocket(port));
 	}
 
 
-	if (strcmp(get_str("thrift-transport").c_str(), "framed") == 0){
-		std::shared_ptr<transport::TTransportFactory> transportFactory(new transport::TFramedTransportFactory());
-		server::TThreadedServer server(hql_service_processor_factory, serverTransport, transportFactory, protocolFactory);
-		HT_INFO("Starting the server with framed transport...");
+	HT_INFOF("Starting the server with %d workers on %s transport...",
+		(int)get_i32("workers"), get_str("thrift-transport").c_str());
+
+	stdcxx::shared_ptr<concurrency::ThreadManager> threadManager =
+		concurrency::ThreadManager::newSimpleThreadManager((int)get_i32("workers"));
+	threadManager->threadFactory(std::make_shared<concurrency::PlatformThreadFactory>());
+	threadManager->start();
+
+
+	if (get_str("thrift-transport").compare("framed") == 0){
+		stdcxx::shared_ptr<transport::TTransportFactory> transportFactory(
+			new transport::TFramedTransportFactory());
+		server::TThreadPoolServer server(hql_service_processor_factory,
+			serverTransport,
+			transportFactory,
+			protocolFactory,
+			threadManager);
 		server.serve();
 	}
-	else if (strcmp(get_str("thrift-transport").c_str(), "zlib") == 0){
-		std::shared_ptr<transport::TTransportFactory> transportFactory(new transport::TZlibTransportFactory());
-		server::TThreadedServer server(hql_service_processor_factory, serverTransport, transportFactory, protocolFactory);
-		HT_INFO("Starting the server with zlib transport...");
+	else if (get_str("thrift-transport").compare("zlib") == 0){
+		stdcxx::shared_ptr<transport::TTransportFactory> transportFactory(
+			new transport::TZlibTransportFactory());
+		server::TThreadPoolServer server(hql_service_processor_factory,
+			serverTransport,
+			transportFactory,
+			protocolFactory,
+			threadManager);
 		server.serve();
 	}
+	else {
+		HT_FATALF("No implementation for thrift transport: %s", get_str("thrift-transport").c_str());
+		return 0;
+	}
+
 
     g_metrics_handler->start_collecting();
     g_metrics_handler.reset();

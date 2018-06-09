@@ -228,6 +228,7 @@ SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -U__STRICT_ANSI__")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-terminate")
 
+SET(CORE_LIBS "")
 if(${HT_O_LEVEL} MATCHES "[1-3]")
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
 	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
@@ -240,6 +241,10 @@ else()
 	# SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsection-anchors")
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -floop-interchange")
 	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -floop-interchange")
+
+	if(BUILD_WITH_STATIC)
+		SET(CORE_LIBS "-static-libgcc -static-libstdc++")
+	endif()
 endif ()
 
 if (ASAN)

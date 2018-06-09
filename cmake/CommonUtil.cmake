@@ -177,7 +177,7 @@ function(HT_FIND_LIB)
 	cmake_parse_arguments(HT_FIND_LIB "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 	
 	if(BUILD_WITH_STATIC AND HT_FIND_LIB_STATIC)
-		set(HT_FIND_LIB_LIBS ${HT_FIND_LIB_STATIC})
+		set(HT_FIND_LIB_LIBS ${HT_FIND_LIB_STATIC}) # opt fall-back to shared
 	else()
 		set(HT_FIND_LIB_LIBS ${HT_FIND_LIB_SHARED})
 	endif ()
@@ -259,6 +259,9 @@ function(HT_ADD_LIBS)
 		endif ()
 	endif ()
 	
+	if(BUILD_WITH_STATIC)
+		SET(HT_ADD_LIBS_DEPS ${HT_ADD_LIBS_DEPS} ${CORE_LIBS})
+	endif()
 	target_link_libraries(${HT_ADD_LIBS_TARGET} ${HT_ADD_LIBS_DEPS} ${HT_ADD_LIBS_TARGETS})
 endfunction()
 

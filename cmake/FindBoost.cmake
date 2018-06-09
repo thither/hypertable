@@ -297,64 +297,65 @@ if(LANGS OR LANG_PY3)
 		message(FATAL_ERROR "Language python3 require libboost_python3")
 	endif ()
 endif ()
+
 endif ()
 
-#set(BOOST_LIBS "")
+set(BOOST_LIBS "")
 
-#if(Boost_HAS_SYSTEM_LIB)
-#HT_FASTLIB_SET(
-#	NAME "boost_system" 
-#	REQUIRED TRUE 
-#	LIB_PATHS ${BOOST_DIR_SEARCH}
-#	INC_PATHS ${Boost_INCLUDE_DIR}
-#	STATIC libboost_system.a
-#	SHARED boost_system
-#)
-#set(BOOST_LIBS ${BOOST_LIBS} ${boost_system_LIBRARIES})
-#endif()
+if(Boost_HAS_SYSTEM_LIB)
+HT_FASTLIB_SET(
+	NAME "boost_system" 
+	REQUIRED TRUE 
+	LIB_PATHS ${BOOST_DIR_SEARCH}
+	INC_PATHS ${Boost_INCLUDE_DIR}
+	STATIC libboost_system.a
+	SHARED boost_system
+)
+set(BOOST_LIBS ${BOOST_LIBS} ${boost_system_LIBRARIES})
+endif()
 
-#HT_FASTLIB_SET(
-#	NAME "boost_filesystem" 
-#	REQUIRED TRUE 
-#	LIB_PATHS ${BOOST_DIR_SEARCH}
-#	STATIC libboost_filesystem.a
-#	SHARED boost_filesystem
-#)
-#set(BOOST_LIBS ${BOOST_LIBS} ${boost_filesystem_LIBRARIES})
+HT_FASTLIB_SET(
+	NAME "boost_filesystem" 
+	REQUIRED TRUE 
+	LIB_PATHS ${BOOST_DIR_SEARCH}
+	STATIC libboost_filesystem.a
+	SHARED boost_filesystem
+)
+set(BOOST_LIBS ${BOOST_LIBS} ${boost_filesystem_LIBRARIES})
 
-#HT_FASTLIB_SET(
-#	NAME "boost_iostreams" 
-#	REQUIRED TRUE 
-#	LIB_PATHS ${BOOST_DIR_SEARCH}
-#	STATIC libboost_iostreams.a
-#	SHARED boost_iostreams
-#)
-#set(BOOST_LIBS ${BOOST_LIBS} ${boost_iostreams_LIBRARIES})
+HT_FASTLIB_SET(
+	NAME "boost_iostreams" 
+	REQUIRED TRUE 
+	LIB_PATHS ${BOOST_DIR_SEARCH}
+	STATIC libboost_iostreams.a
+	SHARED boost_iostreams
+)
+set(BOOST_LIBS ${BOOST_LIBS} ${boost_iostreams_LIBRARIES})
 
-#HT_FASTLIB_SET(
-#	NAME "boost_program_options" 
-#	REQUIRED TRUE 
-#	LIB_PATHS ${BOOST_DIR_SEARCH}
-#	STATIC libboost_program_options.a
-#	SHARED boost_program_options
-#)
-#set(BOOST_LIBS ${BOOST_LIBS} ${boost_program_options_LIBRARIES})
+HT_FASTLIB_SET(
+	NAME "boost_program_options" 
+	REQUIRED TRUE 
+	LIB_PATHS ${BOOST_DIR_SEARCH}
+	STATIC libboost_program_options.a
+	SHARED boost_program_options
+)
+set(BOOST_LIBS ${BOOST_LIBS} ${boost_program_options_LIBRARIES})
 
-#HT_FASTLIB_SET(
-#	NAME "boost_thread" 
-#	REQUIRED TRUE 
-#	LIB_PATHS ${BOOST_DIR_SEARCH}
-#	STATIC libboost_thread.a
-#	SHARED boost_thread
-#)
-#set(BOOST_LIBS ${BOOST_LIBS} ${boost_thread_LIBRARIES})
+HT_FASTLIB_SET(
+	NAME "boost_thread" 
+	REQUIRED TRUE 
+	LIB_PATHS ${BOOST_DIR_SEARCH}
+	STATIC libboost_thread.a
+	SHARED boost_thread
+)
+set(BOOST_LIBS ${BOOST_LIBS} ${boost_thread_LIBRARIES})
 
-#HT_FASTLIB_SET(
-#	NAME "boost_chrono" 
-#	REQUIRED TRUE 
-#	LIB_PATHS ${BOOST_DIR_SEARCH}
-#	INC_PATHS ${Boost_INCLUDE_DIR}
-#	STATIC libboost_chrono.a
-#	SHARED boost_chrono
-#)
-#set(BOOST_LIBS ${BOOST_LIBS} ${boost_chrono_LIBRARIES})
+HT_FASTLIB_SET(
+	NAME "boost_chrono" 
+	REQUIRED TRUE 
+	LIB_PATHS ${BOOST_DIR_SEARCH}
+	INC_PATHS ${Boost_INCLUDE_DIR}
+	STATIC libboost_chrono.a
+	SHARED boost_chrono
+)
+set(BOOST_LIBS ${BOOST_LIBS} ${boost_chrono_LIBRARIES})

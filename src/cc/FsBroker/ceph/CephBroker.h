@@ -26,7 +26,12 @@
 #include <Common/Status.h>
 #include <Common/String.h>
 
+#include <ceph_ver.h>
+#if CEPH_RELEASE > 11
+#include <cephfs/libcephfs.h>
+#else
 #include <ceph/libceph.h>
+#endif
 
 #include <atomic>
 
