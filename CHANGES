@@ -10,9 +10,9 @@ Version master:
    removed std namespace from ThriftBroker's MetricsHandler
    added utilization of ThriftBroker.Workers configuration option 
    changed ThriftClient protocol and transport ptrs renamed with prefixed m_ as apache::thrift namespaces on-course 
-   Updated for Ceph 13.2.0 FsBroker 
    added options to link staticly with libboost, libstdc++ and libgcc 
    added new cmake option -DHT_NOT_STATIC_CORE=1
+   Updated for Ceph 13.2.0 FsBroker 
 
 Version 0.9.8.13:
 (2018-06-01)

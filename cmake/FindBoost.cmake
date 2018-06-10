@@ -129,15 +129,15 @@ foreach(libname ${BOOST_LIBNAMES})
 		)	
 	endif ()
 	set(BOOST_SHARED_NAMES ${BOOST_SHARED_NAMES}
-		"libboost_${libname}"
-		"libboost_${libname}-mt"
-		"libboost_${libname}-gcc45-mt"
-		"libboost_${libname}-gcc44-mt"
-		"libboost_${libname}-gcc43-mt"
-		"libboost_${libname}-gcc42-mt"
-		"libboost_${libname}-gcc41-mt"
-		"libboost_${libname}-gcc34-mt"
-		"libboost_${libname}-xgcc40-mt"
+		"boost_${libname}"
+		"boost_${libname}-mt"
+		"boost_${libname}-gcc45-mt"
+		"boost_${libname}-gcc44-mt"
+		"boost_${libname}-gcc43-mt"
+		"boost_${libname}-gcc42-mt"
+		"boost_${libname}-gcc41-mt"
+		"boost_${libname}-gcc34-mt"
+		"boost_${libname}-xgcc40-mt"
 	)	
 endforeach()
 
@@ -145,6 +145,7 @@ endforeach()
 
 HT_FASTLIB_SET(
 	NAME "BOOST" 
+	REQUIRED TRUE
 	LIB_PATHS ${BOOST_INCDIR_SEARCH}
 	INC_PATHS ${BOOST_LIBDIR_SEARCH}
 	STATIC ${BOOST_STATIC_NAMES}
