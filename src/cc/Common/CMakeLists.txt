@@ -85,10 +85,11 @@ HT_ADD_LIBS(
 	TARGET HyperCommon 
 	SRCS ${Common_SRCS} ${Fmemopen_SRCS}
 	TARGETS HyperThirdParty
-	DEPENDENCIES ${CMAKE_THREAD_LIBS_INIT} ${MALLOC_LIBRARY} ${BOOST_LIBRARIES} 
+	DEPENDENCIES ${MATH_LIBRARIES} ${THREAD_LIBRARIES}
+				 ${MALLOC_LIBRARY} ${BOOST_LIBRARIES} 
 				 ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${LZMA_LIBRARIES}
 				 ${TINFOW_LIBRARIES} 
-				 ${RE2_LIBRARIES} ${CRYPTO_LIBRARIES})
+				 ${RE2_LIBRARIES} ${SSL_LIBRARIES})
 
 add_executable(ht_system_info system_info.cc)
 target_link_libraries(ht_system_info HyperCommon)

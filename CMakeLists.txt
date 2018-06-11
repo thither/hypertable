@@ -228,7 +228,6 @@ SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -U__STRICT_ANSI__")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-terminate")
 
-SET(CORE_LIBS "")
 if(${HT_O_LEVEL} MATCHES "[1-3]")
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
 	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
@@ -242,9 +241,6 @@ else()
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -floop-interchange")
 	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -floop-interchange")
 
-	if(BUILD_WITH_STATIC AND NOT HT_NOT_STATIC_CORE)
-		SET(CORE_LIBS "-static-libgcc -static-libstdc++")
-	endif()
 endif ()
 
 if (ASAN)
@@ -270,6 +266,27 @@ set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
 
 find_package(Threads REQUIRED)
 message(STATUS "Using thread library: ${CMAKE_THREAD_LIBS_INIT}")
+string(SUBSTRING ${CMAKE_THREAD_LIBS_INIT} 2 -1 thread_LIB_NAME)
+
+SET(CORE_LIBS "")
+if(BUILD_WITH_STATIC AND NOT HT_NOT_STATIC_CORE)
+	SET(CORE_LIBS "-s -static-libgcc -static-libstdc++") # -static-pie -static 
+	#SET(CMAKE_FIND_ROOT_PATH /usr/local /usr/local/glibc)
+	#SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY)
+	#SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+	#SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+	set(MATH_LIBRARIES m)
+	set(THREAD_LIBRARIES ${thread_LIB_NAME} c)
+	#HT_FASTLIB_SET(NAME "MATH" REQUIRED TRUE LIB_PATHS "/usr/local/glibc/lib" INC_PATHS "/usr/local/glibc/include" STATIC libm.a SHARED m INCLUDE math.h)
+	#HT_FASTLIB_SET(NAME "THREAD" REQUIRED TRUE LIB_PATHS "/usr/local/glibc/lib" INC_PATHS "/usr/local/glibc/include" STATIC lib${thread_LIB_NAME}.a SHARED ${thread_LIB_NAME} INCLUDE ${thread_LIB_NAME}.h)
+
+else()
+	set(MATH_LIBRARIES m)
+	set(THREAD_LIBRARIES ${thread_LIB_NAME} c)
+endif()
+
+
 find_package(Mallocs)
 
 find_package(Boost REQUIRED)

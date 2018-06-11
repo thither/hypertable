@@ -180,7 +180,7 @@ HT_ADD_LIBS(
 	TARGET Hypertable 
 	SRCS ${Hypertable_SRCS}
 	TARGETS Hyperspace HyperFsBroker
-	DEPENDENCIES m ${SNAPPY_LIBRARIES} ${EXPAT_LIBRARIES})
+	DEPENDENCIES ${SNAPPY_LIBRARIES} ${EXPAT_LIBRARIES})
 add_dependencies(Hypertable HyperComm Hyperspace HyperCommon)
 
 # test files

@@ -152,7 +152,7 @@ HT_ADD_LIBS(
 	TARGET HyperRanger 
 	SRCS ${RangeServer_SRCS}
 	TARGETS HyperFsBroker Hypertable
-	DEPENDENCIES m)
+)
 
 # htRangeServer
 add_executable(htRangeServer main.cc)

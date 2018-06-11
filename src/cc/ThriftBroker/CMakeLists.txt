@@ -43,7 +43,7 @@ HT_ADD_LIBS(
 			gen-cpp/Hql_constants.cpp 
 			gen-cpp/HqlService.cpp 
 			gen-cpp/Hql_types.cpp
-	DEPENDENCIES ${THRIFT_LIBRARIES} ${EVENT_LIBRARIES} ${SSL_LIBRARIES})
+	DEPENDENCIES ${THRIFT_LIBRARIES} ${EVENT_LIBRARIES})
 
 # libHyperThriftConfig
 HT_ADD_LIBS(

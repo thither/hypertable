@@ -76,7 +76,7 @@ HT_ADD_LIBS(
 	TARGET HyperMaster 
 	SRCS ${Master_SRCS}
 	TARGETS Hyperspace HyperFsBroker Hypertable
-	DEPENDENCIES m)
+)
 	
 # htMaster
 add_executable(htMaster main.cc)

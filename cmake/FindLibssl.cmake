@@ -26,26 +26,15 @@
 
 
 HT_FASTLIB_SET(
-	NAME "CRYPTO" 
-	REQUIRED TRUE 
-	LIB_PATHS /usr/local/ssl/lib
-	INC_PATHS /usr/local/ssl/include
-	STATIC libcrypto.a 
-	SHARED crypto
-	INCLUDE openssl/crypto.h
-)
-set(CRYPTO_LIBRARIES ${CRYPTO_LIBRARIES} dl)
-
-HT_FASTLIB_SET(
 	NAME "SSL" 
 	REQUIRED TRUE 
 	LIB_PATHS /usr/local/ssl/lib
 	INC_PATHS /usr/local/ssl/include
-	STATIC libssl.a 
-	SHARED ssl
-	INCLUDE openssl/ssl.h
+	STATIC libssl.a libcrypto.a 
+	SHARED ssl crypto
+	INCLUDE openssl/ssl.h openssl/crypto.h
 )
-
+set(SSL_LIBRARIES ${SSL_LIBRARIES} dl)
 
 if (SSL_FOUND)
   exec_program(${CMAKE_SOURCE_DIR}/bin/src-utils/ldd.sh

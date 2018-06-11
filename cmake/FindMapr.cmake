@@ -23,36 +23,28 @@
 #  Mapr_LIBRARIES   - List of libraries when using Mapr.
 #  Mapr_FOUND       - True if Mapr found.
 
-
-find_path(Mapr_INCLUDE_DIR hdfs.h
-	$ENV{HADOOP_HOME}/include
-	/opt/mapr/hadoop/hadoop-0.20.2/src/c++/libhdfs
+HT_FASTLIB_SET(
+	NAME "MAPR" 
+	LIB_PATHS /opt/mapr/lib  
+			  $ENV{HADOOP_HOME}/lib/native
+	INC_PATHS /$ENV{HADOOP_HOME}/include 
+			  /opt/mapr/hadoop/hadoop-0.20.2/src/c++/libhdfs
+	STATIC libhdfs.a 
+	SHARED hdfs 
+	INCLUDE hdfs.h
 )
 
-macro(FIND_MAPR_LIB lib)
-  find_library(${lib}_LIB NAMES ${lib} PATHS 
-	/opt/mapr/lib 
-	$ENV{HADOOP_HOME}/lib/native
-	)
-  mark_as_advanced(${lib}_LIB)
-endmacro(FIND_MAPR_LIB lib libname)
-
-FIND_MAPR_LIB(hdfs)
-
-if (Mapr_INCLUDE_DIR AND hdfs_LIB)
+if (MAMPR_INCLUDE_DIR AND MAPR_LIBRARIES)
   set(Mapr_FOUND TRUE)
   
   if (jvm_LIB)
-	set(Mapr_LIBRARIES ${hdfs_LIB} ${jvm_LIB})
-	mark_as_advanced(Mapr_INCLUDE_DIR)
-	message(STATUS "Found MAPR: ${Mapr_LIBRARIES}")
-	HT_INSTALL_LIBS(lib ${hdfs_LIB})
+	set(MAPR_LIBRARIES ${MAPR_LIBRARIES} ${jvm_LIB})
   else ()
 	if (FSBROKER_MAPR)
 		message(FATAL_ERROR "Could NOT find jvm_LIB for MAPR libraries")
 	endif ()
 	set(Mapr_FOUND FALSE)
-	set(Mapr_LIBRARIES)
+	set(MAPR_LIBRARIES)
   endif ()
 
 else ()
@@ -60,5 +52,5 @@ else ()
       message(FATAL_ERROR "Could NOT find MAPR libraries")
    endif ()
    set(Mapr_FOUND FALSE)
-   set(Mapr_LIBRARIES)
+   set(MAPR_LIBRARIES)
 endif ()
