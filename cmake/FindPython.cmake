@@ -35,6 +35,8 @@ if (LANGS OR LANG_PY2)
             /usr/local/include/python${PYTHON_VERSION}
             /usr/include/python${PYTHON_VERSION}
             )
+		
+		if(LANG_PY_HYPERPYTHON)
 		find_library(PYTHON2_LIBRARY python${PYTHON_VERSION} NO_DEFAULT_PATH PATHS
                ${HT_DEPENDENCY_LIB_DIR}
                /opt/local/lib
@@ -42,6 +44,7 @@ if (LANGS OR LANG_PY2)
                /usr/lib
                /usr/lib/x86_64-linux-gnu
                )
+		endif()
 	elseif (LANG_PY2)
 	    message(FATAL_ERROR "Requested for language, python2 is not available")
 	endif ()
@@ -81,6 +84,7 @@ if (LANGS OR LANG_PY3)
             )
 		endif ()
 			
+		if(LANG_PY_HYPERPYTHON)
 		find_library(PYTHON3_LIBRARY python${PYTHON_VERSION} NO_DEFAULT_PATH PATHS
                ${HT_DEPENDENCY_LIB_DIR}
                /opt/local/lib
@@ -97,11 +101,12 @@ if (LANGS OR LANG_PY3)
 				/usr/lib/x86_64-linux-gnu
                )
 		endif ()
+		endif ()
 	elseif (LANG_PY3)
 	    message(FATAL_ERROR "Requested for language, python3 is not available")
 	endif ()
 	
-	if (PYTHON3_INCLUDE_DIR AND PYTHON3_LIBRARY)
+	if (PYTHON3_INCLUDE_DIR AND (PYTHON3_LIBRARY OR NOT LANG_PY_HYPERPYTHON))
 		set(PYTHON3_FOUND ON)
 		set(PYTHON3_LIBRARY ${PYTHON3_LIBRARY})
 		message(STATUS "Found Python${PYTHON_VERSION}-devel: ${PYTHON3_LIBRARY}  ${PYTHON3_INCLUDE_DIR}")
@@ -126,11 +131,14 @@ print(sys.prefix);
 		string(REGEX REPLACE "\n" ";" _PYPY_VALUES ${_PYPY_VALUES})
 		list(GET _PYPY_VALUES 0 PYPY2_INCLUDE_DIR)
 		list(GET _PYPY_VALUES 1 PYPY2_LIBDIR)
-		set(PYPY2_LIBDIR ${PYPY2_LIBDIR}/bin/libpypy-c.so)
+		
+		if(LANG_PY_HYPERPYTHON)
+			set(PYPY2_LIBDIR ${PYPY2_LIBDIR}/bin/libpypy-c.so)
+		endif ()
 	elseif(LANG_PYPY2)
 	    message(FATAL_ERROR "Requested for language, pypy2 is not available")
 	endif ()
-	if (PYPY2_INCLUDE_DIR AND PYPY2_LIBDIR)
+	if (PYPY2_INCLUDE_DIR AND (PYPY2_LIBDIR OR NOT LANG_PY_HYPERPYTHON))
 		set(PYPY2_FOUND ON)
 		message(STATUS "Found PyPy2-devel: ${PYPY2_LIBDIR} ${PYPY2_INCLUDE_DIR}")
 	else ()
@@ -152,11 +160,13 @@ print(sys.prefix);
 		string(REGEX REPLACE "\n" ";" _PYPY_VALUES ${_PYPY_VALUES})
 		list(GET _PYPY_VALUES 0 PYPY3_INCLUDE_DIR)
 		list(GET _PYPY_VALUES 1 PYPY3_LIBDIR)
-		set(PYPY3_LIBDIR ${PYPY3_LIBDIR}/bin/libpypy-c.so)
+		if(LANG_PY_HYPERPYTHON)
+			set(PYPY3_LIBDIR ${PYPY3_LIBDIR}/bin/libpypy-c.so)
+		endif ()
 	elseif (LANG_PYPY3)
 	    message(FATAL_ERROR "Requested for language, pypy3 is not available")
 	endif ()
-	if (PYPY3_INCLUDE_DIR AND PYPY3_LIBDIR)
+	if (PYPY3_INCLUDE_DIR AND (PYPY3_LIBDIR) OR NOT LANG_PY_HYPERPYTHON)
 		set(PYPY3_FOUND ON)
 		message(STATUS "Found PyPy3-devel: ${PYPY3_LIBDIR} ${PYPY3_INCLUDE_DIR}")
 	else ()

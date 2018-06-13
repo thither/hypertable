@@ -36,12 +36,27 @@ HT_FASTLIB_SET(
 )
 set(SSL_LIBRARIES ${SSL_LIBRARIES} dl)
 
+
+
 if (SSL_FOUND)
+	
+	# if ssl with dso "dl" required
+	#exec_program(nm ARGS ${SSL_LIBRARIES}
+	#			OUTPUT_VARIABLE LDD_OUT
+	#			RETURN_VALUE LDD_RETURN)
+	#if (LDD_RETURN STREQUAL "gg")
+	#	string(REGEX MATCH "dlfcn_globallookup" dummy ${LDD_OUT})
+	#	message(STATUS ${dummy})
+	#	if (dummy)
+	#		set(SSL_LIBRARIES ${SSL_LIBRARIES} dl)
+	#	endif ()
+	#	message(STATUS ${SSL_LIBRARIES})
+	#endif ()
+			   
   exec_program(${CMAKE_SOURCE_DIR}/bin/src-utils/ldd.sh
                ARGS ${SSL_LIBRARIES}
                OUTPUT_VARIABLE LDD_OUT
                RETURN_VALUE LDD_RETURN)
-
   if (LDD_RETURN STREQUAL "0")
     string(REGEX MATCH "[ \t](/[^ ]+/libgssapi_krb5\\.[^ \n]+)" dummy ${LDD_OUT})
     set(Libssl_LIB_DEPENDENCIES "${Libssl_LIB_DEPENDENCIES} ${CMAKE_MATCH_1}")
