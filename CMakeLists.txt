@@ -270,7 +270,7 @@ string(SUBSTRING ${CMAKE_THREAD_LIBS_INIT} 2 -1 thread_LIB_NAME)
 
 SET(CORE_LIBS "")
 if(BUILD_WITH_STATIC AND NOT HT_NOT_STATIC_CORE)
-	SET(CORE_LIBS "-s -static-libgcc -static-libstdc++") # -static-pie -static 
+	SET(CORE_LIBS "-s -static-libgcc -static-libstdc++") # not possible -static-pie -static as long as dl is involved
 	#SET(CMAKE_FIND_ROOT_PATH /usr/local /usr/local/glibc)
 	#SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY)
 	#SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
