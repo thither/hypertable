@@ -55,16 +55,22 @@ ClientKeepaliveHandler::ClientKeepaliveHandler(Comm *comm, PropertiesPtr &cfg,
   m_last_keep_alive_send_time = now;
   m_jeopardy_time = now + chrono::milliseconds(m_lease_interval);
 
-  for (const auto &replica : cfg->get_strs("Hyperspace.Replica.Host")) {
-    m_hyperspace_replicas.push_back(replica);
-  }
+  if (m_hyperspace_replicas.size() == cfg->get_strs("Hyperspace.Replica.Host").size())
+	  m_hyperspace_replicas.clear();
 
-  HT_DEBUG_OUT << "Looking for Hyperspace master at " << m_hyperspace_replicas[0]
+  for (const auto &replica : cfg->get_strs("Hyperspace.Replica.Host")) {
+	  if (std::find(m_hyperspace_replicas.begin(), m_hyperspace_replicas.end(), replica)
+		  == m_hyperspace_replicas.end())
+		  m_hyperspace_replicas.push_back(replica);
+  }
+  // opts, rnd or rack aware
+
+  HT_DEBUG_OUT << "Looking for Hyperspace master at " << m_hyperspace_replicas.back()
                << ":" << m_hyperspace_port << HT_END;
-  HT_EXPECT(InetAddr::initialize(&m_master_addr, m_hyperspace_replicas[0].c_str(),
+  HT_EXPECT(InetAddr::initialize(&m_master_addr, m_hyperspace_replicas.back().c_str(),
                                  m_hyperspace_port), Error::BAD_DOMAIN_NAME);
 
-  m_session->update_master_addr(m_hyperspace_replicas[0]);
+  m_session->update_master_addr(m_hyperspace_replicas.back());
 
 }
 

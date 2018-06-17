@@ -94,20 +94,17 @@ BerkeleyDbFilesystem::BerkeleyDbFilesystem(PropertiesPtr &props,
   if (force_recover)
     env_flags |= DB_RECOVER_FATAL;
 
-   m_db_flags = DB_CREATE | DB_AUTO_COMMIT | DB_THREAD;
 
   /*
    * Open Berkeley DB environment and namespace database
    */
   try {
-    int ret;
-    Dbt key, data;
-    DbtManaged keym, datam;
-    char numbuf[17];
     String localhost = System::net_info().host_name;
     String localip = System::net_info().primary_addr;
     HT_INFOF("localhost=%s localip=%s", localhost.c_str(), localip.c_str());
 
+	// an enstance pointer for useing with call-backs
+	m_replication_info.m_cls = this;
     m_env.set_lk_detect(DB_LOCK_DEFAULT);
     m_env.set_app_private(&m_replication_info);
     m_env.set_event_notify(db_event_callback);
@@ -216,119 +213,19 @@ BerkeleyDbFilesystem::BerkeleyDbFilesystem(PropertiesPtr &props,
 #else
           m_env.repmgr_add_remote_site(e.host.c_str(), e.port, &eid, 0);
 #endif
-          m_replication_info.replica_map[eid] = e.host;
+		  m_replication_info.rep_add(eid, e.host);
           HT_INFOF("Added remote replication site %s priority=%d", e.host.c_str(), priority);
         }
         --priority;
       }
-      m_env.repmgr_start(3, DB_REP_ELECTION);
-      m_replication_info.do_replication = true;
-      m_replication_info.wait_for_election();
+	  m_env.repmgr_start(3, DB_REP_ELECTION);
+	  m_replication_info.do_replication = true;
+	  m_replication_info.wait_for_election();
+	  // go_master(); event-driven on DB_EVENT_REP_MASTER
     }
     else {
       m_replication_info.do_replication = false;
-    }
-
-
-    // only master can initiate writes
-    if (is_master()) {
-      // do checkpoint
-      m_env.txn_checkpoint(0, 0, 0);
-
-      // open handles
-      Db *handle_namespace_db = new Db(&m_env, 0);
-      Db *handle_state_db     = new Db(&m_env, 0);
-
-      try {
-        handle_namespace_db->open(NULL, ms_name_namespace_db, NULL, DB_BTREE, m_db_flags, 0);
-      }
-      catch(DbException &e) {
-        // retry if locker killed to resolve a deadlock
-        if (e.get_errno() == DB_LOCK_DEADLOCK)
-          handle_namespace_db->open(NULL, ms_name_namespace_db, NULL, DB_BTREE, m_db_flags, 0);
-        else
-          throw;
-      }
-
-      handle_state_db->set_flags(DB_DUP|DB_REVSPLITOFF);
-      try {
-        handle_state_db->open(NULL, ms_name_state_db, NULL, DB_BTREE, m_db_flags, 0);
-      }
-      catch(DbException &e) {
-        // retry if locker killed to resolve a deadlock
-        if (e.get_errno() == DB_LOCK_DEADLOCK)
-          handle_state_db->open(NULL, ms_name_state_db, NULL, DB_BTREE, m_db_flags, 0);
-        else
-          throw;
-      }
-
-      key.set_data((void *)"/");
-      key.set_size(2);
-
-      data.set_flags(DB_DBT_REALLOC);
-      if ((ret = handle_namespace_db->get(NULL, &key, &data, 0)) == DB_NOTFOUND) {
-        data.set_data(0);
-        data.set_size(0);
-        ret = handle_namespace_db->put(NULL, &key, &data, 0);
-        key.set_data((void *)"/hyperspace/");
-        key.set_size(strlen("/hyperspace/")+1);
-        ret = handle_namespace_db->put(NULL, &key, &data, 0);
-        key.set_data((void *)"/hyperspace/metadata");
-        key.set_size(strlen("/hyperspace/metadata")+1);
-        ret = handle_namespace_db->put(NULL, &key, &data, 0);
-      }
-
-      if (data.get_data() != 0)
-        free(data.get_data());
-
-      // initialize statedb if reqd
-      key.set_data((void *)"/");
-      key.set_size(2);
-
-      data.set_flags(DB_DBT_REALLOC);
-      data.set_data(0);
-      data.set_size(0);
-
-      if((ret = handle_state_db->get(NULL, &key, &data, 0)) == DB_NOTFOUND) {
-        data.set_data(0);
-        data.set_size(0);
-        ret = handle_state_db->put(NULL, &key, &data, 0);
-        HT_ASSERT(ret == 0);
-      }
-      // init next ids in statedb
-      keym.set_str(NEXT_SESSION_ID);
-      if ((ret = handle_state_db->get(NULL, &keym, &datam, 0)) == DB_NOTFOUND) {
-        sprintf(numbuf, "%llu", (Llu)1);
-        datam.set_str(numbuf);
-        ret = handle_state_db->put(NULL, &keym, &datam, 0);
-        HT_ASSERT(ret==0);
-      }
-      keym.set_str(NEXT_HANDLE_ID);
-      if ( (ret = handle_state_db->get(NULL, &keym, &datam, 0)) == DB_NOTFOUND) {
-        sprintf(numbuf, "%llu", (Llu)1);
-        datam.set_str(numbuf);
-        ret = handle_state_db->put(NULL, &keym, &datam, 0);
-        HT_ASSERT(ret==0);
-      }
-      keym.set_str(NEXT_EVENT_ID);
-      if ((ret = handle_state_db->get(NULL, &keym, &datam, 0)) == DB_NOTFOUND) {
-        sprintf(numbuf, "%llu", (Llu)1);
-        datam.set_str(numbuf);
-        ret = handle_state_db->put(NULL, &keym, &datam, 0);
-        HT_ASSERT(ret==0);
-      }
-
-      if (data.get_data() != 0)
-        free(data.get_data());
-
-      //close handles
-      handle_state_db->close(0);
-      delete handle_state_db;
-      handle_state_db = 0;
-      handle_namespace_db->close(0);
-      delete handle_namespace_db;
-      handle_namespace_db = 0;
-      HT_INFO("Replication master init done");
+	  go_master(m_replication_info.m_cls);
     }
 
   }
@@ -364,6 +261,120 @@ BerkeleyDbFilesystem::BerkeleyDbFilesystem(PropertiesPtr &props,
   HT_DEBUG_OUT <<"namespace initialized"<< HT_END;
 }
 
+/*
+ setup master hyperspace environment
+*/
+void BerkeleyDbFilesystem::go_master(BerkeleyDbFilesystem* m_cls) {
+	// only master can initiate writes, sanity check-up
+	if (!m_cls->is_master()) return;
+
+	Dbt key, data;
+	DbtManaged keym, datam;
+	char numbuf[17];
+	int ret;
+	try {
+		// do checkpoint
+		m_cls->m_env.txn_checkpoint(0, 0, 0);
+
+		// open handles
+		Db *handle_namespace_db = new Db(&m_cls->m_env, 0);
+		Db *handle_state_db = new Db(&m_cls->m_env, 0);
+
+		try {
+			handle_namespace_db->open(NULL, ms_name_namespace_db, NULL, DB_BTREE, m_cls->m_db_flags, 0);
+		}
+		catch (DbException &e) {
+			// retry if locker killed to resolve a deadlock
+			if (e.get_errno() == DB_LOCK_DEADLOCK)
+				handle_namespace_db->open(NULL, ms_name_namespace_db, NULL, DB_BTREE, m_cls->m_db_flags, 0);
+			else
+				throw;
+		}
+
+		handle_state_db->set_flags(DB_DUP | DB_REVSPLITOFF);
+		try {
+			handle_state_db->open(NULL, ms_name_state_db, NULL, DB_BTREE, m_cls->m_db_flags, 0);
+		}
+		catch (DbException &e) {
+			// retry if locker killed to resolve a deadlock
+			if (e.get_errno() == DB_LOCK_DEADLOCK)
+				handle_state_db->open(NULL, ms_name_state_db, NULL, DB_BTREE, m_cls->m_db_flags, 0);
+			else
+				throw;
+		}
+
+		key.set_data((void *)"/");
+		key.set_size(2);
+
+		data.set_flags(DB_DBT_REALLOC);
+		if ((ret = handle_namespace_db->get(NULL, &key, &data, 0)) == DB_NOTFOUND) {
+			data.set_data(0);
+			data.set_size(0);
+			ret = handle_namespace_db->put(NULL, &key, &data, 0);
+			key.set_data((void *)"/hyperspace/");
+			key.set_size(strlen("/hyperspace/") + 1);
+			ret = handle_namespace_db->put(NULL, &key, &data, 0);
+			key.set_data((void *)"/hyperspace/metadata");
+			key.set_size(strlen("/hyperspace/metadata") + 1);
+			ret = handle_namespace_db->put(NULL, &key, &data, 0);
+		}
+
+		if (data.get_data() != 0)
+			free(data.get_data());
+
+		// initialize statedb if reqd
+		key.set_data((void *)"/");
+		key.set_size(2);
+
+		data.set_flags(DB_DBT_REALLOC);
+		data.set_data(0);
+		data.set_size(0);
+
+		if ((ret = handle_state_db->get(NULL, &key, &data, 0)) == DB_NOTFOUND) {
+			data.set_data(0);
+			data.set_size(0);
+			ret = handle_state_db->put(NULL, &key, &data, 0);
+			HT_ASSERT(ret == 0);
+		}
+		// init next ids in statedb
+		keym.set_str(NEXT_SESSION_ID);
+		if ((ret = handle_state_db->get(NULL, &keym, &datam, 0)) == DB_NOTFOUND) {
+			sprintf(numbuf, "%llu", (Llu)1);
+			datam.set_str(numbuf);
+			ret = handle_state_db->put(NULL, &keym, &datam, 0);
+			HT_ASSERT(ret == 0);
+		}
+		keym.set_str(NEXT_HANDLE_ID);
+		if ((ret = handle_state_db->get(NULL, &keym, &datam, 0)) == DB_NOTFOUND) {
+			sprintf(numbuf, "%llu", (Llu)1);
+			datam.set_str(numbuf);
+			ret = handle_state_db->put(NULL, &keym, &datam, 0);
+			HT_ASSERT(ret == 0);
+		}
+		keym.set_str(NEXT_EVENT_ID);
+		if ((ret = handle_state_db->get(NULL, &keym, &datam, 0)) == DB_NOTFOUND) {
+			sprintf(numbuf, "%llu", (Llu)1);
+			datam.set_str(numbuf);
+			ret = handle_state_db->put(NULL, &keym, &datam, 0);
+			HT_ASSERT(ret == 0);
+		}
+
+		if (data.get_data() != 0)
+			free(data.get_data());
+
+		//close handles
+		handle_state_db->close(0);
+		delete handle_state_db;
+		handle_state_db = 0;
+		handle_namespace_db->close(0);
+		delete handle_namespace_db;
+		handle_namespace_db = 0;
+		HT_INFO("Replication master init done");
+	}
+	catch (DbException &e) {
+		HT_FATALF("Error setup replication master Berkeley DB: %s;", e.what());
+	}
+}
 /*
  */
 BerkeleyDbFilesystem::~BerkeleyDbFilesystem() {
@@ -404,6 +415,7 @@ void BerkeleyDbFilesystem::db_err_callback(const DbEnv *dbenv, const char *errpf
 void BerkeleyDbFilesystem::db_event_callback(DbEnv *dbenv, uint32_t which, void *info)
 {
   ReplicationInfo *replication_info = (ReplicationInfo*)dbenv->get_app_private();
+  int eid = *((int*)info);
 
   switch (which) {
   case DB_EVENT_REP_CLIENT:
@@ -412,33 +424,46 @@ void BerkeleyDbFilesystem::db_event_callback(DbEnv *dbenv, uint32_t which, void 
   case DB_EVENT_REP_MASTER:
     HT_INFO("Received DB_EVENT_REP_MASTER event");
     HT_INFOF("Local site elected master: %s", replication_info->localhost.c_str());
-   replication_info->is_master = true;
-   replication_info->finish_election();
-   break;
+	// sanity in-case multi-req, keep check on logs with Local site elected
+	if (!replication_info->is_master) {
+		replication_info->is_master = true;
+		go_master(replication_info->m_cls);
+		replication_info->finish_election();
+	}
+	break;
   case DB_EVENT_REP_ELECTED:
-    HT_INFO("Received DB_EVENT_REP_ELECTED event ignore and wait for DB_EVENT_REP_MASTER");
+    HT_INFO("Received DB_EVENT_REP_ELECTED event syncing and waiting for DB_EVENT_REP_MASTER");
+	dbenv->rep_sync(0);
     break;
   case DB_EVENT_REP_NEWMASTER:
     HT_INFO("Received DB_EVENT_REP_NEWMASTER event");
-   // exit if we lost mastership
-   if (replication_info->is_master)
-     HT_FATAL("Local site lost mastership");
-   replication_info->master_eid = *((int*)info);
-   {
-     auto it = replication_info->replica_map.find(replication_info->master_eid);
-     HT_ASSERT (it != replication_info->replica_map.end());
-     HT_INFOF("New master elected: %s", it->second.c_str());
+	// current master should not receive this event, anyway
+	if (replication_info->is_master && replication_info->master_eid != eid) {
+		// exit if we lost mastership
+		// The master can reboot and re-join the replication group as a client.
+		// wait for any incoming dbenv->rep_sync(0) requests
+		HT_FATAL("Local site lost mastership, Exiting!");
+	}
+	// sync if possible with current master dbenv->rep_sync(0)
 
-     if (replication_info->election_finished())
-       HT_FATAL("New master elected after initial master election.");
+	// sanity check, missing hostname while a site was added.
+	// HT_ASSERT(replication_info->get_site(eid).compare("") != 0 );
+	HT_INFOF("New master elected: %s", replication_info->get_site(eid).c_str());
 
-     replication_info->finish_election();
-   }
-   break;
+    replication_info->master_eid = eid;
+    if (replication_info->m_cls->is_master())
+	   // finishes with DB_EVENT_REP_MASTER
+	   return;
+	// sanity check
+    // if (replication_info->election_finished())
+    //		HT_FATAL("New master elected after initial master election.");
+	replication_info->finish_election();
+	break;
   case DB_EVENT_REP_PERM_FAILED:
-   if (replication_info->is_master)
-     HT_FATAL("Replication failed. Master did not receive enough acks.");
-   break;
+	if (replication_info->is_master)
+		 HT_FATAL("Replication failed. Master did not receive enough acks.");
+	dbenv->rep_sync(0);
+    break;
   case DB_EVENT_PANIC:
    HT_FATAL("Received DB_EVENT_PANIC event");
    break;
@@ -460,8 +485,9 @@ void BerkeleyDbFilesystem::db_event_callback(DbEnv *dbenv, uint32_t which, void 
     HT_INFO("Received DB_EVENT_REP_CONNECT_TRY_FAILED event");
    break;
   case DB_EVENT_REP_DUPMASTER:
-    HT_INFO("Received DB_EVENT_REP_DUPMASTER event");
-   break;
+	// sync and one of masters need to exit
+	HT_INFO("Received DB_EVENT_REP_DUPMASTER event");
+	break;
   case DB_EVENT_REP_ELECTION_FAILED:
     HT_INFO("Received DB_EVENT_REP_ELECTION_FAILED event");
    break;
@@ -473,21 +499,48 @@ void BerkeleyDbFilesystem::db_event_callback(DbEnv *dbenv, uint32_t which, void 
    break;
   case DB_EVENT_REP_LOCAL_SITE_REMOVED:
     HT_INFO("Received DB_EVENT_REP_LOCAL_SITE_REMOVED event");
+	// It can shutdown
    break;
   case DB_EVENT_REP_MASTER_FAILURE:
     HT_INFO("Received DB_EVENT_REP_MASTER_FAILURE event");
+	// rep. mgr does repmgr_start, ev DB_EVENT_REP_MASTER on succeess
+	// if (replication_info->election_finished()) do_election();
    break;
   case DB_EVENT_REP_SITE_ADDED:
-    HT_INFO("Received DB_EVENT_REP_SITE_ADDED event");
-   break;
+	update_rep_sites(dbenv, replication_info);
+	dbenv->rep_sync(0);
+	HT_INFO("Received DB_EVENT_REP_SITE_ADDED event, updating sites and syncing");
+	break;
   case DB_EVENT_REP_SITE_REMOVED:
-    HT_INFO("Received DB_EVENT_REP_SITE_REMOVED event");
-   break;
+	update_rep_sites(dbenv, replication_info);
+	HT_INFO("Received DB_EVENT_REP_SITE_REMOVED event, updating sites");
+	break;
 #endif
 
   default:
     HT_INFO("Received BerkeleyDB event ");
   }
+}
+/* update replication sites follow site added or removed */
+void BerkeleyDbFilesystem::update_rep_sites(DbEnv* dbenv, ReplicationInfo *replication_info) {
+	unsigned count = 0;
+	DB_REPMGR_SITE *list = 0;
+	int e = dbenv->repmgr_site_list(&count, &list);
+	if (e == 0 || count == 0) return;
+
+	/* in-case config required
+	int eid;
+	for (auto e : listp) {
+		DbSite *dbsite;
+		m_env.repmgr_site(e.host.c_str(), e.port, &dbsite, 0);
+		dbsite->set_config(DB_BOOTSTRAP_HELPER, 1);
+		dbsite->set_config(DB_LEGACY, 1);
+		dbsite->get_eid(&eid);
+		dbsite->close();
+	}
+	*/
+	replication_info->rep_update_sites(count, list);
+	free(list);
 }
 
 void BerkeleyDbFilesystem::init_db_handles(const std::vector<Thread::id> &thread_ids) {
@@ -530,7 +583,7 @@ BDbHandlesPtr BerkeleyDbFilesystem::get_db_handles() {
 void BerkeleyDbFilesystem::do_checkpoint() {
 
   // do checkpoint, don't bother to check if this is the master
-  // since its just ignored be  slaves
+  // since its just ignored be slaves
   HT_DEBUG_OUT << "Do checkpoint if log > " << m_checkpoint_size_kb << "KB" << HT_END;
   int ret;
   try {

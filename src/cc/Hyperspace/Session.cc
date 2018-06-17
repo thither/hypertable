@@ -68,6 +68,7 @@ Session::Session(Comm *comm, PropertiesPtr &cfg)
 
   for (const auto &replica : cfg->get_strs("Hyperspace.Replica.Host")) {
     m_hyperspace_replicas.push_back(replica);
+	// so far, used only with cmd LOCATE REPLICAS
   }
 
   m_timeout_ms = m_lease_interval * 2;
