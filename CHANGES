@@ -79,6 +79,7 @@ Version 0.9.8.12:
    Fixed RRDtool execution arg to --step=%u
    RangeServer "Context" changed to "RangeServerContext"
    Fixed ht_cluster SSH con steadiness and optional ../conf/ht_ssh_config 
+   issue #70 Ambiguous class name Context 
    
 Version 0.9.8.11:
 (2016-03-14)
