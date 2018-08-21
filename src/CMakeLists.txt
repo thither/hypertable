@@ -37,7 +37,7 @@ endif ()
 
 
 # DISTRIBUTES FILE SYSTEMS
-if (Ceph_FOUND)
+if (CEPH_FOUND)
    add_subdirectory(cc/FsBroker/ceph)
 endif ()
 

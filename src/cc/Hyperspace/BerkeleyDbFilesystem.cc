@@ -433,7 +433,7 @@ void BerkeleyDbFilesystem::db_event_callback(DbEnv *dbenv, uint32_t which, void 
 	break;
   case DB_EVENT_REP_ELECTED:
     HT_INFO("Received DB_EVENT_REP_ELECTED event syncing and waiting for DB_EVENT_REP_MASTER");
-	dbenv->rep_sync(0);
+	// dbenv->rep_sync(0);  can it be ?
     break;
   case DB_EVENT_REP_NEWMASTER:
     HT_INFO("Received DB_EVENT_REP_NEWMASTER event");

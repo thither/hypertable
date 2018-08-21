@@ -1,8 +1,10 @@
 
-Version master:
+Version 0.9.8.14:
 (in-progress)
 
+   Updated for GCC 8.2, boost 1.68.0, maven 3.5.4
    Updated for Thrift 0.11.0 (no backward capabilitites)
+   Updated for Ceph 13.2.0 FsBroker
    fixed ThriftBroker any shared_ptr switched to thrift::stdcxx::shared_ptr
    add new cmake option -DBOOST_NO_CXX11_SMART_PTR=1 for thrift to use Boost
    changed ThriftBroker does not need to inlcude boost
@@ -12,7 +14,6 @@ Version master:
    changed ThriftClient protocol and transport ptrs renamed with prefixed m_ as apache::thrift namespaces on-course 
    added options to link staticly with libboost, libstdc++ and libgcc 
    added new cmake option -DHT_NOT_STATIC_CORE=1
-   Updated for Ceph 13.2.0 FsBroker
    changed Hyperspace client keep-alive handler selects a hyperspace-replica by round-robin
    added accessed with scope_guard for replica_map in ReplicationInfo
    added ReplicationInfo new methods rep_update_sites, rep_remove, rep_add, get_site 
@@ -23,7 +24,7 @@ Version master:
    changed BerkeleyDbFilesystem master, lost of ownership condition to is_master && master_eid != eid
    changed BerkeleyDbFilesystem condition for event DB_EVENT_REP_NEWMASTER new Master can be elected
    added on event DB_EVENT_REP_MASTER, in-case host is a new master, go_master() doing master init
-   added a call to dbenv->rep_sync(0) to DB_EVENT_REP_PERM_FAILED, DB_EVENT_REP_ELECTED, DB_EVENT_REP_SITE_ADDED events
+   added a call to dbenv->rep_sync(0) to DB_EVENT_REP_PERM_FAILED, DB_EVENT_REP_SITE_ADDED events
    added a call of update_rep_sites for events DB_EVENT_REP_SITE_ADDED and DB_EVENT_REP_SITE_REMOVED
    added method BerkeleyDbFilesystem::update_rep_sites makes functionality of hot-adding replicas without Hyperspace.Replica.Host
    TODO: check Hyperspace related changes in cluster environment
