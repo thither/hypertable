@@ -113,7 +113,8 @@ namespace Hyperspace {
     bool m_reconnect {};
     uint16_t m_hyperspace_port {};
     uint16_t m_datagram_send_port {};
-    std::vector<String> m_hyperspace_replicas;
+	std::vector<String> m_hyperspace_replicas;
+	uint16_t m_hyperspace_replica_nxt = 0;
   };
 
   typedef std::shared_ptr<ClientKeepaliveHandler> ClientKeepaliveHandlerPtr;

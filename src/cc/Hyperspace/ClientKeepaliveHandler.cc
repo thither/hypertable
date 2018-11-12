@@ -40,37 +40,47 @@ using namespace Hyperspace;
 using namespace Serialization;
 
 ClientKeepaliveHandler::ClientKeepaliveHandler(Comm *comm, PropertiesPtr &cfg,
-                                               Session *session)
-  : m_comm(comm), m_session(session) {
+	Session *session)
+	: m_comm(comm), m_session(session) {
 
-  HT_TRY("getting config values",
-    m_verbose = cfg->get_bool("Hypertable.Verbose");
-    m_hyperspace_port = cfg->get_i16("Hyperspace.Replica.Port");
-    m_datagram_send_port = cfg->get_i16("Hyperspace.Client.Datagram.SendPort");
-    m_lease_interval = cfg->get_i32("Hyperspace.Lease.Interval");
-    m_keep_alive_interval = cfg->get_i32("Hyperspace.KeepAlive.Interval");
-    m_reconnect = cfg->get_bool("Hyperspace.Session.Reconnect"));
+	HT_TRY("getting config values",
+		m_verbose = cfg->get_bool("Hypertable.Verbose");
+	m_hyperspace_port = cfg->get_i16("Hyperspace.Replica.Port");
+	m_datagram_send_port = cfg->get_i16("Hyperspace.Client.Datagram.SendPort");
+	m_lease_interval = cfg->get_i32("Hyperspace.Lease.Interval");
+	m_keep_alive_interval = cfg->get_i32("Hyperspace.KeepAlive.Interval");
+	m_reconnect = cfg->get_bool("Hyperspace.Session.Reconnect"));
 
-  auto now = chrono::steady_clock::now();
-  m_last_keep_alive_send_time = now;
-  m_jeopardy_time = now + chrono::milliseconds(m_lease_interval);
+	auto now = chrono::steady_clock::now();
+	m_last_keep_alive_send_time = now;
+	m_jeopardy_time = now + chrono::milliseconds(m_lease_interval);
+	
+	{
+		lock_guard<recursive_mutex> lock(m_mutex);
+		std::vector<String> new_replicas = cfg->get_strs("Hyperspace.Replica.Host");
 
-  if (m_hyperspace_replicas.size() == cfg->get_strs("Hyperspace.Replica.Host").size())
-	  m_hyperspace_replicas.clear();
+		for (const auto &replica : m_hyperspace_replicas) {
+			if (std::find(new_replicas.begin(), new_replicas.end(), replica)
+				!= new_replicas.end())
+				m_hyperspace_replicas.erase(replica);
+		}
+		for (const auto &replica : new_replicas) {
+			if (std::find(m_hyperspace_replicas.begin(), m_hyperspace_replicas.end(), replica)
+				== m_hyperspace_replicas.end())
+				m_hyperspace_replicas.push_back(replica);
+		}
+	}
+	// opts, rnd or rack aware
+	// if round-rubin
+	String replica = m_hyperspace_replicas[m_hyperspace_replica_nxt];
+	m_hyperspace_replica_nxt++;
+	if (m_hyperspace_replica_nxt == m_hyperspace_replicas.size())
+		m_hyperspace_replica_nxt = 0;
+	
+	HT_DEBUG_OUT << "Looking for Hyperspace master at " << replica << ":" << m_hyperspace_port << HT_END;
+	HT_EXPECT(InetAddr::initialize(&m_master_addr, replica, m_hyperspace_port), Error::BAD_DOMAIN_NAME);
 
-  for (const auto &replica : cfg->get_strs("Hyperspace.Replica.Host")) {
-	  if (std::find(m_hyperspace_replicas.begin(), m_hyperspace_replicas.end(), replica)
-		  == m_hyperspace_replicas.end())
-		  m_hyperspace_replicas.push_back(replica);
-  }
-  // opts, rnd or rack aware
-
-  HT_DEBUG_OUT << "Looking for Hyperspace master at " << m_hyperspace_replicas.back()
-               << ":" << m_hyperspace_port << HT_END;
-  HT_EXPECT(InetAddr::initialize(&m_master_addr, m_hyperspace_replicas.back().c_str(),
-                                 m_hyperspace_port), Error::BAD_DOMAIN_NAME);
-
-  m_session->update_master_addr(m_hyperspace_replicas.back());
+	m_session->update_master_addr(replica);
 
 }
 

@@ -221,7 +221,7 @@ BerkeleyDbFilesystem::BerkeleyDbFilesystem(PropertiesPtr &props,
 	  m_env.repmgr_start(3, DB_REP_ELECTION);
 	  m_replication_info.do_replication = true;
 	  m_replication_info.wait_for_election();
-	  // go_master(); event-driven on DB_EVENT_REP_MASTER
+	  // go_master(); event-driven on DB_EVENT_REP_MASTER - won't be called for a single replication
     }
     else {
       m_replication_info.do_replication = false;
@@ -419,106 +419,109 @@ void BerkeleyDbFilesystem::db_event_callback(DbEnv *dbenv, uint32_t which, void 
 
   switch (which) {
   case DB_EVENT_REP_CLIENT:
-    HT_INFO("Received DB_EVENT_REP_CLIENT event");
-   break;
+	  HT_INFO("Received DB_EVENT_REP_CLIENT event");
+	  dbenv->rep_sync(0);
+	  break;
   case DB_EVENT_REP_MASTER:
-    HT_INFO("Received DB_EVENT_REP_MASTER event");
-    HT_INFOF("Local site elected master: %s", replication_info->localhost.c_str());
-	// sanity in-case multi-req, keep check on logs with Local site elected
-	if (!replication_info->is_master) {
-		replication_info->is_master = true;
-		go_master(replication_info->m_cls);
-		replication_info->finish_election();
-	}
-	break;
+	  HT_INFO("Received DB_EVENT_REP_MASTER event");
+	  HT_INFOF("Local site elected master: %s", replication_info->localhost.c_str());
+	  // sanity in-case multi-req, keep check on logs with Local site elected
+	  if (!replication_info->is_master) {
+		  replication_info->is_master = true;
+		  go_master(replication_info->m_cls);
+	  }
+	  replication_info->finish_election();
+	  break;
   case DB_EVENT_REP_ELECTED:
-    HT_INFO("Received DB_EVENT_REP_ELECTED event waiting for DB_EVENT_REP_MASTER");
-	// dbenv->rep_sync(0); and syncing, can it be?
-    break;
+	  HT_INFO("Received DB_EVENT_REP_ELECTED event waiting for DB_EVENT_REP_MASTER");
+	  // dbenv->rep_sync(0); and syncing, can it be(is there an active master )?
+	  break;
   case DB_EVENT_REP_NEWMASTER:
-    HT_INFO("Received DB_EVENT_REP_NEWMASTER event");
-	// current master should not receive this event, anyway
-	if (replication_info->is_master && replication_info->master_eid != eid) {
-		// exit if we lost mastership
-		// The master can reboot and re-join the replication group as a client.
-		// wait for any incoming dbenv->rep_sync(0) requests
-		HT_FATAL("Local site lost mastership, Exiting!");
-	}
-	// sync if possible with current master dbenv->rep_sync(0)
-
-	// sanity check, missing hostname while a site was added.
-	// HT_ASSERT(replication_info->get_site(eid).compare("") != 0 );
-	HT_INFOF("New master elected: %s", replication_info->get_site(eid).c_str());
-
-    replication_info->master_eid = eid;
-    if (replication_info->m_cls->is_master())
-	   // finishes with DB_EVENT_REP_MASTER
-	   return;
-	// sanity check
-    // if (replication_info->election_finished())
-    //		HT_FATAL("New master elected after initial master election.");
-	replication_info->finish_election();
-	break;
+	  HT_INFO("Received DB_EVENT_REP_NEWMASTER event");
+	  // current master should not receive this event, anyway
+	  if (replication_info->is_master && replication_info->master_eid != eid) {
+		  // exit if we lost mastership
+		  // The master can reboot and re-join the replication group as a client.
+		  // wait for any incoming dbenv->rep_sync(0) requests (DB_EVENT_REP_ELECTED)
+		  HT_FATAL("Local site lost mastership, Exiting!");
+	  }
+	  // sync if possible with current master dbenv->rep_sync(0)
+	  
+	  // sanity check, missing hostname while a site was added.
+	  // HT_ASSERT(replication_info->get_site(eid).compare("") != 0 );
+	  HT_INFOF("New master elected: %s", replication_info->get_site(eid).c_str());
+	  
+	  replication_info->master_eid = eid;
+	  if (replication_info->m_cls->is_master())
+		  // finishes with DB_EVENT_REP_MASTER
+		  return;
+	  // sanity check
+	  // if (replication_info->election_finished())
+	  //		HT_FATAL("New master elected after initial master election.");
+	  replication_info->finish_election();
+	  dbenv->rep_sync(0);
+	  break;
   case DB_EVENT_REP_PERM_FAILED:
-	if (replication_info->is_master)
-		 HT_FATAL("Replication failed. Master did not receive enough acks.");
-	dbenv->rep_sync(0);
-    break;
+	  if (replication_info->is_master)
+		  HT_FATAL("Replication failed. Master did not receive enough acks.");
+	  dbenv->rep_sync(0);
+	  break;
   case DB_EVENT_PANIC:
-   HT_FATAL("Received DB_EVENT_PANIC event");
-   break;
+	  HT_FATAL("Received DB_EVENT_PANIC event");
+	  break;
   case DB_EVENT_REP_STARTUPDONE:
-    HT_INFO("Received DB_EVENT_REP_STARTUPDONE event");
-   break;
+	  HT_INFO("Received DB_EVENT_REP_STARTUPDONE event");
+	  break;
   case DB_EVENT_WRITE_FAILED:
-    HT_INFO("Received DB_EVENT_WROTE_FAILED event");
-   break;
+	  HT_INFO("Received DB_EVENT_WROTE_FAILED event");
+	  break;
 
 #if DB_VERSION_MAJOR > 5 || (DB_VERSION_MAJOR == 5 && DB_VERSION_MINOR >= 2)
   case DB_EVENT_REP_CONNECT_BROKEN:
-    HT_INFO("Received DB_EVENT_REP_CONNECT_BROKEN event");
-   break;
+	  HT_INFO("Received DB_EVENT_REP_CONNECT_BROKEN event");
+	  break;
   case DB_EVENT_REP_CONNECT_ESTD:
-    HT_INFO("Received DB_EVENT_REP_CONNECT_ESTD event");
-   break;
+	  HT_INFO("Received DB_EVENT_REP_CONNECT_ESTD event");
+	  break;
   case DB_EVENT_REP_CONNECT_TRY_FAILED:
-    HT_INFO("Received DB_EVENT_REP_CONNECT_TRY_FAILED event");
-   break;
+	  HT_INFO("Received DB_EVENT_REP_CONNECT_TRY_FAILED event");
+	  break;
   case DB_EVENT_REP_DUPMASTER:
-	// sync and one of masters need to exit
-	HT_INFO("Received DB_EVENT_REP_DUPMASTER event");
-	break;
+	  //  as a result, local site changed to the client role
+	  HT_FATAL("Received DB_EVENT_REP_DUPMASTER event");
+	  // TODO: bring this replica back (as client) or undo go_master
+	  break;
   case DB_EVENT_REP_ELECTION_FAILED:
-    HT_INFO("Received DB_EVENT_REP_ELECTION_FAILED event");
-   break;
+	  HT_INFO("Received DB_EVENT_REP_ELECTION_FAILED event");
+	  break;
   case DB_EVENT_REP_INIT_DONE:
-    HT_INFO("Received DB_EVENT_REP_INIT_DONE event");
-   break;
+	  HT_INFO("Received DB_EVENT_REP_INIT_DONE event");
+	  break;
   case DB_EVENT_REP_JOIN_FAILURE:
-    HT_INFO("Received DB_EVENT_REP_JOIN_FAILURE event");
-   break;
+	  HT_INFO("Received DB_EVENT_REP_JOIN_FAILURE event");
+	  break;
   case DB_EVENT_REP_LOCAL_SITE_REMOVED:
-    HT_INFO("Received DB_EVENT_REP_LOCAL_SITE_REMOVED event");
-	// It can shutdown
-   break;
+	  // It can shutdown
+	  HT_FATAL("Received DB_EVENT_REP_LOCAL_SITE_REMOVED event");
+	  break;
   case DB_EVENT_REP_MASTER_FAILURE:
-    HT_INFO("Received DB_EVENT_REP_MASTER_FAILURE event");
-	// rep. mgr does repmgr_start, ev DB_EVENT_REP_MASTER on succeess
-	// if (replication_info->election_finished()) do_election();
-   break;
+	  HT_INFO("Received DB_EVENT_REP_MASTER_FAILURE event");
+	  // rep. mgr does repmgr_start, ev DB_EVENT_REP_MASTER on succeess
+	  // if (replication_info->election_finished()) do_election();
+	  break;
   case DB_EVENT_REP_SITE_ADDED:
-	update_rep_sites(dbenv, replication_info);
-	dbenv->rep_sync(0);
-	HT_INFO("Received DB_EVENT_REP_SITE_ADDED event, updating sites and syncing");
-	break;
+	  update_rep_sites(dbenv, replication_info);
+	  dbenv->rep_sync(0);
+	  HT_INFO("Received DB_EVENT_REP_SITE_ADDED event, updating sites and syncing");
+	  break;
   case DB_EVENT_REP_SITE_REMOVED:
-	update_rep_sites(dbenv, replication_info);
-	HT_INFO("Received DB_EVENT_REP_SITE_REMOVED event, updating sites");
-	break;
+	  update_rep_sites(dbenv, replication_info);
+	  HT_INFO("Received DB_EVENT_REP_SITE_REMOVED event, updating sites");
+	  break;
 #endif
 
   default:
-    HT_INFO("Received BerkeleyDB event ");
+	  HT_INFOF("Received BerkeleyDB event no. %d ", which);
   }
 }
 /* update replication sites follow site added or removed */
