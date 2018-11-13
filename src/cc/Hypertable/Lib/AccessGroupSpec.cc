@@ -46,7 +46,8 @@ namespace {
   bool desc_inited = false;
 
   PropertiesDesc
-  compressor_desc("  bmz|lzo|quicklz|zlib|snappy|none [compressor_options]\n\n"
+                  "compressor_options"),
+  compressor_desc("  bmz|lzo|quicklz|zlib|snappy|zstd|none [compressor_options]\n\n"
                   "compressor_options"),
     bloomfilter_desc("  rows|rows+cols|none [bloomfilter_options]\n\n"
                       "  Default bloom filter is defined by the config property:\n"
@@ -63,14 +64,15 @@ namespace {
       return;
 
     compressor_desc.add_options()
-      ("best,9", "Highest setting (probably slower) for zlib")
-      ("normal", "Normal setting for zlib")
+	  ("ultra,20", "Highest setting (probably slower) for zstd")
+	  ("best,9", "Highest setting (probably slower) for zlib, zstd")
+      ("normal", "Normal setting for zlib, zstd")
       ("fp-len", i16()->default_value(19), "Minimum fingerprint length for bmz")
       ("offset", i16()->default_value(0), "Starting fingerprint offset for bmz")
       ;
     compressor_hidden_desc.add_options()
       ("compressor-type", str(), 
-       "Compressor type (bmz|lzo|quicklz|zlib|snappy|none)")
+       "Compressor type (bmz|lzo|quicklz|zlib|snappy|zstd|none)")
       ;
     compressor_pos_desc.add("compressor-type", 1);
 

@@ -113,6 +113,7 @@ namespace Hypertable {
     ///   quicklz
     ///   zlib [--best|--9|--normal]
     ///   snappy
+    ///   zstd [|--ultra|--20|--best|--9|--normal]
     ///   none
     /// </pre>
     /// @param compressor Compressor specification

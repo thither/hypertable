@@ -482,7 +482,7 @@ void DefaultPolicy::init_options() {
         "Roll commit log after this many bytes")
     ("Hypertable.RangeServer.CommitLog.Compressor",
         str()->default_value("quicklz"),
-       "Commit log compressor to use (zlib, lzo, quicklz, snappy, bmz, none)")
+       "Commit log compressor to use (zlib, lzo, quicklz, snappy, bmz, zstd, none)")
     ("Hypertable.RangeServer.Testing.MaintenanceNeeded.PauseInterval", i32()->default_value(0),
         "TESTING:  After update, if range needs maintenance, pause for this number of milliseconds")
     ("Hypertable.RangeServer.UpdateCoalesceLimit", i64()->default_value(5*M),
@@ -500,7 +500,7 @@ void DefaultPolicy::init_options() {
     ("Hypertable.CommitLog.RollLimit", i64()->default_value(100*M),
         "Roll commit log after this many bytes")
     ("Hypertable.CommitLog.Compressor", str()->default_value("quicklz"),
-        "Commit log compressor to use (zlib, lzo, quicklz, snappy, bmz, none)")
+        "Commit log compressor to use (zlib, lzo, quicklz, snappy, bmz, zstd, none)")
     ("Hypertable.CommitLog.SkipErrors", boo()->default_value(false),
         "Skip over any corruption encountered in the commit log")
     ("Hypertable.RangeServer.Scanner.Ttl", i32()->default_value(1800*K),

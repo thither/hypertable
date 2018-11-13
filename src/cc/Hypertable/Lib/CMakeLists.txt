@@ -28,6 +28,7 @@ BlockCompressionCodecNone.cc
 BlockCompressionCodecQuicklz.cc
 BlockCompressionCodecSnappy.cc
 BlockCompressionCodecZlib.cc
+BlockCompressionCodecZstd.cc
 BlockHeader.cc
 BlockHeaderCellStore.cc
 BlockHeaderCommitLog.cc
@@ -180,7 +181,7 @@ HT_ADD_LIBS(
 	TARGET Hypertable 
 	SRCS ${Hypertable_SRCS}
 	TARGETS Hyperspace HyperFsBroker
-	DEPENDENCIES ${SNAPPY_LIBRARIES} ${EXPAT_LIBRARIES})
+	DEPENDENCIES ${SNAPPY_LIBRARIES} ${ZSTD_LIBRARIES} ${EXPAT_LIBRARIES})
 add_dependencies(Hypertable HyperComm Hyperspace HyperCommon)
 
 # test files
@@ -264,7 +265,7 @@ HT_ADD_TEST(
 	NAME BlockCompressor
 	SRCS tests/compressor_test.cc
 	TARGETS Hypertable
-	EXEC_OPTS bmz lzo none quicklz zlib snappy
+	EXEC_OPTS bmz lzo none quicklz zlib snappy zstd
 )
 
 # block_header_test

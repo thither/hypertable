@@ -31,6 +31,7 @@
 #include <Hypertable/Lib/BlockCompressionCodecLzo.h>
 #include <Hypertable/Lib/BlockCompressionCodecQuicklz.h>
 #include <Hypertable/Lib/BlockCompressionCodecSnappy.h>
+#include <Hypertable/Lib/BlockCompressionCodecZstd.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -66,7 +67,10 @@ CompressorFactory::parse_block_codec_spec(const std::string &spec,
     return BlockCompressionCodec::QUICKLZ;
 
   if (name == "snappy")
-    return BlockCompressionCodec::SNAPPY;
+	  return BlockCompressionCodec::SNAPPY;
+
+  if (name == "zstd")
+	  return BlockCompressionCodec::ZSTD;
 
   HT_ERRORF("unknown codec type: %s", name.c_str());
   return BlockCompressionCodec::UNKNOWN;
@@ -87,7 +91,9 @@ CompressorFactory::create_block_codec(BlockCompressionCodec::Type type,
   case BlockCompressionCodec::QUICKLZ:
     return new BlockCompressionCodecQuicklz(args);
   case BlockCompressionCodec::SNAPPY:
-    return new BlockCompressionCodecSnappy(args);
+	  return new BlockCompressionCodecSnappy(args);
+  case BlockCompressionCodec::ZSTD:
+	  return new BlockCompressionCodecZstd(args);
   default:
     HT_THROWF(Error::BLOCK_COMPRESSOR_UNSUPPORTED_TYPE, "Invalid compression "
               "type: '%d'", (int)type);
