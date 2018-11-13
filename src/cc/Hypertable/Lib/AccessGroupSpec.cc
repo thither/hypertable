@@ -45,10 +45,9 @@ namespace {
   mutex desc_mutex;
   bool desc_inited = false;
 
-  PropertiesDesc
-                  "compressor_options"),
-  compressor_desc("  bmz|lzo|quicklz|zlib|snappy|zstd|none [compressor_options]\n\n"
-                  "compressor_options"),
+  PropertiesDesc 
+	  compressor_desc("  bmz|lzo|quicklz|zlib|snappy|zstd|none [compressor_options]\n\n"
+		  "compressor_options"),
     bloomfilter_desc("  rows|rows+cols|none [bloomfilter_options]\n\n"
                       "  Default bloom filter is defined by the config property:\n"
                       "  Hypertable.RangeServer.CellStore.DefaultBloomFilter.\n\n"

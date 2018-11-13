@@ -60,9 +60,9 @@ ClientKeepaliveHandler::ClientKeepaliveHandler(Comm *comm, PropertiesPtr &cfg,
 		std::vector<String> new_replicas = cfg->get_strs("Hyperspace.Replica.Host");
 
 		for (const auto &replica : m_hyperspace_replicas) {
-			if (std::find(new_replicas.begin(), new_replicas.end(), replica)
-				!= new_replicas.end())
-				m_hyperspace_replicas.erase(replica);
+			auto itr = std::find(new_replicas.begin(), new_replicas.end(), replica);
+			if (itr != new_replicas.end())
+				m_hyperspace_replicas.erase(itr);
 		}
 		for (const auto &replica : new_replicas) {
 			if (std::find(m_hyperspace_replicas.begin(), m_hyperspace_replicas.end(), replica)
@@ -78,7 +78,8 @@ ClientKeepaliveHandler::ClientKeepaliveHandler(Comm *comm, PropertiesPtr &cfg,
 		m_hyperspace_replica_nxt = 0;
 	
 	HT_DEBUG_OUT << "Looking for Hyperspace master at " << replica << ":" << m_hyperspace_port << HT_END;
-	HT_EXPECT(InetAddr::initialize(&m_master_addr, replica, m_hyperspace_port), Error::BAD_DOMAIN_NAME);
+	HT_EXPECT(InetAddr::initialize(&m_master_addr, replica.c_str(), m_hyperspace_port),
+		Error::BAD_DOMAIN_NAME);
 
 	m_session->update_master_addr(replica);
 

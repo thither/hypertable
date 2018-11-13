@@ -68,7 +68,7 @@ BlockCompressionCodecZstd::deflate(const DynamicBuffer &input,
 	output.reserve(header.encoded_length() + cBuffSize + reserve);
 
 	size_t outlen = ZSTD_compress(
-		(void *)output.base + header.encoded_length(), cBuffSize,
+		(void *)(output.base + header.encoded_length()), cBuffSize,
 		(void *)input.base, input.fill(),
 		1);
 
@@ -126,17 +126,17 @@ BlockCompressionCodecZstd::inflate(const DynamicBuffer &input,
 	  
 	  // check compress bit
 	  if (header.get_compression_type() == NONE)
-		  memcpy(output.base, msg_ptr, header.get_data_length();
+		  memcpy(output.base, msg_ptr, header.get_data_length());
 	  else {
 		  size_t const dSize = ZSTD_decompress(
 			  (void *)output.base,  header.get_data_length(), 
 			  (void *)msg_ptr,		header.get_data_zlength());
 		  
-		  if (static_cast<uint32_t>dSize != header.get_data_length()) {
+		  if (static_cast<uint32_t>(dSize) != header.get_data_length()) {
 			  HT_THROWF(Error::BLOCK_COMPRESSOR_INFLATE_ERROR,
 				  "Compressed block inflate error, name=%s", ZSTD_getErrorName(dSize));
 		  }
-    }
+	  }
 
     output.ptr = output.base + header.get_data_length();
   }
