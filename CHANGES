@@ -8,6 +8,7 @@ Version Master:
    DB_EVENT_REP_MASTER event finish with finish_election, in both cases, newly elected or was master
    added support of ZSTD(zstandard) compressor for BlockCompressionCodec
    added Hyperspace configuration file reload, a command and interpreter statement cfg_reload
+   TODO: test Hyperspace related changes in big(3+ replicas) cluster environment
 
 Version 0.9.8.14:
 (2018-08-23)
