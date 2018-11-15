@@ -1402,3 +1402,9 @@ void Hyperspace::close_handle_ptr(SessionPtr hyperspace, uint64_t *handlep) {
   if (*handlep)
     hyperspace->close(*handlep);
 }
+
+String Hyperspace::cfg_reload(const String &filename) {
+	cfg->reparse_file(filename);
+	return String("LOADED: "+ filename + " IN HERE NEW CONFIGURATION")
+}
+

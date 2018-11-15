@@ -227,6 +227,7 @@ namespace Hypertable { namespace Config {
    * @throws Error::CONFIG_BAD_CFG_FILE on error
    */
   void parse_file(const String &fname, const Desc &desc);
+  void reparse_file(const String &fname);
 
   /**
    * Setup command line option alias for config file option.

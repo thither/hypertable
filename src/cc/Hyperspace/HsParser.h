@@ -85,7 +85,8 @@ namespace Hyperspace {
       COMMAND_DUMP,
       COMMAND_MKDIRS,
       COMMAND_STATUS,
-      COMMAND_MAX
+      COMMAND_MAX,
+	  COMMAND_CFG_RELOAD
     };
 
     enum {
@@ -362,6 +363,7 @@ namespace Hyperspace {
           Token C_HELP                 = as_lower_d["help"];
           Token C_LOCATE               = as_lower_d["locate"];
           Token C_STATUS               = as_lower_d["status"];
+          Token C_CFG_RELOAD           = as_lower_d["cfg_reload"];
 
           Token ESC_HELP               = as_lower_d["\\h"];
 
@@ -444,6 +446,7 @@ namespace Hyperspace {
             | getseq_statement[set_command(self.state, COMMAND_GETSEQ)]
             | echo_statement[set_command(self.state, COMMAND_ECHO)]
             | locate_statement[set_command(self.state, COMMAND_LOCATE)]
+            | cfg_reload_statement[set_command(self.state, COMMAND_CFG_RELOAD)]
             | status_statement[set_command(self.state, COMMAND_STATUS)]
             ;
 
@@ -549,6 +552,10 @@ namespace Hyperspace {
 
           locate_statement
             = C_LOCATE >> locate_type
+            ;
+			
+          cfg_reload_statement
+            = C_CFG_RELOAD >> file_name[set_file_name(self.state)];
             ;
 
           status_statement

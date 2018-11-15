@@ -169,6 +169,28 @@ Properties::load(const String &fname, const PropertiesDesc &desc,
 }
 
 void
+Properties::reload(const String &fname, const PropertiesDesc &desc,
+	bool allow_unregistered) {
+	m_need_alias_sync = true;
+
+	try {
+		std::ifstream in(fname.c_str());
+
+		if (!in)
+			HT_THROWF(Error::CONFIG_BAD_CFG_FILE, "%s", strerror(errno));
+		parsed_options parsed_opts = parse_config_file(in, desc, allow_unregistered);
+		store(parsed_opts, m_map);
+		for (size_t i = 0; i < parsed_opts.options.size(); i++) {
+			if (parsed_opts.options[i].unregistered && parsed_opts.options[i].string_key != "")
+				m_map.insert(Map::value_type(parsed_opts.options[i].string_key,
+					Value(parsed_opts.options[i].value[0], false)));
+		}
+	}
+	catch (std::exception &e) {
+		HT_THROWF(Error::CONFIG_BAD_CFG_FILE, "%s: %s", fname.c_str(), e.what());
+	}
+}
+void
 Properties::parse_args(int argc, char *argv[], const PropertiesDesc &desc,
                        const PropertiesDesc *hidden, const PositionalDesc *p,
                        bool allow_unregistered) {

@@ -239,7 +239,9 @@ public:
    *        accepted
    */
   void load(const String &filename, const PropertiesDesc &desc,
-          bool allow_unregistered = false);
+	  bool allow_unregistered = false);
+  void reload(const String &filename, const PropertiesDesc &desc,
+	  bool allow_unregistered = false);
 
   /**
    * Parses command line arguments

@@ -605,7 +605,19 @@ void parse_args(int argc, char *argv[]) {
 
 void
 parse_file(const String &fname, const Desc &desc) {
-  properties->load(fname, desc, allow_unregistered);
+	properties->load(fname, desc, allow_unregistered);
+}
+
+void
+reparse_file(const String &fname) {
+	std::lock_guard<std::recursive_mutex> lock(rec_mutex);
+	const String filename;
+	if (fname == NULL)
+		filename = get_str("config");
+	else
+		filename = fname;
+	properties->reload(filename, cmdline_hidden_desc(), allow_unregistered);
+	sync_aliases();
 }
 
 void alias(const String &cmdline_opt, const String &file_opt, bool overwrite) {

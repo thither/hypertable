@@ -692,6 +692,12 @@ namespace Hyperspace {
      * @param timer maximum wait timer
      */
     void shutdown(Timer *timer=0);
+   
+    /** Attempts to reload configuration file
+     *
+     * @param filename config file fullpath
+     */
+    void cfg_reload(String &filename);
 
   private:
 
