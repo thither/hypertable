@@ -86,7 +86,7 @@ namespace Hyperspace {
       COMMAND_MKDIRS,
       COMMAND_STATUS,
       COMMAND_MAX,
-	  COMMAND_CFG_RELOAD
+      COMMAND_CFG_RELOAD
     };
 
     enum {

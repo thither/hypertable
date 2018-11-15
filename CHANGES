@@ -1,4 +1,14 @@
 
+Version Master:
+(in-progress)
+
+   ClientKeepaliveHandler, select next hyperspace replica client by index count 
+   stricness to Berkeley DB events REP_DUPMASTER and DB_EVENT_REP_LOCAL_SITE_REMOVED, exit with HT_FATAL
+   dbenv->rep_sync(0) added to on DB_EVENT_REP_CLIENT and DB_EVENT_REP_NEWMASTER(for client)
+   DB_EVENT_REP_MASTER event finish with finish_election, in both cases, newly elected or was master
+   added support of ZSTD(zstandard) compressor for BlockCompressionCodec
+   added Hyperspace configuration file reload, a command and interpreter statement cfg_reload
+
 Version 0.9.8.14:
 (2018-08-23)
 
