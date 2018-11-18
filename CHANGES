@@ -8,8 +8,8 @@ Version Master:
    DB_EVENT_REP_MASTER event finish with finish_election, in both cases, newly elected or was master
    added support of ZSTD(zstandard) compressor for BlockCompressionCodec
    added Hyperspace configuration file reload, a command and interpreter statement cfg_reload
-   changed Hyperspace ClientKeepaliveHandler do not use Config/Properties, assigned via Session
-   added method to Session get_next_replica 
+   changed Hyperspace ClientKeepaliveHandler Config/Properties assigned via Session
+   added method get_next_replica to Session  
    removed unused cases of include Config and using namespace Config
    TODO: test Hyperspace related changes in big(3+ replicas) cluster environment
 
