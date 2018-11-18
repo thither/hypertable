@@ -236,12 +236,12 @@ bool SshSocketHandler::handle(int sd, int events) {
         socklen_t sockerr_len = sizeof(sockerr);
         if (getsockopt(m_sd, SOL_SOCKET, SO_ERROR, &sockerr, &sockerr_len) < 0) {
           m_error = string("getsockopt(SO_ERROR) failed (") + strerror(errno) + ")";
-	  m_cond.notify_all();
+          m_cond.notify_all();
           return false;
         }
         if (sockerr) {
           m_error = string("connect() completion error (") + strerror(errno) + ")";
-	  m_cond.notify_all();
+          m_cond.notify_all();
           return false;
         }
       }
@@ -282,22 +282,20 @@ bool SshSocketHandler::handle(int sd, int events) {
         rc = ssh_set_callbacks(m_ssh_session, &m_callbacks);
         if (rc == SSH_ERROR) {
           m_error = string("ssh_set_callbacks() failed - ") + ssh_get_error(m_ssh_session);
-	  m_cond.notify_all();
+          m_cond.notify_all();
           return false;
         }
 
-
-        // First load Hypertable conf or system config  
-		if (FileUtils::exists("../conf/ht_ssh_config"))
-		  ssh_options_parse_config(m_ssh_session, "../conf/ht_ssh_config");
-		else if (FileUtils::exists("/etc/ssh/ssh_config"))
+        // Load in preferred order a SSH Client Configuration file
+        if (FileUtils::exists("../conf/ht_ssh_config"))
+          ssh_options_parse_config(m_ssh_session, "../conf/ht_ssh_config");
+        else if (FileUtils::exists("/etc/ssh/ssh_config"))
           ssh_options_parse_config(m_ssh_session, "/etc/ssh/ssh_config");
-
-        // Then load ~/.ssh/config
-        string config_file = ssh_dir + "/config";
-        if (FileUtils::exists(config_file))
-          ssh_options_parse_config(m_ssh_session, config_file.c_str());
-
+        else {
+          string config_file = ssh_dir + "/config";
+          if (FileUtils::exists(config_file))
+            ssh_options_parse_config(m_ssh_session, config_file.c_str());
+        }
         rc = ssh_connect(m_ssh_session);
         if (rc == SSH_OK) {
           m_state = STATE_VERIFY_KNOWNHOST;
@@ -305,7 +303,7 @@ bool SshSocketHandler::handle(int sd, int events) {
         }
         if (rc == SSH_ERROR) {
           m_error = string("ssh_connect() failed - ") + ssh_get_error(m_ssh_session);
-	  m_cond.notify_all();
+          m_cond.notify_all();
           return false;
         }
         else if (rc == SSH_AGAIN) {
@@ -700,10 +698,10 @@ bool SshSocketHandler::verify_knownhost() {
   size_t hlen {};
   int rc;
 
-  int state = ssh_is_server_known(m_ssh_session);
+  int state = ssh_session_is_known_server(m_ssh_session);
 
   ssh_key key;
-  rc = ssh_get_publickey(m_ssh_session, &key);
+  rc = ssh_get_server_publickey(m_ssh_session, &key);
   if (rc != SSH_OK) {
     m_error = string("unable to obtain public key - ") + ssh_get_error(m_ssh_session);
     return false;
@@ -720,34 +718,34 @@ bool SshSocketHandler::verify_knownhost() {
 
   switch (state) {
 
-  case SSH_SERVER_KNOWN_OK:
+  case SSH_KNOWN_HOSTS_OK:
     break;
 
-  case SSH_SERVER_KNOWN_CHANGED:
+  case SSH_KNOWN_HOSTS_CHANGED:
     m_error = "host key has changed";
-    free(hash);
+    ssh_clean_pubkey_hash(&hash);
     return false;
 
-  case SSH_SERVER_FOUND_OTHER:
+  case SSH_KNOWN_HOSTS_OTHER:
     m_error = "Key mis-match with one in known_hosts";
-    free(hash);
+    ssh_clean_pubkey_hash(&hash);
     return false;
 
-  case SSH_SERVER_FILE_NOT_FOUND:
-  case SSH_SERVER_NOT_KNOWN:
+  case SSH_KNOWN_HOSTS_NOT_FOUND:
+  case SSH_KNOWN_HOSTS_UNKNOWN:
 
-    if (ssh_write_knownhost(m_ssh_session) < 0) {
+    if (ssh_session_update_known_hosts(m_ssh_session) != SSH_OK) {
       m_error = "problem writing known hosts file";
-      free(hash);
+      ssh_clean_pubkey_hash(&hash);
       return false;
     }
     break;
 
-  case SSH_SERVER_ERROR:
+  case SSH_KNOWN_HOSTS_ERROR:
     m_error = ssh_get_error(m_ssh_session);
     return false;
   }
-  free(hash);
+  ssh_clean_pubkey_hash(&hash);
   return true;
 }
 
