@@ -710,7 +710,7 @@ namespace Hyperspace {
 	std::atomic<uint16_t>     m_hyperspace_port;
 	std::atomic<uint16_t>     m_datagram_send_port;
 	std::atomic<uint32_t>     m_lease_interval;
-	std::atomic<uint32_t>	  m_keep_alive_interval;
+	std::atomic<uint32_t>	    m_keep_alive_interval;
 
   private:
 

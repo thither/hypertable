@@ -139,7 +139,7 @@ namespace Hypertable {
 
     void initialize();
 
-	  PropertiesPtr          m_props;
+    PropertiesPtr          m_props;
     Comm                   *m_comm;
     ConnectionManagerPtr    m_conn_manager;
     ApplicationQueueInterfacePtr m_app_queue;
