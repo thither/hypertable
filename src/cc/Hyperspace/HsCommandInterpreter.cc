@@ -526,8 +526,7 @@ int HsCommandInterpreter::execute_line(const String &line) {
     }
 
     else if (state.command == COMMAND_CFG_RELOAD) {
-      String *fname = state.file_name;
-      String result = m_session->cfg_reload(fname);
+      String result = m_session->cfg_reload(state.file_name);
       cout << result << endl;
     }
 

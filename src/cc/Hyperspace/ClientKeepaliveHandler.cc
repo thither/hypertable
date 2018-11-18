@@ -39,57 +39,27 @@ using namespace Hypertable;
 using namespace Hyperspace;
 using namespace Serialization;
 
-ClientKeepaliveHandler::ClientKeepaliveHandler(Comm *comm, PropertiesPtr &cfg,
-	Session *session)
+ClientKeepaliveHandler::ClientKeepaliveHandler(Comm *comm, Session *session)
 	: m_comm(comm), m_session(session) {
-
-	HT_TRY("getting config values",
-		m_verbose = cfg->get_bool("Hypertable.Verbose");
-	m_hyperspace_port = cfg->get_i16("Hyperspace.Replica.Port");
-	m_datagram_send_port = cfg->get_i16("Hyperspace.Client.Datagram.SendPort");
-	m_lease_interval = cfg->get_i32("Hyperspace.Lease.Interval");
-	m_keep_alive_interval = cfg->get_i32("Hyperspace.KeepAlive.Interval");
-	m_reconnect = cfg->get_bool("Hyperspace.Session.Reconnect"));
 
 	auto now = chrono::steady_clock::now();
 	m_last_keep_alive_send_time = now;
-	m_jeopardy_time = now + chrono::milliseconds(m_lease_interval);
+	m_jeopardy_time = now + chrono::milliseconds(m_session->m_lease_interval);
 	
-	{
-		lock_guard<recursive_mutex> lock(m_mutex);
-		std::vector<String> new_replicas = cfg->get_strs("Hyperspace.Replica.Host");
+	String replica = m_session->get_next_replica();
 
-		for (const auto &replica : m_hyperspace_replicas) {
-			auto itr = std::find(new_replicas.begin(), new_replicas.end(), replica);
-			if (itr != new_replicas.end())
-				m_hyperspace_replicas.erase(itr);
-		}
-		for (const auto &replica : new_replicas) {
-			if (std::find(m_hyperspace_replicas.begin(), m_hyperspace_replicas.end(), replica)
-				== m_hyperspace_replicas.end())
-				m_hyperspace_replicas.push_back(replica);
-		}
-	}
-	// opts, rnd or rack aware
-	// if round-rubin
-	String replica = m_hyperspace_replicas[m_hyperspace_replica_nxt];
-	m_hyperspace_replica_nxt++;
-	if (m_hyperspace_replica_nxt == m_hyperspace_replicas.size())
-		m_hyperspace_replica_nxt = 0;
-	
-	HT_DEBUG_OUT << "Looking for Hyperspace master at " << replica << ":" << m_hyperspace_port << HT_END;
-	HT_EXPECT(InetAddr::initialize(&m_master_addr, replica.c_str(), m_hyperspace_port),
+	HT_DEBUG_OUT << "Looking for Hyperspace master at " << replica << ":" << m_session->m_hyperspace_port << HT_END;
+	HT_EXPECT(InetAddr::initialize(&m_master_addr, replica.c_str(), m_session->m_hyperspace_port),
 		Error::BAD_DOMAIN_NAME);
 
 	m_session->update_master_addr(replica);
-
 }
 
 
 void ClientKeepaliveHandler::start() {
   int error;
 
-  m_local_addr = InetAddr(INADDR_ANY, m_datagram_send_port);
+  m_local_addr = InetAddr(INADDR_ANY, m_session->m_datagram_send_port);
 
   m_comm->create_datagram_receive_socket(m_local_addr, 0x10, shared_from_this());
 
@@ -102,7 +72,7 @@ void ClientKeepaliveHandler::start() {
     exit(EXIT_FAILURE);
   }
 
-  if ((error = m_comm->set_timer(m_keep_alive_interval, shared_from_this()))
+  if ((error = m_comm->set_timer(m_session->m_keep_alive_interval, shared_from_this()))
       != Error::OK) {
     HT_ERRORF("Problem setting timer - %s", Error::get_text(error));
     exit(EXIT_FAILURE);
@@ -124,7 +94,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
   }
 
   /*
-  if (m_verbose) {
+  if (m_session->m_verbose) {
     HT_INFOF("%s", event->to_str().c_str());
   }
   **/
@@ -151,7 +121,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
           if (strlen(host) != 0) {
             HT_DEBUG_OUT << "Received COMMAND_REDIRECT looking for master at "
                         << host << HT_END;
-            HT_EXPECT(InetAddr::initialize(&m_master_addr, host, m_hyperspace_port),
+            HT_EXPECT(InetAddr::initialize(&m_master_addr, host, m_session->m_hyperspace_port),
                       Error::BAD_DOMAIN_NAME);
             m_session->update_master_addr(host);
           }
@@ -164,7 +134,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
             exit(EXIT_FAILURE);
           }
 
-          if ((error = m_comm->set_timer(m_keep_alive_interval, shared_from_this())) != Error::OK) {
+          if ((error = m_comm->set_timer(m_session->m_keep_alive_interval, shared_from_this())) != Error::OK) {
             HT_ERRORF("Problem setting timer - %s", Error::get_text(error));
             exit(EXIT_FAILURE);
           }
@@ -185,7 +155,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
 
           // update jeopardy time
           m_jeopardy_time = m_last_keep_alive_send_time +
-            chrono::milliseconds(m_lease_interval);
+            chrono::milliseconds(m_session->m_lease_interval);
 
           session_id = decode_i64(&decode_ptr, &decode_remain);
           error = decode_i32(&decode_ptr, &decode_remain);
@@ -199,8 +169,8 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
           if (m_session_id == 0) {
             m_session_id = session_id;
             if (!m_conn_handler) {
-              m_conn_handler = make_shared<ClientConnectionHandler>(m_comm, m_session, m_lease_interval);
-              m_conn_handler->set_verbose_mode(m_verbose);
+              m_conn_handler = make_shared<ClientConnectionHandler>(m_comm, m_session, m_session->m_lease_interval);
+              m_conn_handler->set_verbose_mode(m_session->m_verbose);
               m_conn_handler->set_session_id(m_session_id);
             }
           }
@@ -388,7 +358,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
       return;
 
     if (state == Session::STATE_SAFE) {
-      if (m_jeopardy_time < chrono::steady_clock::now() && !m_reconnect)
+      if (m_jeopardy_time < chrono::steady_clock::now() && !m_session->m_reconnect)
         m_session->state_transition(Session::STATE_JEOPARDY);
     }
     else if (m_session->expired()) {
@@ -407,7 +377,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
       exit(EXIT_FAILURE);
     }
 
-    if ((error = m_comm->set_timer(m_keep_alive_interval, shared_from_this()))
+    if ((error = m_comm->set_timer(m_session->m_keep_alive_interval, shared_from_this()))
         != Error::OK) {
       HT_ERRORF("Problem setting timer - %s", Error::get_text(error));
       exit(EXIT_FAILURE);
@@ -420,7 +390,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
 
 
 void ClientKeepaliveHandler::expire_session() {
-  m_session->state_transition(m_reconnect ? Session::STATE_DISCONNECTED : Session::STATE_EXPIRED);
+  m_session->state_transition(m_session->m_reconnect ? Session::STATE_DISCONNECTED : Session::STATE_EXPIRED);
 
   if (m_conn_handler)
     m_conn_handler->close();
@@ -430,12 +400,12 @@ void ClientKeepaliveHandler::expire_session() {
   m_bad_handle_map.clear();
   m_session_id = 0;
 
-  if (m_reconnect) {
+  if (m_session->m_reconnect) {
     auto now = chrono::steady_clock::now();
     m_last_keep_alive_send_time = now;
-    m_jeopardy_time = now + chrono::milliseconds(m_lease_interval);
+    m_jeopardy_time = now + chrono::milliseconds(m_session->m_lease_interval);
 
-    m_local_addr = InetAddr(INADDR_ANY, m_datagram_send_port);
+    m_local_addr = InetAddr(INADDR_ANY, m_session->m_datagram_send_port);
 
     m_comm->create_datagram_receive_socket(m_local_addr, 0x10, shared_from_this());
 
@@ -449,7 +419,7 @@ void ClientKeepaliveHandler::expire_session() {
       exit(EXIT_FAILURE);
     }
 
-    if ((error = m_comm->set_timer(m_keep_alive_interval, shared_from_this()))
+    if ((error = m_comm->set_timer(m_session->m_keep_alive_interval, shared_from_this()))
         != Error::OK) {
       HT_ERRORF("Problem setting timer - %s", Error::get_text(error));
       exit(EXIT_FAILURE);

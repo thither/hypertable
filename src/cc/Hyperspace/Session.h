@@ -59,7 +59,6 @@ namespace Hyperspace {
    * @{
    */
 
-  using namespace std;
   class HsCommandInterpreter;
   /**
    * The following flags (bit masks) are ORed together
@@ -697,7 +696,21 @@ namespace Hyperspace {
      *
      * @param filename config file fullpath
      */
-    void cfg_reload(String &filename);
+	String cfg_reload(const String &filename);
+
+	/** Get next replace in from replicas config
+	*
+	* 
+	*/
+	String get_next_replica();
+
+
+	std::atomic<bool>         m_verbose = false;
+	std::atomic<bool>         m_reconnect;
+	std::atomic<uint16_t>     m_hyperspace_port;
+	std::atomic<uint16_t>     m_datagram_send_port;
+	std::atomic<uint32_t>     m_lease_interval;
+	std::atomic<uint32_t>	  m_keep_alive_interval;
 
   private:
 
@@ -712,29 +725,26 @@ namespace Hyperspace {
     void normalize_name(const std::string &name, std::string &normal);
     uint64_t open(ClientHandleStatePtr &, CommBufPtr &, Timer *timer);
 
-    std::mutex m_mutex;
-    std::condition_variable m_cond;
+    std::mutex                m_mutex;
+    std::condition_variable   m_cond;
     Comm                      *m_comm;
-    PropertiesPtr             m_cfg;
-    bool                      m_verbose;
-    bool                      m_silent;
-    bool                      m_reconnect;
-    uint16_t                  m_hyperspace_port;
+	PropertiesPtr             m_props;
+	bool                      m_silent;
     int                       m_state;
     uint32_t                  m_grace_period;
-    uint32_t                  m_lease_interval;
     uint32_t                  m_timeout_ms;
     std::chrono::steady_clock::time_point m_expire_time;
     InetAddr                  m_master_addr;
     ClientKeepaliveHandlerPtr m_keepalive_handler_ptr;
     CallbackMap               m_callbacks;
     uint64_t                  m_last_callback_id;
-    std::mutex m_callback_mutex;
+    std::mutex                m_callback_mutex;
     vector<String>            m_hyperspace_replicas;
+	uint16_t                  m_hyperspace_replica_nxt = 0;
     String                    m_hyperspace_master;
 
     /// Delivers suspend/resume notifications (e.g. laptop close/open).
-    SleepWakeNotifier *m_sleep_wake_notifier;
+    SleepWakeNotifier         *m_sleep_wake_notifier;
   };
 
   typedef std::shared_ptr<Session> SessionPtr;

@@ -590,7 +590,7 @@ void parse_args(int argc, char *argv[]) {
     std::quick_exit(EXIT_SUCCESS);
   }
 
-  filename = get_str("config");
+  filename = properties->get_str("config");
 
   // Only try to parse config file if it exists or not default
   if (FileUtils::exists(filename)) {
@@ -611,13 +611,12 @@ parse_file(const String &fname, const Desc &desc) {
 void
 reparse_file(const String &fname) {
 	std::lock_guard<std::recursive_mutex> lock(rec_mutex);
-	const String filename;
-	if (fname == NULL)
-		filename = get_str("config");
+	String filename;
+	if (fname.empty())
+		filename = properties->get_str("config");
 	else
 		filename = fname;
 	properties->reload(filename, cmdline_hidden_desc(), allow_unregistered);
-	sync_aliases();
 }
 
 void alias(const String &cmdline_opt, const String &file_opt, bool overwrite) {
@@ -629,14 +628,14 @@ void sync_aliases() {
 }
 
 void DefaultPolicy::init() {
-  String loglevel = get_str("logging-level");
-  bool verbose = get_bool("verbose");
+  String loglevel = properties->get_str("logging-level");
+  bool verbose = properties->get_bool("verbose");
 
-  if (verbose && get_bool("quiet")) {
+  if (verbose && properties->get_bool("quiet")) {
     verbose = false;
     properties->set("verbose", false);
   }
-  if (get_bool("debug")) {
+  if (properties->get_bool("debug")) {
     loglevel = "debug";
     properties->set("logging-level", loglevel);
   }

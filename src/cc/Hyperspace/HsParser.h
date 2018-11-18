@@ -555,7 +555,7 @@ namespace Hyperspace {
             ;
 			
           cfg_reload_statement
-            = C_CFG_RELOAD >> file_name[set_file_name(self.state)];
+            = C_CFG_RELOAD >> node_name[set_file_name(self.state)];
             ;
 
           status_statement
@@ -660,7 +660,8 @@ namespace Hyperspace {
           BOOST_SPIRIT_DEBUG_RULE(close_statement);
           BOOST_SPIRIT_DEBUG_RULE(help_statement);
           BOOST_SPIRIT_DEBUG_RULE(locate_statement);
-          BOOST_SPIRIT_DEBUG_RULE(status_statement);
+		  BOOST_SPIRIT_DEBUG_RULE(status_statement);
+          BOOST_SPIRIT_DEBUG_RULE(cfg_reload_statement);
           BOOST_SPIRIT_DEBUG_RULE(attrset_statement);
           BOOST_SPIRIT_DEBUG_RULE(attrget_statement);
           BOOST_SPIRIT_DEBUG_RULE(attrincr_statement);
@@ -711,7 +712,7 @@ namespace Hyperspace {
           open_event_mask_value, one_create_flag_value, create_flag_value,
           one_create_event_mask_value, create_event_mask_value,
           one_create_option, attribute, lock_mode, node_name, locate_type,
-          status_statement;
+          status_statement, cfg_reload_statement;
         };
 
       ParserState &state;

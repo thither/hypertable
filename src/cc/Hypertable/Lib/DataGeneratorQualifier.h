@@ -26,7 +26,6 @@
 #include "DataGeneratorRandom.h"
 #include "DataGeneratorRowComponent.h"
 
-#include <Common/Config.h>
 #include <Common/Logger.h>
 #include <Common/String.h>
 

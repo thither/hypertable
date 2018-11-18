@@ -31,10 +31,10 @@
 #include <AsyncComm/Comm.h>
 #include <AsyncComm/ConnectionManager.h>
 
+#include <Common/Config.h>
 #include <Common/Error.h>
 #include <Common/InetAddr.h>
 #include <Common/Logger.h>
-#include <Common/Properties.h>
 #include <Common/Serialization.h>
 #include <Common/SleepWakeNotifier.h>
 #include <Common/Time.h>
@@ -45,38 +45,35 @@
 #include <cassert>
 #include <chrono>
 
-using namespace std;
 using namespace Hypertable;
 using namespace Hyperspace;
 using namespace Serialization;
 
 
-Session::Session(Comm *comm, PropertiesPtr &cfg)
-  : m_comm(comm), m_cfg(cfg), m_verbose(false), m_silent(false),
+Session::Session(Comm *comm, PropertiesPtr &props)
+  : m_comm(comm), m_props(props), m_silent(false),
     m_state(STATE_JEOPARDY), m_last_callback_id(0) {
 
   HT_TRY("getting config values",
-    m_verbose = cfg->get_bool("Hypertable.Verbose");
-    m_silent = cfg->get_bool("Hypertable.Silent");
-    m_grace_period = cfg->get_i32("Hyperspace.GracePeriod");
-    m_lease_interval = cfg->get_i32("Hyperspace.Lease.Interval");
-    m_hyperspace_port = cfg->get_i16("Hyperspace.Replica.Port");
-    m_reconnect = cfg->get_bool("Hyperspace.Session.Reconnect"));
+    m_verbose = props->get_bool("Hypertable.Verbose");
+    m_silent = props->get_bool("Hypertable.Silent");
+	m_reconnect = props->get_bool("Hyperspace.Session.Reconnect");
+    m_grace_period = props->get_i32("Hyperspace.GracePeriod");
+    m_lease_interval = props->get_i32("Hyperspace.Lease.Interval");
+    m_hyperspace_port = props->get_i16("Hyperspace.Replica.Port");
+	m_datagram_send_port = props->get_i16("Hyperspace.Client.Datagram.SendPort");
+	m_keep_alive_interval = props->get_i32("Hyperspace.KeepAlive.Interval");
+  );
 
   if (m_reconnect)
     HT_INFO("Hyperspace session setup to reconnect");
 
-  for (const auto &replica : cfg->get_strs("Hyperspace.Replica.Host")) {
-    m_hyperspace_replicas.push_back(replica);
-	// so far, used only with cmd LOCATE REPLICAS
-  }
-
   m_timeout_ms = m_lease_interval * 2;
 
   m_expire_time = chrono::steady_clock::now() +
-    chrono::milliseconds(m_grace_period);
+	  chrono::milliseconds(m_grace_period);
 
-  m_keepalive_handler_ptr = std::make_shared<ClientKeepaliveHandler>(m_comm, m_cfg, this);
+  m_keepalive_handler_ptr = std::make_shared<ClientKeepaliveHandler>(m_comm, this);
   m_keepalive_handler_ptr->start();
 
   function<void()> sleep_callback = [this]() -> void {this->handle_sleep();};
@@ -90,10 +87,35 @@ Session::~Session() {
   delete m_sleep_wake_notifier;
 }
 
+String Session::get_next_replica() 
+{
+	lock_guard<mutex> lock(m_mutex);
+	std::vector<String> new_replicas = m_props->get_strs("Hyperspace.Replica.Host");
+
+	for (const auto &replica : m_hyperspace_replicas) {
+		auto itr = std::find(new_replicas.begin(), new_replicas.end(), replica);
+		if (itr != new_replicas.end())
+			m_hyperspace_replicas.erase(itr);
+	}
+	for (const auto &replica : new_replicas) {
+		if (std::find(m_hyperspace_replicas.begin(), m_hyperspace_replicas.end(), replica)
+			== m_hyperspace_replicas.end())
+			m_hyperspace_replicas.push_back(replica);
+	}
+	// opts, rnd or rack aware
+	// if round-rubin
+	if (m_hyperspace_replica_nxt >= m_hyperspace_replicas.size())
+		m_hyperspace_replica_nxt = 0;
+	String replica = m_hyperspace_replicas[m_hyperspace_replica_nxt];
+	m_hyperspace_replica_nxt++;
+	return replica;
+}
+
+
 void Session::update_master_addr(const String &host)
 {
   lock_guard<mutex> lock(m_mutex);
-  HT_EXPECT(InetAddr::initialize(&m_master_addr, host.c_str(),m_hyperspace_port),
+  HT_EXPECT(InetAddr::initialize(&m_master_addr, host.c_str(), m_hyperspace_port),
             Error::BAD_DOMAIN_NAME);
   m_hyperspace_master = host;
 }
@@ -1151,6 +1173,8 @@ String Session::locate(int type) {
     location = m_hyperspace_master +  "\n";
     break;
   case LOCATE_REPLICAS:
+	// 1st set m_hyperspace_replicas and get next replica
+    location += "this next:" + get_next_replica() +"\n";
     for (const auto &replica : m_hyperspace_replicas)
       location += replica + "\n";
     break;
@@ -1392,6 +1416,10 @@ HsCommandInterpreterPtr Session::create_hs_interpreter() {
   return make_shared<HsCommandInterpreter>(this);
 }
 
+String Session::cfg_reload(const String &filename) {
+	Config::reparse_file(filename);
+	return String("LOADED: " + filename + " IN HERE NEW CONFIGURATION");
+}
 
 void Hyperspace::close_handle(SessionPtr hyperspace, uint64_t handle) {
   if (handle)
@@ -1402,9 +1430,3 @@ void Hyperspace::close_handle_ptr(SessionPtr hyperspace, uint64_t *handlep) {
   if (*handlep)
     hyperspace->close(*handlep);
 }
-
-String Hyperspace::cfg_reload(const String &filename) {
-	cfg->reparse_file(filename);
-	return String("LOADED: "+ filename + " IN HERE NEW CONFIGURATION")
-}
-
