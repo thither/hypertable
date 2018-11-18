@@ -660,7 +660,7 @@ namespace Hyperspace {
           BOOST_SPIRIT_DEBUG_RULE(close_statement);
           BOOST_SPIRIT_DEBUG_RULE(help_statement);
           BOOST_SPIRIT_DEBUG_RULE(locate_statement);
-		  BOOST_SPIRIT_DEBUG_RULE(status_statement);
+		      BOOST_SPIRIT_DEBUG_RULE(status_statement);
           BOOST_SPIRIT_DEBUG_RULE(cfg_reload_statement);
           BOOST_SPIRIT_DEBUG_RULE(attrset_statement);
           BOOST_SPIRIT_DEBUG_RULE(attrget_statement);
