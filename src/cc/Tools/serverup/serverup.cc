@@ -40,7 +40,6 @@
 #include <AsyncComm/ConnectionManager.h>
 #include <AsyncComm/ReactorFactory.h>
 
-#include <Common/Config.h>
 #include <Common/Error.h>
 #include <Common/InetAddr.h>
 #include <Common/Logger.h>
@@ -80,7 +79,7 @@ namespace {
     "    fetched from hyperspace)\n"
     "Options";
 
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc(usage).add_options()
           ("wait", i32()->default_value(2000), "Check wait time in ms")

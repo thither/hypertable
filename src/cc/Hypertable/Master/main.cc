@@ -67,7 +67,7 @@ using namespace std;
 
 namespace {
 
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       alias("port", "Hypertable.Master.Port");
       alias("workers", "Hypertable.Master.Workers");

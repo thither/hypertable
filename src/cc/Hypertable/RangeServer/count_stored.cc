@@ -47,7 +47,7 @@ using namespace std;
 
 namespace {
 
-struct MyPolicy : Config::Policy {
+struct MyPolicy : Policy {
   static void init_options() {
     cmdline_desc("Usage: %s [options] <table>\n\n"
       "  This program counts the number of cells that exist in CellStores\n"

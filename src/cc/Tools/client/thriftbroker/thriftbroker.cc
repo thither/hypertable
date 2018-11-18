@@ -27,8 +27,6 @@
 
 #include <Tools/Lib/CommandShell.h>
 
-#include <AsyncComm/Config.h>
-
 #include <Common/Error.h>
 #include <Common/Init.h>
 #include <Common/Properties.h>

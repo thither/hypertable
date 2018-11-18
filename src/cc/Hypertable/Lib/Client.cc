@@ -29,7 +29,6 @@
 #include <Hypertable/Lib/HqlCommandInterpreter.h>
 
 #include <Hyperspace/DirEntry.h>
-#include <Hypertable/Lib/Config.h>
 
 #include <AsyncComm/ApplicationQueue.h>
 #include <AsyncComm/Comm.h>

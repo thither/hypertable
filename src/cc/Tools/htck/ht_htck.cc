@@ -44,7 +44,6 @@
 #include <AsyncComm/Comm.h>
 #include <AsyncComm/ConnectionManager.h>
 
-#include <Common/Config.h>
 #include <Common/Error.h>
 #include <Common/FileUtils.h>
 #include <Common/FlyweightString.h>
@@ -188,7 +187,7 @@ REPAIRING INTEGRITY
   by `htck check` and verify that no integrity problems are detected.
 
 Options)";
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc(usage).add_options()
         ("all", "Display all entities in log (not just latest state)")
@@ -463,7 +462,7 @@ void handle_default()
   RangeInfoSetEndRow::iterator dangling_iter, incomplete_iter;
   pair<RangeInfoSet::iterator, bool> ret;
   TableIdentifierMap tidmap;
-  int64_t split_size = Config::properties->get_i64("Hypertable.RangeServer.Range.SplitSize");
+  int64_t split_size = properties->get_i64("Hypertable.RangeServer.Range.SplitSize");
   int64_t timestamp = get_ts64();
   FlyweightString flyweight;
   int64_t dangling_rsml_repair_count = 0;
@@ -948,19 +947,19 @@ int main(int argc, char **argv) {
   init_with_policies<Policies>(argc, argv);
 
   try {
-    toplevel_dir = Config::properties->get_str("Hypertable.Directory");
+    toplevel_dir = properties->get_str("Hypertable.Directory");
     boost::trim_if(toplevel_dir, boost::is_any_of("/"));
     toplevel_dir = String("/") + toplevel_dir;
     conn_manager = make_shared<ConnectionManager>();
     hyperspace = make_shared<Hyperspace::Session>(conn_manager->get_comm(),
-					 Config::properties);
+					 properties);
 
     if (!hyperspace->wait_for_connection(10000)) {
       HT_ERROR("Unable to connect to Hyperspace, exiting...");
       exit(1);
     }
 
-    dfs = new FsBroker::Lib::Client(conn_manager, Config::properties);
+    dfs = new FsBroker::Lib::Client(conn_manager, properties);
 
     if (!dfs->wait_for_connection(10000)) {
       HT_ERROR("Unable to connect to DFS Broker, exiting...");
@@ -968,7 +967,7 @@ int main(int argc, char **argv) {
     }
 
     std::vector<Filesystem::Dirent> listing;  
-    String toplevel = Config::properties->get_str("Hypertable.Directory");
+    String toplevel = properties->get_str("Hypertable.Directory");
     boost::trim_if(toplevel, boost::is_any_of("/"));
     toplevel = String("/") + toplevel;
 

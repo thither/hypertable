@@ -56,7 +56,7 @@ using namespace std;
 
 namespace {
 
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc("Usage: %s [options] <filename>\n\n"
         "Dumps the contents of the CellStore contained in the FS <filename>."

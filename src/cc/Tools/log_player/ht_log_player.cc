@@ -114,7 +114,7 @@ LoadTest  1456961038717377424  212325929        source  nah\\nwinnard\\nWinne\\n
 
 Options)";
 
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc(usage).add_options()
         ("tsv-output", "Convert log into a set of loadable .tsv files")

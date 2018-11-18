@@ -38,7 +38,7 @@ using namespace std;
 
 namespace {
 
-struct MyPolicy : Config::Policy {
+struct MyPolicy : Policy {
   static void init_options() {
     cmdline_desc("Usage: %s [Options] [<num_items>]\nOptions").add_options()
       ("TclHash", "Test Tcl hash")

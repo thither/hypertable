@@ -83,7 +83,7 @@ namespace {
   String g_mml_dir;
   uint16_t g_rs_port = 0;
 
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc("Usage: %s <test>\n\n"
                    "  This program tests failures and state transitions\n"

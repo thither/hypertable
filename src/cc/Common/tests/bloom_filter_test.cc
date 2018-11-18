@@ -32,7 +32,7 @@ using namespace Config;
 
 namespace {
 
-struct MyPolicy : Config::Policy {
+struct MyPolicy : Policy {
   static void init_options() {
     cmdline_desc("Usage: %s [Options] [<num_items>]\nOptions").add_options()
       ("MurmurHash2", "Test with MurmurHash2 by Austin Appleby")

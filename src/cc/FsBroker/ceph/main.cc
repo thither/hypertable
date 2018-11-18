@@ -27,7 +27,6 @@
 #include <AsyncComm/ApplicationQueue.h>
 #include <AsyncComm/Comm.h>
 
-#include <Common/Config.h>
 #include <Common/FileUtils.h>
 #include <Common/Init.h>
 #include <Common/Usage.h>
@@ -47,7 +46,7 @@ using namespace Hypertable::FsBroker;
 using namespace Config;
 using namespace std;
 
-struct AppPolicy : Config::Policy {
+struct AppPolicy : Policy {
   static void init_options() {
     cmdline_desc().add_options()
       ("ceph-version", "Show Ceph version and exit")

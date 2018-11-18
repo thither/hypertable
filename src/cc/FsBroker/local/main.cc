@@ -30,7 +30,6 @@
 #include <AsyncComm/Comm.h>
 #include <AsyncComm/DispatchHandler.h>
 
-#include <Common/Config.h>
 #include <Common/Error.h>
 #include <Common/FileUtils.h>
 #include <Common/InetAddr.h>

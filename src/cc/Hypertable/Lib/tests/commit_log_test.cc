@@ -42,7 +42,7 @@ using namespace Config;
 using namespace std;
 
 namespace {
-  struct MyPolicy : Config::Policy {
+  struct MyPolicy : Policy {
     static void init_options() {
       cmdline_desc().add_options()
         ("roll-limit", i64()->default_value(2000),

@@ -36,7 +36,7 @@ using namespace std;
 
 namespace {
 
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc().add_options()
         ("no-log-sync", boo()->default_value(false),

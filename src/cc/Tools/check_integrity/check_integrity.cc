@@ -25,7 +25,6 @@
 #include <Hypertable/Lib/Client.h>
 #include <Hypertable/Lib/NameIdMapper.h>
 
-#include <Common/Config.h>
 #include <Common/Error.h>
 #include <Common/InetAddr.h>
 #include <Common/Logger.h>
@@ -64,7 +63,7 @@ namespace {
     "  sleep: specifies a sleep time (in seconds) during the requests to\n"
     "  reduce the load that is caused by this tool.\n";
 
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc(usage).add_options()
           ("sleep", i32()->default_value(0),

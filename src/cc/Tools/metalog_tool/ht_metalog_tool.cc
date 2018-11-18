@@ -294,7 +294,7 @@ RSML OPTIONS
 
 Options)";
 
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc(usage).add_options()
         ("all", "Used with --dump to display all entities in log (not just latest state)")

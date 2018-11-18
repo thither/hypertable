@@ -30,7 +30,6 @@
 #include <Tools/Lib/CommandShell.h>
 
 #include <AsyncComm/Comm.h>
-#include <AsyncComm/Config.h>
 
 #include <Common/Error.h>
 #include <Common/Init.h>

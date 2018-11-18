@@ -56,7 +56,7 @@ using namespace std;
 
 namespace {
 
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc("Usage: %s [options] <log-dir>\n\n"
                    "  This program dumps a textual representation of\n"
