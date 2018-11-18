@@ -233,9 +233,9 @@ class Context {
 public:
   Context() {
     client = new Hypertable::Client();
-    log_api = Config::properties->get_bool("ThriftBroker.API.Logging");
-    next_threshold = Config::properties->get_i32("ThriftBroker.NextThreshold");
-    future_capacity = Config::properties->get_i32("ThriftBroker.Future.Capacity");
+    log_api = get_bool("ThriftBroker.API.Logging");
+    next_threshold = get_i32("ThriftBroker.NextThreshold");
+    future_capacity = get_i32("ThriftBroker.Future.Capacity");
   }
   Hypertable::Client *client;
   std::mutex shared_mutator_mutex;
