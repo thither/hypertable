@@ -210,7 +210,7 @@ namespace {
   };
   
   const char *help_cfg_reload[] = {
-    "cfg_reload Null|ConfigFileFullPath",
+    "cfg_reload Null | ConfigFileFullPath",
     "  This command reloads a new configuration file, default eg. /opt/hypertable/current/conf/hypertable.cfg"
     "  else the specified file path",
     (const char *)0

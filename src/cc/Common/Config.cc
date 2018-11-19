@@ -40,6 +40,8 @@
 
 #include <errno.h>
 
+#include <boost/algorithm/string.hpp>
+
 namespace Hypertable { namespace Config {
 
 // singletons
@@ -608,15 +610,13 @@ parse_file(const String &fname, const Desc &desc) {
 	properties->load(fname, desc, allow_unregistered);
 }
 
-void
-reparse_file(const String &fname) {
+String reparse_file(const String &fname) {
 	std::lock_guard<std::recursive_mutex> lock(rec_mutex);
-	String filename;
-	if (fname.empty())
-		filename = properties->get_str("config");
-	else
-		filename = fname;
-	properties->reload(filename, cmdline_hidden_desc(), allow_unregistered);
+    String filename = fname;
+    boost::trim(filename);
+    if(filename.empty())
+	    filename = properties->get_str("config");
+	return properties->reload(filename, cmdline_hidden_desc(), allow_unregistered);
 }
 
 void alias(const String &cmdline_opt, const String &file_opt, bool overwrite) {

@@ -168,28 +168,36 @@ Properties::load(const String &fname, const PropertiesDesc &desc,
   }
 }
 
-void
-Properties::reload(const String &fname, const PropertiesDesc &desc,
-	bool allow_unregistered) {
+String 
+Properties::reload(const String &fname, const PropertiesDesc &desc, bool allow_unregistered) {
 	m_need_alias_sync = true;
-
+  // update value to existing config names
 	try {
 		std::ifstream in(fname.c_str());
 
-		if (!in)
-			HT_THROWF(Error::CONFIG_BAD_CFG_FILE, "%s", strerror(errno));
+		if (!in){
+      HT_WARNF("Error::CONFIG_BAD_CFG_FILE error: %s", strerror(errno));
+      return format("BAD CFG FILE, error: %s", strerror(errno));
+    }
+    std::ostringstream out;
 		parsed_options parsed_opts = parse_config_file(in, desc, allow_unregistered);
-		store(parsed_opts, m_map);
 		for (size_t i = 0; i < parsed_opts.options.size(); i++) {
-			if (parsed_opts.options[i].unregistered && parsed_opts.options[i].string_key != "")
-				m_map.insert(Map::value_type(parsed_opts.options[i].string_key,
-					Value(parsed_opts.options[i].value[0], false)));
-		}
+      const String name = parsed_opts.options[i].string_key;
+			if (!parsed_opts.options[i].unregistered && name != ""){
+        Value v(parsed_opts.options[i].value[0], false);
+        out << format("%s=%s=>%s", name.c_str(), to_str(m_map.at(name).value()).c_str(), to_str(v).c_str());
+        m_map.at(name).value() = v;
+      }
+		}      
+    out << std::endl;
+    return out.str();
 	}
 	catch (std::exception &e) {
-		HT_THROWF(Error::CONFIG_BAD_CFG_FILE, "%s: %s", fname.c_str(), e.what());
+		HT_WARNF("Error::CONFIG_BAD_CFG_FILE %s: %s", fname.c_str(), e.what());
+    return format("Error::CONFIG_BAD_CFG_FILE %s: %s", fname.c_str(), e.what());
 	}
 }
+
 void
 Properties::parse_args(int argc, char *argv[], const PropertiesDesc &desc,
                        const PropertiesDesc *hidden, const PositionalDesc *p,

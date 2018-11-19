@@ -240,7 +240,7 @@ public:
    */
   void load(const String &filename, const PropertiesDesc &desc,
 	  bool allow_unregistered = false);
-  void reload(const String &filename, const PropertiesDesc &desc,
+  String reload(const String &filename, const PropertiesDesc &desc,
 	  bool allow_unregistered = false);
 
   /**

@@ -728,8 +728,8 @@ namespace Hyperspace {
     std::mutex                m_mutex;
     std::condition_variable   m_cond;
     Comm                      *m_comm;
-	PropertiesPtr             m_props;
-	bool                      m_silent;
+	  PropertiesPtr             m_props;
+	  bool                      m_silent;
     int                       m_state;
     uint32_t                  m_grace_period;
     uint32_t                  m_timeout_ms;
@@ -740,7 +740,7 @@ namespace Hyperspace {
     uint64_t                  m_last_callback_id;
     std::mutex                m_callback_mutex;
     vector<String>            m_hyperspace_replicas;
-	uint16_t                  m_hyperspace_replica_nxt = 0;
+	  uint16_t                  m_hyperspace_replica_nxt = 0;
     String                    m_hyperspace_master;
 
     /// Delivers suspend/resume notifications (e.g. laptop close/open).
