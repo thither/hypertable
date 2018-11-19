@@ -1417,7 +1417,7 @@ HsCommandInterpreterPtr Session::create_hs_interpreter() {
 }
 
 String Session::cfg_reload(const String &filename) {
-	return format("\n%s\n", Config::reparse_file(filename));
+	return format("\n%s\n", Config::reparse_file(filename).c_str());
 }
 
 void Hyperspace::close_handle(SessionPtr hyperspace, uint64_t handle) {

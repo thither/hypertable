@@ -175,22 +175,38 @@ Properties::reload(const String &fname, const PropertiesDesc &desc, bool allow_u
 	try {
 		std::ifstream in(fname.c_str());
 
+    HT_INFOF("Reloading Configuration File %s", fname.c_str());
+
 		if (!in){
       HT_WARNF("Error::CONFIG_BAD_CFG_FILE error: %s", strerror(errno));
-      return format("BAD CFG FILE, error: %s", strerror(errno));
+      return format("Error::BAD CFG FILE, error: %s", strerror(errno));
     }
-    std::ostringstream out;
+    String out;
+    out.append("\n\nCurrent Configurations:\n");
+    append_to_string(out, true);
+
+    out.append("\n\nUpdated Configurations:\n");
 		parsed_options parsed_opts = parse_config_file(in, desc, allow_unregistered);
 		for (size_t i = 0; i < parsed_opts.options.size(); i++) {
       const String name = parsed_opts.options[i].string_key;
-			if (!parsed_opts.options[i].unregistered && name != ""){
-        Value v(parsed_opts.options[i].value[0], false);
-        out << format("%s=%s=>%s", name.c_str(), to_str(m_map.at(name).value()).c_str(), to_str(v).c_str());
-        m_map.at(name).value() = v;
-      }
-		}      
-    out << std::endl;
-    return out.str();
+			if (parsed_opts.options[i].unregistered || name.empty())
+        continue;
+      Map::iterator it = m_map.find(name);
+      if (it == m_map.end())
+        continue;
+
+      String oldV = to_str(m_map[name].value());
+      Value vn(parsed_opts.options[i].value[0], false);
+      if(oldV.compare(to_str(vn)) == 0)
+        continue;
+      (it->second).value() = vn;
+      // TODO - new value is "invalid option type"
+      out.append(format("%s=new(%s) old(%s)\n", name.c_str(), 
+                 to_str(m_map[name].value()).c_str(), oldV.c_str()));
+		}
+    out.append("\n\nNew Configurations:\n");
+    append_to_string(out, true);
+    return out;
 	}
 	catch (std::exception &e) {
 		HT_WARNF("Error::CONFIG_BAD_CFG_FILE %s: %s", fname.c_str(), e.what());
@@ -312,6 +328,22 @@ Properties::print(std::ostream &out, bool include_default) {
         out << " (default)";
 
       out << std::endl;
+    }
+  }
+}
+
+void
+Properties::append_to_string(String &out, bool include_default) {
+  for (const auto &kv : m_map) {
+    bool isdefault = kv.second.defaulted();
+
+    if (include_default || !isdefault) {
+      out.append(format("%s=%s", kv.first.c_str(), to_str(kv.second.value()).c_str()));
+
+      if (isdefault)
+        out.append(" (default)");
+
+      out.append("\n");
     }
   }
 }

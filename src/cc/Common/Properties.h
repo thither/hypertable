@@ -428,6 +428,14 @@ public:
   void print(std::ostream &out, bool include_default = false);
 
   /**
+   * Append to String keys and values of the configuration map for print
+   *   
+   * @param out The String to append 
+   * @param include_default If true then default values are included
+   */
+  void append_to_string(String &out, bool include_default = false);
+
+  /**
    * Helper to print boost::any used by property values
    *
    * @param a Reference to the boost::any value
