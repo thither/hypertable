@@ -561,20 +561,43 @@ void LocalBroker::readdir(Response::Callback::Readdir *cb, const char *dname) {
     return;
   }
 
-  struct dirent *dp = (struct dirent *)new uint8_t [sizeof(struct dirent)+1025];
   struct dirent *result;
-
-  if (readdir_r(dirp, dp, &result) != 0) {
-    report_error(cb);
-    HT_ERRORF("readdir('%s') failed - %s", absdir.c_str(), strerror(errno));
-    (void)closedir(dirp);
-    delete [] (uint8_t *)dp;
-    return;
-  }
 
   String full_entry_path;
   struct stat statbuf;
-  while (result != 0) {
+
+#if defined(USE_READDIR_R) || USE_READDIR_R
+  struct dirent *dp = (struct dirent *)new uint8_t [sizeof(struct dirent)+1025];
+  int ret;
+#endif
+
+  do{
+    
+#if defined(USE_READDIR_R) && USE_READDIR_R
+    ret = readdir_r(dirp, dp, &result)
+    if (ret != 0) {
+      report_error(cb);
+      HT_ERRORF("readdir('%s') failed - %s", absdir.c_str(), strerror(errno));
+      (void)closedir(dirp);
+      delete [] (uint8_t *)dp;
+      return;
+    }
+    if(result == NULL) break;
+
+#else
+    errno = 0;
+    result = ::readdir(dirp);
+    if(result == NULL){
+      if(errno > 0){
+        report_error(cb);
+        HT_ERRORF("readdir('%s') failed - %s", absdir.c_str(), strerror(errno));
+        (void)closedir(dirp);
+        return;
+      }
+      break;
+    }
+
+#endif
 
     if (result->d_name[0] != '.' && result->d_name[0] != 0) {
       if (m_no_removal) {
@@ -591,7 +614,10 @@ void LocalBroker::readdir(Response::Callback::Readdir *cb, const char *dname) {
             if (errno != ENOENT) {
               report_error(cb);
               HT_ERRORF("readdir('%s') failed - %s", absdir.c_str(), strerror(errno));
+#if defined(USE_READDIR_R) && USE_READDIR_R
               delete [] (uint8_t *)dp;
+#endif
+              (void)closedir(dirp);
               return;
             }
           }
@@ -613,7 +639,10 @@ void LocalBroker::readdir(Response::Callback::Readdir *cb, const char *dname) {
         if (stat(full_entry_path.c_str(), &statbuf) == -1) {
           report_error(cb);
           HT_ERRORF("readdir('%s') failed - %s", absdir.c_str(), strerror(errno));
+#if defined(USE_READDIR_R) && USE_READDIR_R
           delete [] (uint8_t *)dp;
+#endif
+          (void)closedir(dirp);
           return;
         }
         entry.length = (uint64_t)statbuf.st_size;
@@ -623,16 +652,13 @@ void LocalBroker::readdir(Response::Callback::Readdir *cb, const char *dname) {
       //HT_INFOF("readdir Adding listing '%s'", result->d_name);
     }
 
-    if (readdir_r(dirp, dp, &result) != 0) {
-      report_error(cb);
-      HT_ERRORF("readdir('%s') failed - %s", absdir.c_str(), strerror(errno));
-      delete [] (uint8_t *)dp;
-      return;
-    }
-  }
-  (void)closedir(dirp);
+  }while(1);
 
+#if defined(USE_READDIR_R) && USE_READDIR_R
   delete [] (uint8_t *)dp;
+#endif
+
+  (void)closedir(dirp);
 
   HT_DEBUGF("Sending back %d listings", (int)listing.size());
 

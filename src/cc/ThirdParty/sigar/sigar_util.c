@@ -155,7 +155,7 @@ int sigar_proc_list_procfs_get(sigar_t *sigar,
 {
     DIR *dirp = opendir("/proc");
     struct dirent *ent;
-#ifdef HAVE_READDIR_R
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
     struct dirent dbuf;
 #endif
 
@@ -163,7 +163,7 @@ int sigar_proc_list_procfs_get(sigar_t *sigar,
         return errno;
     }
 
-#ifdef HAVE_READDIR_R
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
     while (readdir_r(dirp, &dbuf, &ent) == 0) {
         if (ent == NULL) {
             break;
@@ -193,7 +193,7 @@ int sigar_proc_fd_count(sigar_t *sigar, sigar_pid_t pid,
 {
     DIR *dirp;
     struct dirent *ent;
-#ifdef HAVE_READDIR_R
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
     struct dirent dbuf;
 #endif
     char name[BUFSIZ];
@@ -206,7 +206,7 @@ int sigar_proc_fd_count(sigar_t *sigar, sigar_pid_t pid,
         return errno;
     }
 
-#ifdef HAVE_READDIR_R
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
     while (readdir_r(dirp, &dbuf, &ent) == 0) {
         if (ent == NULL) {
             break;

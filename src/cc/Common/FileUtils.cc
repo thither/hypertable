@@ -508,15 +508,17 @@ bool FileUtils::expand_tilde(String &fname) {
 
 void FileUtils::readdir(const String &dirname, const String &fname_regex,
 			std::vector<struct dirent> &listing) {
-  int ret;
+
   DIR *dirp = opendir(dirname.c_str());
-  struct dirent de, *dep;
   boost::shared_ptr<re2::RE2> regex(fname_regex.length()
                                 ? new re2::RE2(fname_regex)
                                 : 0);
 
+#if defined(USE_READDIR_R) && USE_READDIR_R
+  int ret;
+  struct dirent de, *dep;
   do {
-    if ((ret = readdir_r(dirp, &de, &dep)) != 0)
+    if ((ret = ::readdir_r(dirp, &de, &dep)) != 0)
       HT_FATALF("Problem reading directory '%s' - %s", dirname.c_str(),
               strerror(errno));
 
@@ -524,7 +526,25 @@ void FileUtils::readdir(const String &dirname, const String &fname_regex,
       listing.push_back(de);
   } while (dep != 0);
 
+#else
+  struct dirent *de;
+  do {
+    errno = 0;
+    de = ::readdir(dirp);
+    if (de == NULL){
+      if(errno > 0)
+        HT_FATALF("Problem reading directory '%s' - %s", dirname.c_str(),
+                strerror(errno));
+      break;
+    }
+    if (!regex || re2::RE2::FullMatch(de->d_name, *regex))
+      listing.push_back(*de);
+
+  } while (de != NULL);
+#endif
+
   (void)closedir(dirp);
 }
+
 
 
