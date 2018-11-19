@@ -8,7 +8,7 @@ Version Master:
    dbenv->rep_sync(0) added to on DB_EVENT_REP_CLIENT and DB_EVENT_REP_NEWMASTER(for client)
    DB_EVENT_REP_MASTER event finish with finish_election, in both cases, newly elected or was master
    added support of ZSTD(zstandard) compressor for BlockCompressionCodec
-   added Hyperspace configuration file reload, a command and interpreter statement cfg_reload (only update existing names)
+   added a command and interpreter statement cfg_reload (only update existing cfg names) to Hyperspace
    changed Hyperspace ClientKeepaliveHandler, Config/Properties assigned via Session
    added method get_next_replica to Hyperspace Session  
    removed unused cases of include Config and using namespace Config
