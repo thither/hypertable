@@ -57,12 +57,12 @@ Session::Session(Comm *comm, PropertiesPtr &props)
   HT_TRY("getting config values",
     m_verbose = props->get_bool("Hypertable.Verbose");
     m_silent = props->get_bool("Hypertable.Silent");
-	  m_reconnect = props->get_bool("Hyperspace.Session.Reconnect");
+    m_reconnect = props->get_bool("Hyperspace.Session.Reconnect");
     m_grace_period = props->get_i32("Hyperspace.GracePeriod");
     m_lease_interval = props->get_i32("Hyperspace.Lease.Interval");
     m_hyperspace_port = props->get_i16("Hyperspace.Replica.Port");
-	  m_datagram_send_port = props->get_i16("Hyperspace.Client.Datagram.SendPort");
-	  m_keep_alive_interval = props->get_i32("Hyperspace.KeepAlive.Interval");
+    m_datagram_send_port = props->get_i16("Hyperspace.Client.Datagram.SendPort");
+    m_keep_alive_interval = props->get_i32("Hyperspace.KeepAlive.Interval");
   );
 
   if (m_reconnect)

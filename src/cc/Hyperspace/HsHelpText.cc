@@ -58,7 +58,7 @@ namespace {
     "locate ............ Get the location of Hyperspace Master or all Replicas",
     "dump .............. Dump contents of hyperspace",
     "status ............ Get server status",
-    "cfg_reload .........Reload configurations file"
+    "cfg_reload ........ Reload configurations file"
     "",
     "Statements must be terminated with ';' to execute.  For more information on",
     "a specific statement, type 'help <statement>', where <statement> is one from",
