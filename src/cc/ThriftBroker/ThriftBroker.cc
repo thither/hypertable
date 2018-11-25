@@ -1544,7 +1544,7 @@ public:
     LOG_API_FINISH_E(" result.size="<< result.size());
   }
 
-  void get_cell(Value &result, const ThriftGen::Namespace ns,
+  void get_cell(ThriftGen::Value &result, const ThriftGen::Namespace ns,
           const String &table, const String &row, const String &column) override {
     LOG_API_START("namespace=" << ns << " table=" << table << " row="
             << row << " column=" << column);

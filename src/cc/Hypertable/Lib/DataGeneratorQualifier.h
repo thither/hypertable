@@ -79,7 +79,7 @@ namespace Hypertable {
   class QualifierFactory {
   public:
     static Qualifier *create(QualifierSpec &spec) {
-      if (spec.type == STRING)
+      if (spec.type == Type::STRING)
         return new QualifierString(spec);
       else
         HT_ASSERT(!"Invalid qualifier type");
