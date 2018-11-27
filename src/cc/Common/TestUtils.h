@@ -164,10 +164,10 @@ void serial_run(FunT fun, size_t n, bool proc_stat = false) {
  * results
  */
 template <typename FunT>
-void parallel_run(FunT fun, size_t n, bool proc_stat = false) {
+void parallel_run(FunT fun, Property::ValueDef<int32_t>* threads, bool proc_stat = false) {
   ThreadGroup pool;
   TestStat stat;
-
+  size_t n = threads->get_value();
   while (n--) {
     pool.create_thread(TestFun<FunT>(fun, proc_stat, &stat));
   }
@@ -182,18 +182,20 @@ void parallel_run(FunT fun, size_t n, bool proc_stat = false) {
  *   --repeats   How often the test function is invoked
  */
 template <typename FunT>
-void run_test(FunT fun, bool proc_stat = false, const Properties *props = 0) {
+void run_test(FunT fun, bool proc_stat = false, Properties *props = 0) {
   if (!props) {
     HT_ASSERT(Config::properties);
     props = Config::properties.get();
   }
-
-  size_t threads = props->get_i32("threads", 0);
-
-  if (threads)
+  if(!props->has("threads")){
+    props->set("threads", 0, false);
+  }
+  // test with using direct pointer to ValueDef 
+  Property::ValueDef<int32_t>* threads = props->get_type_ptr<int32_t>("threads");
+  if (threads->get_value())
     parallel_run(fun, threads, proc_stat);
   else
-    serial_run(fun, props->get_i32("repeats", 3), proc_stat);
+    serial_run(fun, (int32_t)props->get_i32("repeats", 3), proc_stat);
 }
 
 namespace Config {

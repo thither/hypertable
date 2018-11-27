@@ -215,19 +215,19 @@ Apps::RangeServer::RangeServer(PropertiesPtr &props, ConnectionManagerPtr &conn_
     Global::memory_limit = cfg.get_i64("MemoryLimit");
   else {
     double pct = std::max(1.0, std::min((double)cfg.get_i32("MemoryLimit.Percentage"), 99.0)) / 100.0;
-    Global::memory_limit = (int64_t)(mem_stat.ram * Property::MiB * pct);
+    Global::memory_limit = (int64_t)(mem_stat.ram * MiB * pct);
   }
 
   if (cfg.has("MemoryLimit.EnsureUnused"))
     Global::memory_limit_ensure_unused = cfg.get_i64("MemoryLimit.EnsureUnused");
   else if (cfg.has("MemoryLimit.EnsureUnused.Percentage")) {
     double pct = std::max(1.0, std::min((double)cfg.get_i32("MemoryLimit.EnsureUnused.Percentage"), 99.0)) / 100.0;
-    Global::memory_limit_ensure_unused = (int64_t)(mem_stat.ram * Property::MiB * pct);
+    Global::memory_limit_ensure_unused = (int64_t)(mem_stat.ram * MiB * pct);
   }
 
   if (Global::memory_limit_ensure_unused) {
     // adjust current limit according to the actual memory situation
-    int64_t free_memory_50pct = (int64_t)(0.5 * mem_stat.free * Property::MiB);
+    int64_t free_memory_50pct = (int64_t)(0.5 * mem_stat.free * MiB);
     Global::memory_limit_ensure_unused_current = std::min(free_memory_50pct, Global::memory_limit_ensure_unused);
     if (Global::memory_limit_ensure_unused_current < Global::memory_limit_ensure_unused)
       HT_NOTICEF("Start up in low memory condition (free memory %.2fMB)", mem_stat.free);
@@ -236,7 +236,7 @@ Apps::RangeServer::RangeServer(PropertiesPtr &props, ConnectionManagerPtr &conn_
   int64_t block_cache_min = cfg.get_i64("BlockCache.MinMemory");
   int64_t block_cache_max = cfg.get_i64("BlockCache.MaxMemory");
   if (block_cache_max == -1) {
-    double physical_ram = mem_stat.ram * Property::MiB;
+    double physical_ram = mem_stat.ram * MiB;
     block_cache_max = (int64_t)physical_ram;
   }
   if (block_cache_min > block_cache_max)
@@ -252,7 +252,7 @@ Apps::RangeServer::RangeServer(PropertiesPtr &props, ConnectionManagerPtr &conn_
     if ((double)query_cache_memory > (double)Global::memory_limit * 0.2) {
       query_cache_memory = (int64_t)((double)Global::memory_limit * 0.2);
       props->set("Hypertable.RangeServer.QueryCache.MaxMemory", query_cache_memory);
-      HT_INFOF("Maximum size of query cache has been reduced to %.2fMB", (double)query_cache_memory / Property::MiB);
+      HT_INFOF("Maximum size of query cache has been reduced to %.2fMB", (double)query_cache_memory / MiB);
     }
     m_query_cache = std::make_shared<QueryCache>(query_cache_memory);
   }

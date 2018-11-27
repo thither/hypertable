@@ -126,6 +126,96 @@ void file_desc(const Desc &desc) {
   file_descp = new Desc(desc);
 }
 
+void parse_args(int argc, char *argv[]) {
+  std::lock_guard<std::recursive_mutex> lock(rec_mutex);
+
+  HT_TRY("parsing init arguments",
+    properties->parse_args(argc, argv, cmdline_desc(), cmdline_hidden_descp,
+                           cmdline_positional_descp, allow_unregistered));
+  // some built-in behavior
+  if (has("help")) {
+    std::cout << cmdline_desc() << std::flush;
+    std::quick_exit(EXIT_SUCCESS);
+  }
+
+  if (has("help-config")) {
+    std::cout << file_desc() << std::flush;
+    std::quick_exit(EXIT_SUCCESS);
+  }
+
+  if (has("version")) {
+    std::cout << version_string() << std::endl;
+    std::quick_exit(EXIT_SUCCESS);
+  }
+
+  filename = properties->get_str("config");
+
+  // Only try to parse config file if it exists or not default
+  if (FileUtils::exists(filename)) {
+    parse_file(filename, cmdline_hidden_desc());
+    file_loaded = true;
+  }
+  else if (!defaulted("config"))
+    HT_THROW(Error::FILE_NOT_FOUND, filename);
+
+  sync_aliases();       // call before use
+}
+
+void
+parse_file(const String &fname, const Desc &desc) {
+	properties->load(fname, desc, allow_unregistered);
+}
+
+String reparse_file(const String &fname) {
+	std::lock_guard<std::recursive_mutex> lock(rec_mutex);
+    String filename = fname;
+    boost::trim(filename);
+    if(filename.empty())
+	    filename = properties->get_str("config");
+	return properties->reload(filename, cmdline_hidden_desc(), allow_unregistered);
+}
+
+void alias(const String &cmdline_opt, const String &file_opt, bool overwrite) {
+  properties->alias(cmdline_opt, file_opt, overwrite);
+}
+
+void sync_aliases() {
+  properties->sync_aliases();
+}
+
+bool allow_unregistered_options(bool choice) {
+  std::lock_guard<std::recursive_mutex> lock(rec_mutex);
+  bool old = allow_unregistered;
+  allow_unregistered = choice;
+  return old;
+}
+
+bool allow_unregistered_options() {
+  std::lock_guard<std::recursive_mutex> lock(rec_mutex);
+  return allow_unregistered;
+}
+
+void cleanup() {
+  std::lock_guard<std::recursive_mutex> lock(rec_mutex);
+  properties = 0;
+  if (cmdline_descp) {
+    delete cmdline_descp;
+    cmdline_descp = 0;
+  }
+  if (cmdline_hidden_descp) {
+    delete cmdline_hidden_descp;
+    cmdline_hidden_descp = 0;
+  }
+  if (cmdline_positional_descp) {
+    delete cmdline_positional_descp;
+    cmdline_positional_descp = 0;
+  }
+  if (file_descp) {
+    delete file_descp;
+    file_descp = 0;
+  }
+}
+
 void DefaultPolicy::init_options() {
   String default_config;
   HT_EXPECT(!System::install_dir.empty(), Error::FAILED_EXPECTATION);
@@ -165,6 +255,12 @@ void DefaultPolicy::init_options() {
   alias("verbose", "Hypertable.Verbose");
   alias("silent", "Hypertable.Silent");
   alias("timeout", "Hypertable.Request.Timeout");
+
+  // TODO: 
+  //  * avoid of loading all properties
+  //  * use of essential configurations file for configurations definitions
+  //  * load essential on groups of init requirments eg. Config::load_groups(['pre.']))
+  //    use here as list of essential config groups to load 
 
   // pre boost 1.35 doesn't support allow_unregistered, so we have to have the
   // full cfg definition here, which might not be a bad thing.
@@ -570,63 +666,6 @@ void DefaultPolicy::init_options() {
   cmdline_hidden_desc().add(file_desc());
 }
 
-void parse_args(int argc, char *argv[]) {
-  std::lock_guard<std::recursive_mutex> lock(rec_mutex);
-
-  HT_TRY("parsing init arguments",
-    properties->parse_args(argc, argv, cmdline_desc(), cmdline_hidden_descp,
-                           cmdline_positional_descp, allow_unregistered));
-  // some built-in behavior
-  if (has("help")) {
-    std::cout << cmdline_desc() << std::flush;
-    std::quick_exit(EXIT_SUCCESS);
-  }
-
-  if (has("help-config")) {
-    std::cout << file_desc() << std::flush;
-    std::quick_exit(EXIT_SUCCESS);
-  }
-
-  if (has("version")) {
-    std::cout << version_string() << std::endl;
-    std::quick_exit(EXIT_SUCCESS);
-  }
-
-  filename = properties->get_str("config");
-
-  // Only try to parse config file if it exists or not default
-  if (FileUtils::exists(filename)) {
-    parse_file(filename, cmdline_hidden_desc());
-    file_loaded = true;
-  }
-  else if (!defaulted("config"))
-    HT_THROW(Error::FILE_NOT_FOUND, filename);
-
-  sync_aliases();       // call before use
-}
-
-void
-parse_file(const String &fname, const Desc &desc) {
-	properties->load(fname, desc, allow_unregistered);
-}
-
-String reparse_file(const String &fname) {
-	std::lock_guard<std::recursive_mutex> lock(rec_mutex);
-    String filename = fname;
-    boost::trim(filename);
-    if(filename.empty())
-	    filename = properties->get_str("config");
-	return properties->reload(filename, cmdline_hidden_desc(), allow_unregistered);
-}
-
-void alias(const String &cmdline_opt, const String &file_opt, bool overwrite) {
-  properties->alias(cmdline_opt, file_opt, overwrite);
-}
-
-void sync_aliases() {
-  properties->sync_aliases();
-}
-
 void DefaultPolicy::init() {
   String loglevel = properties->get_str("logging-level");
   bool verbose = properties->get_bool("verbose");
@@ -666,37 +705,5 @@ void DefaultPolicy::init() {
   }
 }
 
-bool allow_unregistered_options(bool choice) {
-  std::lock_guard<std::recursive_mutex> lock(rec_mutex);
-  bool old = allow_unregistered;
-  allow_unregistered = choice;
-  return old;
-}
-
-bool allow_unregistered_options() {
-  std::lock_guard<std::recursive_mutex> lock(rec_mutex);
-  return allow_unregistered;
-}
-
-void cleanup() {
-  std::lock_guard<std::recursive_mutex> lock(rec_mutex);
-  properties = 0;
-  if (cmdline_descp) {
-    delete cmdline_descp;
-    cmdline_descp = 0;
-  }
-  if (cmdline_hidden_descp) {
-    delete cmdline_hidden_descp;
-    cmdline_hidden_descp = 0;
-  }
-  if (cmdline_positional_descp) {
-    delete cmdline_positional_descp;
-    cmdline_positional_descp = 0;
-  }
-  if (file_descp) {
-    delete file_descp;
-    file_descp = 0;
-  }
-}
 
 }} // namespace Hypertable::Config

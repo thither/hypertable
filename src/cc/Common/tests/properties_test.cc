@@ -44,9 +44,11 @@ void basic_test(const PropertiesDesc &desc) {
   Properties props;
   props.parse_args(sizeof(argv) / sizeof(char *), (char **)argv, desc);
   props.parse_args(args, desc);
-  props.notify();
+  //props.set("string_type", (String)"11111 a String Type 111111");
+  //cout << "string_type=" << props.get<String>("string_type") << endl;
+  
   props.set("mode", MODE_FOO);
-  cout << "mode=" << props.get<Mode>("mode") << endl;
+  cout << "mode=" << props.str("mode") << endl;
   props.print(cout);
 }
 
@@ -74,12 +76,21 @@ int main(int argc, char *argv[]) {
       ;
     Properties props;
     props.parse_args(argc, argv, desc);
-    props.notify();
 
     if (props.has("help"))
       cout << desc << endl;
 
     cout << "f64test=" << f64test << endl;
+    /*
+    if (!props.has("f64")) {
+      cout << "f64 has!=" << f64test << endl;
+      props.set("f64", (double)1234.1234);
+      cout << "f64=" << props.str("f64") << endl;
+    } else
+      cout << "f64 has=" << f64test << endl;
+    props.get_value_ptr("f64")->set_value((double)5678.9);
+    cout << "f64 set=" << props.str("f64") << endl;
+    */
 
     props.print(cout, true);
     HT_TRY("basic test", basic_test(desc));

@@ -49,7 +49,26 @@ namespace Hypertable {
     /// Rows plus columns
     BLOOM_FILTER_ROWS_COLS
   };
-
+  /*
+  // Configuration Property
+  class ConfBloomFilterMode : public Property::EnumExt {
+    public:
+      enum enums BloomFilterMode;
+      bool valid(String &name){
+        return opts.find(name) != opts.end();
+      }
+      String str(enums num){
+        return opts[num];
+      }
+      enums value(String &name){
+        return std::distance(opts.begin(),
+                             std::find(opts.begin(), opts.end(), name));
+      }
+    private:
+      // vector/map to enum index on strings/mode aliases
+      std::vector<String> opts = {"none","rows","rows+cols"};
+  };
+  */
   /// Specification for access group options.
   class AccessGroupOptions {
   public:

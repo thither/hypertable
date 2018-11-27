@@ -63,8 +63,8 @@ namespace {
       return;
 
     compressor_desc.add_options()
-	  ("ultra,20", "Highest setting (probably slower) for zstd")
-	  ("best,9", "Highest setting (probably slower) for zlib, zstd")
+	    ("ultra,20", "Highest setting (probably slower) for zstd")
+	    ("best,9", "Highest setting (probably slower) for zlib, zstd")
       ("normal", "Normal setting for zlib, zstd")
       ("fp-len", i16()->default_value(19), "Minimum fingerprint length for bmz")
       ("offset", i16()->default_value(0), "Starting fingerprint offset for bmz")
@@ -87,7 +87,9 @@ namespace {
       ;
     bloomfilter_hidden_desc.add_options()
       ("bloom-filter-mode", str(), "Bloom filter mode (rows|rows+cols|none)")
+      // ("bloom-filter-mode", eNum<ConfBloomFilterMode>()->default_value(0)
       ;
+      
     bloomfilter_pos_desc.add("bloom-filter-mode", 1);
     desc_inited = true;
   }
@@ -283,7 +285,8 @@ void AccessGroupOptions::parse_bloom_filter(const std::string &spec, PropertiesP
                            &bloomfilter_pos_desc));
   
   std::string mode = props->get_str("bloom-filter-mode");
-  
+  // property name used with enum and string!!, 
+  // TODO: EnumExt with enum validation and repr
   if (mode == "none" || mode == "disabled")
     props->set("bloom-filter-mode", BLOOM_FILTER_DISABLED);
   else if (mode == "rows" || mode == "row")

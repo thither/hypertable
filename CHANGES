@@ -14,8 +14,23 @@ Version Master:
    added method get_next_replica to Hyperspace Session  
    removed unused cases of include Config and using namespace Config
    added macro USE_READDIR_R, false with glibc-2.23+
-   changed readdir_r deprecated infavour of readdir depends on USE_READDIR_R
+   changed readdir_r deprecated infavour of readdir depends on USE_READDIR_R(GLIBC version)
+   added file Common/Property.h include namespace hypretable::Property
+   added class ValueType with dependencies classes TypeDef and ValueDef
+   changed definitions of MiB, KiB, etc. moved to Property file onto Hypertable namespace 
+   changed Properties MapPair is <String, Property::ValuePtr>
+   changed abbr to boost::program_options value type is in Hypertable namespace
+   removed typedef Po of to boost::program_options from Config and Hypertable namespace
+   depcicated use of boost::program_options store method to apply parsed properties used with an intermediate Po Map
+   added support dynamic and multithread safe for values of Properties (data of Property::ValueDef<T>)
+   changed Config::get("name") return a std::atomic value for non-trival types and no longer a const
+   added usabillity of configurations changes to apply at run time (eg. Hyperspace.KeepAlive.Interval )
+   
    TODO: test Hyperspace related changes in big(3+ replicas) cluster environment
+         change from hardcoded predefined configurations descriptions to a hypertable-essential.ext file
+         an EnumExt holder for an ENUM value type property (corresponding enum to Name/Aliases and versa)
+         apply possible configurations to be dynamic at run time
+         support of servers and clients for reloading configuarions file, Hyperspace's cfg_reload is at debug state
 
 Version 0.9.8.14:
 (2018-08-23)

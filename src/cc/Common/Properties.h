@@ -29,8 +29,12 @@
 
 #include <vector>
 #include <string>
+#include <any>
+#include <mutex>
 #include <boost/version.hpp>
 #include <boost/any.hpp>
+#include <Common/Logger.h>
+#include <Common/Property.h>
 
 // Required declarations for custom validators *before* including the header,
 // otherwise no overloading would happen in standard conforming compilers.
@@ -41,20 +45,15 @@ namespace boost {
 /** Program options. */
 namespace program_options {
 
-using namespace std;
-
-typedef std::vector<std::string> Strings;
-typedef std::vector<int64_t> Int64s;
-
-void validate(boost::any &v, const vector<string> &values, ::int64_t *, int);
-void validate(boost::any &v, const vector<string> &values, ::int32_t *, int);
-void validate(boost::any &v, const vector<string> &values, ::uint16_t *, int);
-void validate(boost::any &v, const vector<string> &values, double *, int);
+void validate(boost::any &v, const std::vector<std::string> &values, ::int64_t *, int);
+void validate(boost::any &v, const std::vector<std::string> &values, ::int32_t *, int);
+void validate(boost::any &v, const std::vector<std::string> &values, ::uint16_t *, int);
+void validate(boost::any &v, const std::vector<std::string> &values, double *, int);
 
 // pre 1.35 vector<T> validate doesn't pickup user defined validate for T
 #if BOOST_VERSION < 103500
 template<typename T>
-void validate(boost::any& v, const vector<string> &s, std::vector<T>*, int);
+void validate(boost::any& v, const std::vector<std::string> &s, std::vector<T>*, int);
 #endif
 
 }} // namespace boost::program_options
@@ -66,25 +65,23 @@ void validate(boost::any& v, const vector<string> &s, std::vector<T>*, int);
 
 namespace boost { namespace program_options {
 
-using namespace std;
-
 #if BOOST_VERSION < 103500
 /** Implement validation function for vector<T>, which is not
  * implemented in boost prior to 1.35
  */
 template<typename T>
-void validate(boost::any& v, const vector<string> &s, std::vector<T>*, int) {
+void validate(boost::any& v, const std::vector<std::string> &s, std::vector<T>*, int) {
   if (v.empty())
       v = boost::any(std::vector<T>());
 
-  std::vector<T>* tv = boost::any_cast< std::vector<T> >(&v);
+  std::vector<T>* tv = boost::any_cast<std::vector<T> >(&v);
   assert(NULL != tv);
 
   for (unsigned i = 0; i < s.size(); ++i) {
     try {
       // so we can pick up user defined validate for T here
       boost::any a;
-      vector<string> sv;
+      std::vector<std::string> sv;
       sv.push_back(s[i]);
       validate(a, sv, (T*)0, 0);
       tv->push_back(boost::any_cast<T>(a));
@@ -98,65 +95,80 @@ void validate(boost::any& v, const vector<string> &s, std::vector<T>*, int) {
 
 }} // namespace boost::program_options
 
+
+namespace {  namespace Po = boost::program_options; } // local
+
 // convenience/abbreviated accessors
-#define HT_PROPERTIES_ABBR_ACCESSORS(_const_) \
-  inline bool get_bool(const String &name) _const_ { \
+#define HT_PROPERTIES_ABBR_ACCESSORS() \
+  inline bool get_bool(const String &name)  { \
     return get<bool>(name); } \
-  inline String get_str(const String &name) _const_ { \
+  inline String get_str(const String &name)  { \
     return get<String>(name); } \
-  inline Strings get_strs(const String &name) _const_ { \
+  inline Strings get_strs(const String &name)  { \
     return get<Strings>(name); } \
-  inline uint16_t get_i16(const String &name) _const_ { \
+  inline uint16_t get_i16(const String &name)  { \
     return get<uint16_t>(name); } \
-  inline int32_t get_i32(const String &name) _const_ { \
+  inline int32_t get_i32(const String &name)  { \
     return get<int32_t>(name); } \
-  inline int64_t get_i64(const String &name) _const_ { \
+  inline int64_t get_i64(const String &name)  { \
     return get<int64_t>(name); } \
-  inline Int64s get_i64s(const String &name) _const_ { \
+  inline Int64s get_i64s(const String &name)  { \
     return get<Int64s>(name); } \
-  inline double get_f64(const String &name) _const_ { \
+  inline double get_f64(const String &name)  { \
     return get<double>(name); } \
-  inline Doubles get_f64s(const String &name) _const_ { \
+  inline Doubles get_f64s(const String &name)  { \
     return get<Doubles>(name); } \
-  inline bool get_bool(const String &name, bool default_value) _const_ { \
-    return get(name, default_value); } \
-  inline String get_str(const String &name, const String &default_value) \
-    _const_ { return get(name, default_value); } \
-  inline Strings get_strs(const String &name, const Strings &default_value) \
-    _const_ { return get(name, default_value); } \
+  inline bool get_bool(const String &name, bool default_value) \
+     { return get<bool>(name, default_value); } \
+  inline String get_str(const String &name, String &default_value) \
+     { return get<String>(name, static_cast<String>(default_value)); } \
+  inline String get_str(const String &name, String default_value) \
+     { return get<String>(name, default_value); } \
+  inline Strings get_strs(const String &name, Strings default_value) \
+     { return get<Strings>(name, default_value); } \
   inline uint16_t get_i16(const String &name, uint16_t default_value) \
-    _const_ { return get(name, default_value); } \
-  inline int32_t get_i32(const String &name, int32_t default_value) _const_ { \
-    return get(name, default_value); } \
-  inline int64_t get_i64(const String &name, int64_t default_value) _const_ { \
-    return get(name, default_value); } \
-  inline Int64s get_i64s(const String &name, const Int64s &default_value) \
-    _const_ { return get(name, default_value); } \
-  inline double get_f64(const String &name, double default_value) _const_ { \
-    return get(name, default_value); } \
-  inline Doubles get_f64s(const String &name, const Doubles &default_value) \
-    _const_ { return get(name, default_value); }
+     { return get<uint16_t>(name, default_value); } \
+  inline int32_t get_i32(const String &name, int32_t default_value) \
+     { return get<int32_t>(name, default_value); } \
+  inline int64_t get_i64(const String &name, int64_t default_value) \
+     { return get<int64_t>(name, default_value); } \
+  inline Int64s get_i64s(const String &name, Int64s &default_value) \
+     { return get<Int64s>(name, default_value); } \
+  inline double get_f64(const String &name, double default_value) \
+     { return get<double>(name, default_value); } \
+  inline Doubles get_f64s(const String &name, Doubles default_value) \
+     { return get<Doubles>(name, default_value); }
+  /*     \
+  inline bool get_bool(const String &name, bool default_value) \
+    const { return get<bool>(name, default_value); } \
+  inline String get_str(const String &name, String default_value) \
+    const { return get<String>(name, default_value); } \
+  inline Strings get_strs(const String &name, Strings &default_value) \
+    const { return get<Strings>(name, default_value); } \
+  inline uint16_t get_i16(const String &name, uint16_t default_value) \
+    const { return get<uint16_t>(name, default_value); } \
+  inline int32_t get_i32(const String &name, int32_t default_value) \
+    const { return get<int32_t>(name, default_value); } \
+  inline int64_t get_i64(const String &name, int64_t default_value)  \
+    const { return get<int64_t>(name, default_value); } \
+  inline Int64s get_i64s(const String &name, Int64s default_value) \
+    const { return get<Int64s>(name, default_value); } \
+  inline double get_f64(const String &name, double default_value) \
+    const { return get<double>(name, default_value); } \
+  inline Doubles get_f64s(const String &name, Doubles default_value) \
+    const { return get<Doubles>(name, default_value); }
+  */
+ 
 
 namespace Hypertable {
+
+typedef Po::options_description PropertiesDesc;
+typedef Po::positional_options_description PositionalDesc;
 
 /** @addtogroup Common
  *  @{
  */
 
-namespace Po = boost::program_options;
-
-typedef std::vector<String> Strings;
-typedef std::vector<int64_t> Int64s;
-typedef std::vector<double> Doubles;
-
-namespace Property {
-
-const uint64_t K = 1000;
-const uint64_t KiB = 1024;
-const uint64_t M = K * 1000;
-const uint64_t MiB = KiB * 1024;
-const uint64_t G = M * 1000;
-const uint64_t GiB = MiB * 1024;
 
 // Abbrs for some common types
 inline Po::typed_value<bool> *boo(bool *v = 0) {
@@ -195,10 +207,12 @@ inline Po::typed_value<Doubles> *f64s(Doubles *v = 0) {
   return Po::value<Doubles>(v);
 }
 
-} // namespace Property
-
-typedef Po::options_description PropertiesDesc;
-typedef Po::positional_options_description PositionalDesc;
+/*
+template<typename T>
+inline Po::typed_value<T> *eNum(T *v = 0) {
+  return Po::value<T>(v);
+}
+*/
 
 /**
  * Manages a collection of program options.
@@ -206,8 +220,8 @@ typedef Po::positional_options_description PositionalDesc;
  * Implements getters and setters, aliases and default values.
  */
 class Properties {
-  typedef Po::variable_value Value;
-  typedef Po::variables_map Map;
+  typedef std::map<String, Property::ValuePtr> Map;
+  typedef std::pair<String, Property::ValuePtr> MapPair;
   typedef std::pair<Map::iterator, bool> InsRet;
   typedef std::map<String, String> AliasMap;
 
@@ -240,6 +254,15 @@ public:
    */
   void load(const String &filename, const PropertiesDesc &desc,
 	  bool allow_unregistered = false);
+  
+  /**
+   * ReLoads a configuration file with properties
+   *
+   * @param filename The name of the configuration file
+   * @param desc A property description
+   * @param allow_unregistered If true, unknown/unregistered properties are
+   *        accepted
+   */
   String reload(const String &filename, const PropertiesDesc &desc,
 	  bool allow_unregistered = false);
 
@@ -275,10 +298,53 @@ public:
              bool allow_unregistered = false);
 
   /**
-   * Calls user-defined notifier functions (if any) with final values
+   * Get the ptr of property value. Throws if name is not defined.
+   * 
+   * @param name The name of the property
+   * @throw Error::CONFIG_GET_ERROR if the requested property is not defined
+   * @return Property::ValuePtr
    */
-  void notify();
+  Property::ValuePtr get_value_ptr(const String &name) {
+    try{
+      return m_map.at(name);
+    }
+    catch (std::exception &e) {
+      HT_THROWF(Error::CONFIG_GET_ERROR, "getting value of '%s': %s",
+                name.c_str(), e.what());
+    }
+    // 
+    // return nullptr;
+  }
 
+  /**
+   * Get the ptr of property value type. Throws if name is not defined.
+   * Property::ValueDef<int32_t>* threads = props->get_type_ptr<int32_t>("threads");
+   * 
+   * @param name The name of the property
+   * @throw Error::CONFIG_GET_ERROR if the requested property is not defined
+   * @return Property::ValueDef<T>*
+   */
+  template <typename T>
+  Property::ValueDef<T>* get_type_ptr(const String &name) {
+    return (Property::ValueDef<T>*)get_value_ptr(name)->get_type_ptr();
+  }
+
+  /**
+   * Get the String representation of property name 
+   *
+   * @param name The name of the property
+   * @throw Error::CONFIG_GET_ERROR if the requested property is not defined
+   * @return const String
+   */
+  const String str(const String &name) {
+    try {
+      return get_value_ptr(name)->str();
+    }
+    catch (std::exception &e) {
+      HT_THROWF(Error::CONFIG_GET_ERROR, "getting value of '%s': %s",
+                name.c_str(), e.what());
+    }
+  }
   /**
    * Get the value of option of type T. Throws if option is not defined.
    *
@@ -286,9 +352,9 @@ public:
    * @throw Error::CONFIG_GET_ERROR if the requested property is not defined
    */
   template <typename T>
-  T get(const String &name) const {
+  T get(const String &name) {
     try {
-      return m_map[name].template as<T>();
+      return get_value_ptr(name)->get<T>();
     }
     catch (std::exception &e) {
       HT_THROWF(Error::CONFIG_GET_ERROR, "getting value of '%s': %s",
@@ -301,43 +367,53 @@ public:
    * not found. Try use the first form in usual cases and supply default
    * values in the config descriptions, as it validates the name and is less
    * error prone.
+   * If no value, sets the default value to properties 
    *
    * @param name The name of the property
    * @param default_value The default value to return if not found
    */
   template <typename T>
-  T get(const String &name, const T &default_value) const {
+  T get(const String &name, T default_value) {
     try {
       Map::const_iterator it = m_map.find(name);
 
       if (it != m_map.end())
-        return (*it).second.template as<T>();
-
-      return default_value;
+        return (*it).second->get<T>();
+      
+      set(name, default_value, true);
+      return get<T>(name);
     }
     catch (std::exception &e) {
       HT_THROWF(Error::CONFIG_GET_ERROR, "getting value of '%s': %s",
                 name.c_str(), e.what());
     }
   }
+  /*
+  template <typename T>
+  T get(const String &name, T &default_value)  {
+    T v = get(name, default_value);
+    return std::as_const(v);
+  }
+  */
 
   /**
    * Get the underlying boost::any value of 'name'
    *
    * @param name The name of the property
+
    */
-  const boost::any &operator[](const String &name) const {
-    return m_map[name].value();
+  boost::any operator[](const String &name) {
+    return get_value_ptr(name)->to_any();
   }
 
   /**
-   * Check whether a property has a default value
+   * Check whether a property is by default value
    *
    * @param name The name of the property
    * @return true if the value is default
    */
-  bool defaulted(const String &name) const {
-    return m_map[name].defaulted();
+  bool defaulted(const String &name) {
+    return get_value_ptr(name)->defaulted();
   }
 
   /** Check whether a property exists
@@ -345,37 +421,52 @@ public:
    * @param name The name of the property
    * @return true if the property exists
    */
+  bool has(const String &name) {
+    return m_map.count(name);
+  }
   bool has(const String &name) const {
     return m_map.count(name);
   }
 
-  HT_PROPERTIES_ABBR_ACCESSORS(const)
+  HT_PROPERTIES_ABBR_ACCESSORS()
 
   /**
-   * Add property to the map
+   * Add property to the map of type T
    *
    * @param name The name of the property
    * @param v The value of the property
    * @param defaulted True if the value is default
    * @return An iterator to the new item
    */
-  InsRet add(const String &name, const boost::any &v, bool defaulted = false) {
-    m_need_alias_sync = true;
-    return m_map.insert(Map::value_type(name, Value(v, defaulted)));
+  template<typename T>
+  InsRet add(const String &name, T v, bool defaulted = false) {
+    return m_map.insert(MapPair(name, new Property::Value(v, defaulted)));
   }
-
   /**
-   * Set a property in the map, create if not found
+   * Add property to the map
    *
    * @param name The name of the property
-   * @param v The value of the property
+   * @param v The Property::ValuePtr of the property
    * @param defaulted True if the value is default
    */
-  void set(const String &name, const boost::any &v, bool defaulted = false) {
+  void add(const String &name, Property::ValuePtr v) {
+    m_map.insert(MapPair(name, v));
+  }
+  /**
+   * Set a property in the map, create or update, of T type
+   *
+   * @param name The name of the property
+   * @param v The value of the property, name need to correspond to Value Type
+   * @param defaulted True if the value is default
+   */
+  template<typename T>
+  void set(const String &name, T v, bool defaulted = false)  {
     InsRet r = add(name, v, defaulted);
-
-    if (!r.second)
-      (*r.first).second = Value(v, defaulted);
+    if (!r.second){
+      m_need_alias_sync = true;
+      (*r.first).second = new Property::Value(v, defaulted);
+    } else 
+      (*r.first).second->set_value(v);
   }
 
   /**
@@ -449,12 +540,14 @@ private:
 
   /** The map containing all properties */
   Map m_map;
-
+  
   /** A map with all aliases */
   AliasMap m_alias_map;
 };
 
  typedef std::shared_ptr<Properties> PropertiesPtr;
+
+
 
 /** Helper class to access parts of the properties.
  *
@@ -491,7 +584,7 @@ public:
    * @param name The name of the sub-property
    */
   template <typename T>
-  T get(const String &name) const {
+  T get(const String &name) {
     return m_props->get<T>(full_name(name));
   }
 
@@ -502,8 +595,8 @@ public:
    * @param default_value The default value to return if not found
    */
   template <typename T>
-  T get(const String &name, const T &default_value) const {
-    return m_props->get(full_name(name), default_value);
+  T get(const String &name, T default_value) {
+    return m_props->get<T>(full_name(name), default_value);
   }
 
   /**
@@ -512,7 +605,7 @@ public:
    * @param name The name of the sub-property
    * @return true if the value is default
    */
-  bool defaulted(const String &name) const {
+  bool defaulted(const String &name) {
     return m_props->defaulted(full_name(name));
   }
 
@@ -522,11 +615,11 @@ public:
    * @param name The name of the sub-property
    * @return true if the property exists
    */
-  bool has(const String &name) const {
+  bool has(const String &name) {
     return m_props->has(full_name(name));
   }
 
-  HT_PROPERTIES_ABBR_ACCESSORS(const)
+  HT_PROPERTIES_ABBR_ACCESSORS()
 
 private:
   /** Reference to the original Properties object */
@@ -539,5 +632,4 @@ private:
 /** @} */
 
 }
-
 #endif // Common_Properties_h

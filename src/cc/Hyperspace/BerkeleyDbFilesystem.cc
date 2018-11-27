@@ -225,7 +225,7 @@ BerkeleyDbFilesystem::BerkeleyDbFilesystem(PropertiesPtr &props,
     }
     else {
       m_replication_info.do_replication = false;
-	  go_master(m_replication_info.m_cls);
+	    go_master(m_replication_info.m_cls);
     }
 
   }
@@ -260,6 +260,12 @@ BerkeleyDbFilesystem::BerkeleyDbFilesystem(PropertiesPtr &props,
   init_db_handles(thread_ids);
   HT_DEBUG_OUT <<"namespace initialized"<< HT_END;
 }
+
+/* configure_for_replication
+* for cfg_reload, with several replica hosts when perior was one host
+* to move from a single Hyperspace replica to replication state, 
+* BDB ERROR: BDB3637 A local site must be named before calling repmgr_start
+*/
 
 /*
  setup master hyperspace environment

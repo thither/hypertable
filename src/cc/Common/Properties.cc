@@ -26,18 +26,27 @@
 
 #include <Common/Compat.h>
 #include <Common/Properties.h>
-#include <Common/Logger.h>
 
 #include <errno.h>
 #include <fstream>
 
 using namespace Hypertable;
-using namespace Property;
-using namespace boost::program_options;
 
 // Custom validator defintions
 namespace boost { namespace program_options {
 
+/*
+// EnumExt object validator/converter //
+template<typename T>
+void validate(boost::any &v, const Strings &values, T *, int) {
+  const std::string &s = validators::get_single_string(values);
+  T tChk = T();
+
+  if(!tChk.valid(s))
+    throw invalid_option_value(s + ": enum name not correspond to options");
+  v = any(tChk.value(s));
+}
+*/
 void validate(boost::any &v, const Strings &values, ::int64_t *, int) {
   validators::check_first_occurrence(v);
   const std::string &s = validators::get_single_string(values);
@@ -110,8 +119,8 @@ void validate(boost::any &v, const Strings &values, ::uint16_t *, int) {
 namespace {
 
 void
-parse(command_line_parser &parser, const PropertiesDesc &desc,
-      variables_map &result, const PropertiesDesc *hidden,
+parse(Po::command_line_parser &parser, const PropertiesDesc &desc,
+      Po::variables_map &result, const PropertiesDesc *hidden,
       const PositionalDesc *p, bool allow_unregistered) {
   try {
     PropertiesDesc full(desc);
@@ -125,12 +134,12 @@ parse(command_line_parser &parser, const PropertiesDesc &desc,
       parser.positional(*p);
 
 #if BOOST_VERSION >= 103500
-    if (allow_unregistered)
-      store(parser.allow_unregistered().run(), result);
-    else
-      store(parser.run(), result);
-#else
+  if (allow_unregistered)
+    store(parser.allow_unregistered().run(), result);
+  else
     store(parser.run(), result);
+#else
+  store(parser.run(), result);
 #endif
   }
   catch (std::exception &e) {
@@ -139,6 +148,7 @@ parse(command_line_parser &parser, const PropertiesDesc &desc,
 }
 
 } // local namespace
+
 
 void
 Properties::load(const String &fname, const PropertiesDesc &desc,
@@ -151,17 +161,26 @@ Properties::load(const String &fname, const PropertiesDesc &desc,
     if (!in)
       HT_THROWF(Error::CONFIG_BAD_CFG_FILE, "%s", strerror(errno));
 
+    Po::variables_map parser_map;
 #if BOOST_VERSION >= 103500
-    parsed_options parsed_opts = parse_config_file(in, desc, allow_unregistered);
-    store(parsed_opts, m_map);
-    for (size_t i = 0; i < parsed_opts.options.size(); i++) {
-      if (parsed_opts.options[i].unregistered && parsed_opts.options[i].string_key != "")
-        m_map.insert(Map::value_type(parsed_opts.options[i].string_key,
-                    Value(parsed_opts.options[i].value[0], false)));
+    Po::parsed_options parsed_opts = parse_config_file(in, desc, allow_unregistered);
+    store(parsed_opts, parser_map);
+    
+    for (const auto &kv : parser_map) {
+      if(has(kv.first)&&kv.second.defaulted())
+        continue;
+      set(kv.first, kv.second.value(), kv.second.defaulted());
+    }
+    if(allow_unregistered){
+      for (size_t i = 0; i < parsed_opts.options.size(); i++) {
+        if (parsed_opts.options[i].unregistered && parsed_opts.options[i].string_key != "")
+          set(parsed_opts.options[i].string_key, parsed_opts.options[i].value[0], false);
+      }
     }
 #else
-    store(parse_config_file(in, desc), m_map);
+    store(parse_config_file(in, desc), parser_map);
 #endif
+
   }
   catch (std::exception &e) {
     HT_THROWF(Error::CONFIG_BAD_CFG_FILE, "%s: %s", fname.c_str(), e.what());
@@ -169,9 +188,10 @@ Properties::load(const String &fname, const PropertiesDesc &desc,
 }
 
 String 
-Properties::reload(const String &fname, const PropertiesDesc &desc, bool allow_unregistered) {
+Properties::reload(const String &fname, const PropertiesDesc &desc, 
+                   bool allow_unregistered) {
 	m_need_alias_sync = true;
-  // update value to existing config names
+  String out;
 	try {
 		std::ifstream in(fname.c_str());
 
@@ -181,36 +201,50 @@ Properties::reload(const String &fname, const PropertiesDesc &desc, bool allow_u
       HT_WARNF("Error::CONFIG_BAD_CFG_FILE error: %s", strerror(errno));
       return format("Error::BAD CFG FILE, error: %s", strerror(errno));
     }
-    String out;
     out.append("\n\nCurrent Configurations:\n");
     append_to_string(out, true);
 
-    out.append("\n\nUpdated Configurations:\n");
-		parsed_options parsed_opts = parse_config_file(in, desc, allow_unregistered);
-		for (size_t i = 0; i < parsed_opts.options.size(); i++) {
-      const String name = parsed_opts.options[i].string_key;
-			if (parsed_opts.options[i].unregistered || name.empty())
-        continue;
-      Map::iterator it = m_map.find(name);
-      if (it == m_map.end())
+    out.append("\n(parsing)\n");
+    
+    Po::variables_map parser_map;
+    store(parse_config_file(in, desc, allow_unregistered), parser_map);
+
+    out.append("\n(parsed)\n");
+
+    out.append("\n\nUpdated Configurations: \n");
+    
+    for (const auto &kv : parser_map) {
+      const String name = kv.first;
+      out.append(format("name=%s\n", name.c_str()));
+			if (!has(name))
         continue;
 
-      String oldV = to_str(m_map[name].value());
-      Value vn(parsed_opts.options[i].value[0], false);
-      if(oldV.compare(to_str(vn)) == 0)
+      Property::ValuePtr v_ptr(get_value_ptr(name));
+      out.append(format("v_ptr->str=%s\n", v_ptr->str().c_str()));
+
+      // compare current value to boost::any , v_ptr->compare(boost::any nv&)
+      Property::Value vn(kv.second.value(), false);
+      out.append(format("old=%s new=%s\n", v_ptr->str().c_str(), vn.str().c_str()));
+      if(v_ptr->str().compare(vn.str()) == 0) {
         continue;
-      (it->second).value() = vn;
-      // TODO - new value is "invalid option type"
-      out.append(format("%s=new(%s) old(%s)\n", name.c_str(), 
-                 to_str(m_map[name].value()).c_str(), oldV.c_str()));
-		}
+      }
+      String old_value = v_ptr->str();
+      v_ptr->set_value(kv.second.value());
+
+      out.append(format("%s => new(%s) old(%s)\n", name.c_str(), 
+                 v_ptr->str().c_str(), old_value.c_str()));
+
+      set(name, kv.second.value(), false);
+    }
+
     out.append("\n\nNew Configurations:\n");
     append_to_string(out, true);
     return out;
 	}
 	catch (std::exception &e) {
 		HT_WARNF("Error::CONFIG_BAD_CFG_FILE %s: %s", fname.c_str(), e.what());
-    return format("Error::CONFIG_BAD_CFG_FILE %s: %s", fname.c_str(), e.what());
+    return format("Error::CONFIG_BAD_CFG_FILE %s: %s \noutput:\n%s", 
+                    fname.c_str(), e.what(), out.c_str());
 	}
 }
 
@@ -226,8 +260,16 @@ Properties::parse_args(int argc, char *argv[], const PropertiesDesc &desc,
     argv = (char **)&dummy;
   }
   HT_TRY("parsing arguments",
-    command_line_parser parser(argc, argv);
-    parse(parser, desc, m_map, hidden, p, allow_unregistered));
+    Po::command_line_parser parser(argc, argv);
+    
+  Po::variables_map parser_map;
+  parse(parser, desc, parser_map, hidden, p, allow_unregistered);
+  for (const auto &kv : parser_map) {
+    if(has(kv.first)&&kv.second.defaulted())
+      continue;
+    set(kv.first, kv.second.value(), kv.second.defaulted());
+  }
+  );
 }
 
 void
@@ -235,16 +277,18 @@ Properties::parse_args(const std::vector<String> &args,
                        const PropertiesDesc &desc, const PropertiesDesc *hidden,
                        const PositionalDesc *p, bool allow_unregistered) {
   HT_TRY("parsing arguments",
-    command_line_parser parser(args);
-    parse(parser, desc, m_map, hidden, p, allow_unregistered));
+
+  Po::variables_map parser_map;
+  Po::command_line_parser parser(args);
+  parse(parser, desc, parser_map, hidden, p, allow_unregistered);
+  for (const auto &kv : parser_map) {
+    if(has(kv.first)&&kv.second.defaulted())
+      continue;
+    set(kv.first, kv.second.value(), kv.second.defaulted());
+  }
+  );
 }
 
-// As of boost 1.38, notify will segfault if anything is added to
-// the variables_map by means other than store, which is too limiting.
-// So don't call notify after add/setting properties manually or die
-void Properties::notify() {
-  boost::program_options::notify(m_map);
-}
 
 void Properties::alias(const String &primary, const String &secondary,
                        bool overwrite) {
@@ -266,14 +310,14 @@ void Properties::sync_aliases() {
 
     if (it1 != m_map.end()) {
       if (it2 == m_map.end())           // secondary missing
-        m_map.insert(std::make_pair(v.second, (*it1).second));
-      else if (!(*it1).second.defaulted())
+        add(v.second, (*it1).second);
+      else if (!(*it1).second->defaulted())
         (*it2).second = (*it1).second;  // non-default primary trumps
-      else if (!(*it2).second.defaulted())
+      else if (!(*it2).second->defaulted())
         (*it1).second = (*it2).second;  // otherwise use non-default secondary
     }
     else if (it2 != m_map.end()) {      // primary missing
-      m_map.insert(std::make_pair(v.first, (*it2).second));
+      add(v.first, (*it2).second);
     }
   }
   m_need_alias_sync = false;
@@ -319,14 +363,13 @@ String Properties::to_str(const boost::any &v) {
 void
 Properties::print(std::ostream &out, bool include_default) {
   for (const auto &kv : m_map) {
-    bool isdefault = kv.second.defaulted();
+    bool isdefault = kv.second->defaulted();
 
     if (include_default || !isdefault) {
-      out << kv.first << '=' << to_str(kv.second.value());
+      out << kv.first.c_str() << '=' << kv.second->str().c_str();
 
       if (isdefault)
         out << " (default)";
-
       out << std::endl;
     }
   }
@@ -335,15 +378,15 @@ Properties::print(std::ostream &out, bool include_default) {
 void
 Properties::append_to_string(String &out, bool include_default) {
   for (const auto &kv : m_map) {
-    bool isdefault = kv.second.defaulted();
+    bool isdefault = kv.second->defaulted();
 
     if (include_default || !isdefault) {
-      out.append(format("%s=%s", kv.first.c_str(), to_str(kv.second.value()).c_str()));
+      out.append(format("%s=%s", kv.first.c_str(), kv.second->str().c_str()));
 
       if (isdefault)
         out.append(" (default)");
-
       out.append("\n");
     }
   }
 }
+

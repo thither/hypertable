@@ -148,8 +148,8 @@ DataGenerator::DataGenerator(PropertiesPtr &props, bool keys_only) : m_props(pro
   else
     m_seed = m_props->get_i32("DataGenerator.Seed", 1);
 
-  rowkey_order = parse_order( m_props->get<String>("rowkey.order", "ascending") );
-  rowkey_distribution = m_props->get<String>("rowkey.distribution", "uniform");
+  rowkey_order = parse_order( m_props->get_str("rowkey.order", "ascending") );
+  rowkey_distribution = m_props->get_str("rowkey.distribution", "uniform");
   rowkey_seed = m_props->get_i32("rowkey.seed", 1);
 
   std::vector<String> names;
