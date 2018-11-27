@@ -566,7 +566,7 @@ void LocalBroker::readdir(Response::Callback::Readdir *cb, const char *dname) {
   String full_entry_path;
   struct stat statbuf;
 
-#if defined(USE_READDIR_R) || USE_READDIR_R
+#if defined(USE_READDIR_R) && USE_READDIR_R
   struct dirent *dp = (struct dirent *)new uint8_t [sizeof(struct dirent)+1025];
   int ret;
 #endif
