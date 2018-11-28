@@ -27,6 +27,7 @@ DispatchHandlerSynchronizer.cc
 Comm.cc
 CommAddress.cc
 CommHeader.cc
+ConfigHandler.cc
 Config.cc
 ConnectionManager.cc
 Event.cc

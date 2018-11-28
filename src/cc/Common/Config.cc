@@ -276,6 +276,10 @@ void DefaultPolicy::init_options() {
         "Disable verbose output (system wide)")
     ("Hypertable.Logging.Level", str()->default_value("info"),
         "Set system wide logging level (default: info)")
+    ("Hypertable.Config.OnFileChange.Reload", boo()->default_value(false),
+        "Set Config File Listener for Reloading cfg on Change")
+    ("Hypertable.Config.OnFileChange.Reload.Interval", i32()->default_value(600000),
+        "Interval in milliseconds of checking on cfg file")
     ("Hypertable.DataDirectory", str()->default_value(default_data_dir),
         "Hypertable data directory root")
     ("Hypertable.Client.Workers", i32()->default_value(20),

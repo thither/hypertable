@@ -30,6 +30,7 @@
 #include <fstream>
 #include "Config.h"
 #include "ReactorFactory.h"
+#include "ConfigHandler.h"
 
 namespace Hypertable { namespace Config {
 
@@ -50,6 +51,8 @@ void init_comm() {
   int32_t reactors = get("reactors", num_cores);
 
   if (!has("reactors"))
+    // condition can be removed
+    // if get with default remain with set default value
     properties->add("reactors", reactors);
 
   ReactorFactory::initialize(reactors);
