@@ -30,7 +30,6 @@
 #include <fstream>
 #include "Config.h"
 #include "ReactorFactory.h"
-#include "ConfigHandler.h"
 
 namespace Hypertable { namespace Config {
 
