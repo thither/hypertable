@@ -1164,6 +1164,7 @@ void Session::check_sequencer(LockSequencer &sequencer, Timer *timer) {
 }
 
 /*
+data based on client
  */
 String Session::locate(int type) {
   String location;
@@ -1181,6 +1182,13 @@ String Session::locate(int type) {
   }
   return location;
 }
+/*
+data based on client
+ */
+String Session::cfg_reload(const String &filename) {
+	return format("\n%s\n", Config::reparse_file(filename).c_str());
+} /// ht_hyperspace cfg_reload command chk up (only the client's cfg reloaded )
+
 
 /*
  */
@@ -1414,10 +1422,6 @@ void Session::normalize_name(const String &name, String &normal) {
 
 HsCommandInterpreterPtr Session::create_hs_interpreter() {
   return make_shared<HsCommandInterpreter>(this);
-}
-
-String Session::cfg_reload(const String &filename) {
-	return format("\n%s\n", Config::reparse_file(filename).c_str());
 }
 
 void Hyperspace::close_handle(SessionPtr hyperspace, uint64_t handle) {
