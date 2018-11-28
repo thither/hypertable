@@ -3150,63 +3150,65 @@ int main(int argc, char **argv) {
     g_metrics_handler = std::make_shared<MetricsHandler>(properties, g_slow_query_log);
     g_metrics_handler->start_collecting();
 
-	std::shared_ptr<ThriftBroker::Context> context(new ThriftBroker::Context());
+	  std::shared_ptr<ThriftBroker::Context> context(new ThriftBroker::Context());
     g_context = context.get();
 
-	stdcxx::shared_ptr<protocol::TProtocolFactory> protocolFactory(
-		new protocol::TBinaryProtocolFactory());
-	stdcxx::shared_ptr<HqlServiceIfFactory> hql_service_factory(
-		new ThriftBrokerIfFactory());
-	stdcxx::shared_ptr<TProcessorFactory> hql_service_processor_factory(
-		new HqlServiceProcessorFactory(hql_service_factory));
+	  stdcxx::shared_ptr<protocol::TProtocolFactory> protocolFactory(
+		  new protocol::TBinaryProtocolFactory());
+	  stdcxx::shared_ptr<HqlServiceIfFactory> hql_service_factory(
+	  	new ThriftBrokerIfFactory());
+	  stdcxx::shared_ptr<TProcessorFactory> hql_service_processor_factory(
+		  new HqlServiceProcessorFactory(hql_service_factory));
 
-	stdcxx::shared_ptr<server::TServerTransport> serverTransport;
-	::uint16_t port = get_i16("port");
+	  stdcxx::shared_ptr<server::TServerTransport> serverTransport;
+	  ::uint16_t port = get_i16("port");
     if (has("thrift-timeout")) {
       int timeout_ms = get_i32("thrift-timeout");
       serverTransport.reset(new transport::TServerSocket(port, timeout_ms, timeout_ms));
     } 
-	else { 
-		serverTransport.reset(new transport::TServerSocket(port));
-	}
+	  else { 
+		  serverTransport.reset(new transport::TServerSocket(port));
+	  }
 
 
-	HT_INFOF("Starting the server with %d workers on %s transport...",
-		(int)get_i32("workers"), get_str("thrift-transport").c_str());
+	  HT_INFOF("Starting the server with %d workers on %s transport...",
+		  (int)get_i32("workers"), get_str("thrift-transport").c_str());
 
-	stdcxx::shared_ptr<concurrency::ThreadManager> threadManager =
-		concurrency::ThreadManager::newSimpleThreadManager((int)get_i32("workers"));
-	threadManager->threadFactory(std::make_shared<concurrency::PlatformThreadFactory>());
-	threadManager->start();
-
-
-	if (get_str("thrift-transport").compare("framed") == 0){
-		stdcxx::shared_ptr<transport::TTransportFactory> transportFactory(
-			new transport::TFramedTransportFactory());
-		server::TThreadPoolServer server(hql_service_processor_factory,
-			serverTransport,
-			transportFactory,
-			protocolFactory,
-			threadManager);
-		server.serve();
-	}
-	else if (get_str("thrift-transport").compare("zlib") == 0){
-		stdcxx::shared_ptr<transport::TTransportFactory> transportFactory(
-			new transport::TZlibTransportFactory());
-		server::TThreadPoolServer server(hql_service_processor_factory,
-			serverTransport,
-			transportFactory,
-			protocolFactory,
-			threadManager);
-		server.serve();
-	}
-	else {
-		HT_FATALF("No implementation for thrift transport: %s", get_str("thrift-transport").c_str());
-		return 0;
-	}
+	  stdcxx::shared_ptr<concurrency::ThreadManager> threadManager =
+		  concurrency::ThreadManager::newSimpleThreadManager((int)get_i32("workers"));
+	  threadManager->threadFactory(std::make_shared<concurrency::PlatformThreadFactory>());
+	  threadManager->start();
 
 
-    g_metrics_handler->start_collecting();
+	  if (get_str("thrift-transport").compare("framed") == 0){
+		  stdcxx::shared_ptr<transport::TTransportFactory> transportFactory(
+			  new transport::TFramedTransportFactory());
+		  server::TThreadPoolServer server(hql_service_processor_factory,
+			  serverTransport,
+			  transportFactory,
+			  protocolFactory,
+			  threadManager
+      );
+	  	server.serve();
+	  }
+	  else if (get_str("thrift-transport").compare("zlib") == 0){
+		  stdcxx::shared_ptr<transport::TTransportFactory> transportFactory(
+			  new transport::TZlibTransportFactory());
+		  server::TThreadPoolServer server(hql_service_processor_factory,
+			  serverTransport,
+			  transportFactory,
+			  protocolFactory,
+			  threadManager
+      );
+		  server.serve();
+	  }
+	  else {
+		  HT_FATALF("No implementation for thrift transport: %s", get_str("thrift-transport").c_str());
+		  return 0;
+	  }
+
+
+    g_metrics_handler->stop_collecting();
     g_metrics_handler.reset();
 
     HT_INFO("Exiting.\n");
