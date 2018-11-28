@@ -5,4 +5,4 @@
 /.vs
 /CppProperties.json
 built_logs/*
-.vscode/settings.json
+.vscode/*
