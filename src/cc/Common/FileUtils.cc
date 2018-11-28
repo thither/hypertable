@@ -462,6 +462,13 @@ off_t FileUtils::length(const String &fname) {
   return statbuf.st_size;
 }
 
+time_t FileUtils::modification(const String &fname) {
+  struct stat statbuf;
+  if (stat(fname.c_str(), &statbuf) != 0)
+    return 0;
+  return statbuf.st_mtime;
+}
+
 
 void FileUtils::add_trailing_slash(String &path) {
   if (path.find('/', path.length() - 1) == string::npos)
