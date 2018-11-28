@@ -100,6 +100,13 @@ int main(int argc, char **argv) {
     InetAddr listen_addr(INADDR_ANY, port);
 
     comm->listen(listen_addr, handler_factory);
+    
+    if (get_bool("Hypertable.Config.OnFileChange.Reload")){
+      // inotify can be an option instead of a timer based Handler
+      ConfigHandlerPtr hdlr = std::make_shared<ConfigHandler>(properties);
+      hdlr->run();
+    }
+    
     app_queue->join();
   }
   catch (Exception &e) {

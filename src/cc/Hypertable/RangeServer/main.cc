@@ -106,6 +106,13 @@ int main(int argc, char **argv) {
       = std::make_shared<Apps::RangeServer>(properties, conn_manager,
           Global::app_queue, Global::hyperspace);
 
+
+    if (get_bool("Hypertable.Config.OnFileChange.Reload")){
+      // inotify can be an option instead of a timer based Handler
+      ConfigHandlerPtr hdlr = std::make_shared<ConfigHandler>(properties);
+      hdlr->run();
+    }
+
     Global::app_queue->join();
 
     IndexUpdaterFactory::close();

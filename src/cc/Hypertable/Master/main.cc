@@ -308,6 +308,11 @@ int main(int argc, char **argv) {
       if (!context->set_startup_status(false))
         context->start_shutdown();
 
+      if (get_bool("Hypertable.Config.OnFileChange.Reload")){
+        // inotify can be an option instead of a timer based Handler
+        ConfigHandlerPtr hdlr = std::make_shared<ConfigHandler>(properties);
+        hdlr->run();
+      }
       context->op->join();
     }
     catch (Exception &e) {

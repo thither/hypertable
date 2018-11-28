@@ -3179,6 +3179,11 @@ int main(int argc, char **argv) {
 	  threadManager->threadFactory(std::make_shared<concurrency::PlatformThreadFactory>());
 	  threadManager->start();
 
+    if (get_bool("Hypertable.Config.OnFileChange.Reload")){
+      // inotify can be an option instead of a timer based Handler
+      ConfigHandlerPtr hdlr = std::make_shared<ConfigHandler>(properties);
+      hdlr->run();
+    }
 
 	  if (get_str("thrift-transport").compare("framed") == 0){
 		  stdcxx::shared_ptr<transport::TTransportFactory> transportFactory(
