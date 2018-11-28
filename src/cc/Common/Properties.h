@@ -329,6 +329,12 @@ public:
     return (Property::ValueDef<T>*)get_value_ptr(name)->get_type_ptr();
   }
 
+  // want to return a base on std::atomic 
+  // template <typename T>
+  // T* get_ptr(const String &name) {
+  //  return get_value_ptr(name)->get_ptr<T>();
+  // }
+  
   /**
    * Get the String representation of property name 
    *

@@ -141,6 +141,9 @@ class  ValueDef : public TypeDef {
     }
     void set_value(T nv)  { v = nv;         }
     T get_value()         { return v;       }
+
+    T* get_ptr()          { return &v;      }
+
     operator TypeDef*()   { return this;    }
     virtual ~ValueDef()   {}
 
@@ -156,6 +159,7 @@ class  ValueDef<String> : public TypeDef {
     }
     void set_value(String nv)  { v = nv;         }
     String get_value()         { return v;       }
+    String* get_ptr()          { return &v;      }
   private:
     String v;
 };
@@ -174,6 +178,7 @@ class  ValueDef<Strings> : public TypeDef {
       std::lock_guard<std::mutex> lock(mutex);
       return v;       
     }
+    Strings* get_ptr()          { return &v;      }
   private:
     std::mutex mutex;
     Strings v;
@@ -193,6 +198,7 @@ class  ValueDef<Doubles> : public TypeDef {
       std::lock_guard<std::mutex> lock(mutex);
       return v;       
     }
+    Doubles* get_ptr()          { return &v;      }
   private:
     std::mutex mutex;
     Doubles v;
@@ -212,6 +218,7 @@ class  ValueDef<Int64s> : public TypeDef {
       std::lock_guard<std::mutex> lock(mutex);
       return v;       
     }
+    Int64s* get_ptr()          { return &v;      }
   private:
     std::mutex mutex;
     Int64s v;
@@ -241,6 +248,10 @@ class Value {
       ((ValueDef<T>*)type_ptr)->set_value(v);
       // m_defaulted = false;
       //HT_INFOF("set_value chg type: %s, value: %s", typeid(v).name(), str().c_str());
+    }
+    template<typename T>
+    T* get_ptr() {
+      return ((ValueDef<T>*)type_ptr)->get_ptr();
     }
     
     void set_value(boost::any v){
