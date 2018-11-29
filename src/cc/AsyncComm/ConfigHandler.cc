@@ -47,6 +47,9 @@ ConfigHandler::ConfigHandler(PropertiesPtr &props) {
 }
 
 ConfigHandler::~ConfigHandler() {
+}
+
+void ConfigHandler::stop() {
   DispatchHandlerPtr handler = shared_from_this();
   m_comm->cancel_timer(handler);
 }

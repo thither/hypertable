@@ -54,8 +54,10 @@ namespace Hypertable { namespace Config {
     ConfigHandler(PropertiesPtr &props);
   
     /// Destructor.
-    /// Cancels the timer.
     virtual ~ConfigHandler();
+
+    /// Cancels the timer.
+    void stop();
 
     /// Runs File State Check.
     void run();
