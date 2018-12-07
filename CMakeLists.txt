@@ -146,14 +146,20 @@ endif ()
 if (HT_ENABLE_SHARED AND NOT BUILD_SHARED_LIBS AND HT_TEST_WITH STREQUAL "BOTH")
 	message(STATUS "Tests are dual for shared and static libraries linking ")
 	enable_testing() # Enable testing
+	set(HT_TEST_WITH_STATIC ON)
+	set(HT_TEST_WITH_SHARED ON)
 elseif ((HT_ENABLE_SHARED OR BUILD_SHARED_LIBS) AND (NOT HT_TEST_WITH OR HT_TEST_WITH STREQUAL "SHARED"))
 	message(STATUS "Tests are linked with shared libraries")
 	enable_testing() # Enable testing
+	set(HT_TEST_WITH_SHARED ON)
 elseif (HT_TEST_WITH STREQUAL "STATIC")
 	message(STATUS "Tests are linked with static libraries")
 	enable_testing() # Enable testing
+	set(HT_TEST_WITH_STATIC ON)
 else ()
 	message(STATUS "Tests are not performed")
+	set(HT_TEST_WITH_STATIC OFF)
+	set(HT_TEST_WITH_SHARED OFF)
 endif ()
 	
 # Build support for all possible or only requested languages 
