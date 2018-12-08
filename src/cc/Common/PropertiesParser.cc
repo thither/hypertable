@@ -208,10 +208,29 @@ Parser::Parser(std::ifstream &in, ParserConfig cfg, bool unregistered){
   m_cfg = *(new ParserConfig());
   m_cfg.add(*cfg);
     
-  String line;
-  while(getline (in, line))
-    parse_line(line);
-  
+  size_t at;
+  String group = "";
+  String line, g_tmp;
+  while(getline (in, line)){
+    at = line.find_first_of("[");
+    if(at == (size_t)0){
+
+      at = line.find_first_of("]");      
+      if(at!=std::string::npos) {
+
+        g_tmp = line.substr(1, at-1);        
+        if(g_tmp.compare(group+"=end")==0) // an end of group  "[groupname=end]"
+          group.clear();
+        else
+          group = g_tmp+".";               // a start of group "[groupname]"
+        line.clear();
+        continue;
+      }
+    }
+
+    parse_line(group+line);
+
+  }
   make_options();
 }
 
