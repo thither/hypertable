@@ -3,37 +3,39 @@ Version Master:
 (in-progress)
 
    Updated for libssh 8.4.5 (changes to deprecated)
-   changed ClientKeepaliveHandler, select next hyperspace replica client by index count 
-   stricness to Berkeley DB events REP_DUPMASTER and DB_EVENT_REP_LOCAL_SITE_REMOVED, exit with HT_FATAL
-   dbenv->rep_sync(0) added to on DB_EVENT_REP_CLIENT and DB_EVENT_REP_NEWMASTER(for client)
-   DB_EVENT_REP_MASTER event finish with finish_election, in both cases, newly elected or was master
    added support of ZSTD(zstandard) compressor for BlockCompressionCodec
-   added method cfg_reparse to Config and cfg_reload to Properties (only update existing cfg names) 
-   added cfg_reload a command and interpreter statement to Hyperspace
-   changed Hyperspace ClientKeepaliveHandler, Config/Properties assigned via Session
-   added method get_next_replica to Hyperspace Session  
-   removed unused cases of include Config and using namespace Config
    added macro USE_READDIR_R, false with glibc-2.23+
    changed readdir_r deprecated infavour of readdir depends on USE_READDIR_R(GLIBC version)
-   added file Common/Property.h include namespace hypretable::Property
-   added class ValueType with dependencies classes TypeDef and ValueDef
-   added class ValueDef value type std::atomic for non-trival types and mutex for others
+   changed ClientKeepaliveHandler, select next hyperspace replica client by index count 
+   changed Hyperspace ClientKeepaliveHandler, Config/Properties assigned via Session
+   added method get_next_replica to Hyperspace Session 
+   added stricness to Berkeley DB events REP_DUPMASTER and DB_EVENT_REP_LOCAL_SITE_REMOVED, exit with HT_FATAL
+   added dbenv->rep_sync(0) to on DB_EVENT_REP_CLIENT and DB_EVENT_REP_NEWMASTER(for client)
+   changed finish_election in both cases of newly elected or was a master at DB_EVENT_REP_MASTER event
+   removed unused cases of include Config and using namespace Config
+   added files Common/Property.[h,cc] include namespace hypretable::Property
    changed definitions of MiB, KiB, etc. moved to Property file onto Hypertable namespace 
-   changed Properties MapPair is <String, Property::ValuePtr>
-   changed abbr to boost::program_options value type is in Hypertable namespace
-   removed typedef Po of to boost::program_options from Config and Hypertable namespace
-   depcicated use of boost::program_options store method to apply parsed properties used with an intermediate Po Map
+   added class Property::Value with dependencies classes TypeDef and ValueDef
+   added class ValueDef value type std::atomic for non-trival types and mutex for others
    added support dynamic and multithread safe for values of Properties (data of Property::ValueDef<T>)
-   changed Config::get("name") returns the current value 
-   added class ConfigHandler checks on config file changes and apply the updated properties on change
+   changed Properties MapPair to <String, Property::ValuePtr>
+   added class AsyncComm/ConfigHandler checks on file changes and apply updated properties
    added config option Hypertable.Config.OnFileChange.Reload=True change to False will halt from reloading
    added config option Hypertable.Config.OnFileChange.Reload.Interval=600000 
    added use of Hypertable.Config.OnFileChange.Reload for Master,Range,Thrift,FsBroker(C++) and Hyperspace
+   added files Common/PropertiesParser.[h,cc] classes ParserConfig, Parser
+   changed parsed cfg option validation and convertion is done by Property::ValueDef<T>
+   changed use of configurations(cmdline,file desc) to new PropertiesParser configurations
+   organized Common/Properties.[cc,h] and Config namespace and align to the new Config::Parser/ParserConfig
+   added new test Common/properties_parser_test
+   depcicated boost::program_options(libboost_program_options) 
+   removed test Common/config_test 
+   added cfg_reload a command and interpreter statement to Hyperspace(client-side)
 
    TODO: test Hyperspace related changes in big(3+ replicas) cluster environment
-         change from hardcoded predefined configurations descriptions to a hypertable-essential.ext file
-         an EnumExt holder for an ENUM value type property (corresponding enum to Name/Aliases and versa)
-         apply possible configurations to be dynamic configurations at run time
+         change(opt) from hardcoded predefined configurations descriptions to a hypertable-essential.ext file
+         an EnumExt holder for an ENUM property value (corresponding enum to Name/Aliases and versa)
+         apply possible configurations to be dynamic property at run time
 
 Version 0.9.8.14:
 (2018-08-23)
