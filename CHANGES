@@ -27,7 +27,7 @@ Version Master:
    changed parsed cfg option validation and convertion is done by Property::ValueDef<T>
    changed use of configurations(cmdline,file desc) to new PropertiesParser configurations
    organized Common/Properties.[cc,h] and Config namespace and align to the new Config::Parser/ParserConfig
-   added new test Common/properties_parser_test
+   added test Common/properties_parser_test
    depcicated boost::program_options(libboost_program_options) 
    removed test Common/config_test 
    added cfg_reload a command and interpreter statement to Hyperspace(client-side)
