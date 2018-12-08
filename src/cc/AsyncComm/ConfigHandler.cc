@@ -39,7 +39,7 @@ namespace Hypertable { namespace Config {
 ConfigHandler::ConfigHandler(PropertiesPtr &props) {
   m_props = props;
   m_chk_interval_ptr = m_props->get_type_ptr<int32_t>("Hypertable.Config.OnFileChange.Reload.Interval");
-  /* Int32tSafe */ //m_chk_interval_ptr = m_props->get("Hypertable.Config.OnFileChange.Reload.Interval");
+  //m_chk_interval_ptr = m_props->get<Int32tSafe>("Hypertable.Config.OnFileChange.Reload.Interval");
   
   m_filename = m_props->get_str("config");
   m_comm = Comm::instance();
@@ -68,13 +68,13 @@ void ConfigHandler::handle(Hypertable::EventPtr &event) {
     
     errno = 0;
     time_t ts = FileUtils::modification(m_filename);
-    HT_INFOF("ConfigHandler interval:%d last_ts: %ld ts: %ld", 
-                            m_chk_interval_ptr->get_value(), m_last_timestamp, ts);
+    HT_DEBUGF("ConfigHandler interval:%d last_ts: %ld ts: %ld", 
+              m_chk_interval_ptr->get_value(), m_last_timestamp, ts);
     if(errno>0) 
       HT_WARNF("cfg file Problem '%s' - %s", m_filename.c_str(), strerror(errno));
 
     if(ts > m_last_timestamp) {
-      HT_INFOF("%s", m_props->reload(m_filename, cmdline_hidden_desc(), false).c_str());
+      HT_DEBUGF("%s", m_props->reload(m_filename, cmdline_hidden_desc(), false).c_str());
       if (!properties->get_bool("Hypertable.Config.OnFileChange.Reload"))
         return;
       m_last_timestamp = ts;
