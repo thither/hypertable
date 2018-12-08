@@ -477,7 +477,7 @@ void DefaultPolicy::init_options() {
      "Minimum time interval (milliseconds) to check for control files in run/ directory")
     ("Hypertable.RangeServer.LoadSystemTablesOnly", boo(false),
         "Instructs the RangeServer to only load system tables (for debugging)")
-    ("Hypertable.RangeServer.LowActivityPeriod", strs(),
+    ("Hypertable.RangeServer.LowActivityPeriod", strs(Strings()),
      "Periods of low activity during which RangeServer can perform heavy "
      "maintenance (specified in crontab format)")
     ("Hypertable.RangeServer.MemoryLimit", i64(), "RangeServer memory limit")

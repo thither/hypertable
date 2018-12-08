@@ -395,7 +395,7 @@ void CommandShell::add_options(PropertiesDesc &desc) {
         "Currently the only formats are 'default' and 'nanoseconds'")
     ("notification-address", str(), "[<host>:]<port> "
         "Send notification datagram to this address after each command.")
-    ("execute,e", str(), "Execute specified commands.")
+    ("execute,exec,e", str(), "Execute specified commands.")
     ("command-file", str(), "Execute commands from file.")
     ;
 }
