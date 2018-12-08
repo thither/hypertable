@@ -65,7 +65,7 @@ void init_generic_server_options() {
 }
 
 void init_generic_server() {
-  String pidfile = get("pidfile", String());
+  String pidfile = get_str("pidfile", String());
 
   if (pidfile.length()) {
     std::ofstream out(pidfile.c_str());

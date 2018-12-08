@@ -57,8 +57,7 @@ struct MyPolicy : Policy {
       "  number of cells...\nOptions");
     cmdline_hidden_desc().add_options()
       ("table", str(), "name of the table to scan")
-      ;
-    cmdline_positional_desc().add("table", -1);
+      ("table", -1);
   }
 };
 

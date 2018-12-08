@@ -39,8 +39,8 @@ namespace Hypertable { namespace Config {
 ConfigHandler::ConfigHandler(PropertiesPtr &props) {
   m_props = props;
   m_chk_interval_ptr = m_props->get_type_ptr<int32_t>("Hypertable.Config.OnFileChange.Reload.Interval");
-
-  // m_chk_interval = m_props->get_ptr<int32_t>("Hypertable.Config.OnFileChange.Reload.Interval");
+  /* Int32tSafe */ //m_chk_interval_ptr = m_props->get("Hypertable.Config.OnFileChange.Reload.Interval");
+  
   m_filename = m_props->get_str("config");
   m_comm = Comm::instance();
   m_last_timestamp = FileUtils::modification(m_filename);;

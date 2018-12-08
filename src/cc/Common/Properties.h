@@ -29,74 +29,12 @@
 
 #include <vector>
 #include <string>
-#include <any>
 #include <mutex>
-#include <boost/version.hpp>
-#include <boost/any.hpp>
+#include <Common/Error.h>
 #include <Common/Logger.h>
 #include <Common/Property.h>
+#include <Common/PropertiesParser.h>
 
-// Required declarations for custom validators *before* including the header,
-// otherwise no overloading would happen in standard conforming compilers.
-
-/** Boost library. */
-namespace boost {
-
-/** Program options. */
-namespace program_options {
-
-void validate(boost::any &v, const std::vector<std::string> &values, ::int64_t *, int);
-void validate(boost::any &v, const std::vector<std::string> &values, ::int32_t *, int);
-void validate(boost::any &v, const std::vector<std::string> &values, ::uint16_t *, int);
-void validate(boost::any &v, const std::vector<std::string> &values, double *, int);
-
-// pre 1.35 vector<T> validate doesn't pickup user defined validate for T
-#if BOOST_VERSION < 103500
-template<typename T>
-void validate(boost::any& v, const std::vector<std::string> &s, std::vector<T>*, int);
-#endif
-
-}} // namespace boost::program_options
-
-#include <Common/Error.h>
-
-#include <boost/program_options.hpp>
-
-
-namespace boost { namespace program_options {
-
-#if BOOST_VERSION < 103500
-/** Implement validation function for vector<T>, which is not
- * implemented in boost prior to 1.35
- */
-template<typename T>
-void validate(boost::any& v, const std::vector<std::string> &s, std::vector<T>*, int) {
-  if (v.empty())
-      v = boost::any(std::vector<T>());
-
-  std::vector<T>* tv = boost::any_cast<std::vector<T> >(&v);
-  assert(NULL != tv);
-
-  for (unsigned i = 0; i < s.size(); ++i) {
-    try {
-      // so we can pick up user defined validate for T here
-      boost::any a;
-      std::vector<std::string> sv;
-      sv.push_back(s[i]);
-      validate(a, sv, (T*)0, 0);
-      tv->push_back(boost::any_cast<T>(a));
-    }
-    catch (const bad_lexical_cast &/*e*/) {
-      boost::throw_exception(invalid_option_value(s[i]));
-    }
-  }
-}
-#endif // < boost 1.35
-
-}} // namespace boost::program_options
-
-
-namespace {  namespace Po = boost::program_options; } // local
 
 // convenience/abbreviated accessors
 #define HT_PROPERTIES_ABBR_ACCESSORS() \
@@ -162,57 +100,13 @@ namespace {  namespace Po = boost::program_options; } // local
 
 namespace Hypertable {
 
-typedef Po::options_description PropertiesDesc;
-typedef Po::positional_options_description PositionalDesc;
 
 /** @addtogroup Common
  *  @{
  */
 
+typedef Config::ParserConfig PropertiesDesc;
 
-// Abbrs for some common types
-inline Po::typed_value<bool> *boo(bool *v = 0) {
-  return Po::value<bool>(v);
-}
-
-inline Po::typed_value<String> *str(String *v = 0) {
-  return Po::value<String>(v);
-}
-
-inline Po::typed_value<Strings> *strs(Strings *v = 0) {
-  return Po::value<Strings>(v);
-}
-
-inline Po::typed_value<uint16_t> *i16(uint16_t *v = 0) {
-  return Po::value<uint16_t>(v);
-}
-
-inline Po::typed_value<int32_t> *i32(int32_t *v = 0) {
-  return Po::value<int32_t>(v);
-}
-
-inline Po::typed_value<int64_t> *i64(int64_t *v = 0) {
-  return Po::value<int64_t>(v);
-}
-
-inline Po::typed_value<Int64s> *i64s(Int64s *v = 0) {
-  return Po::value<Int64s>(v);
-}
-
-inline Po::typed_value<double> *f64(double *v = 0) {
-  return Po::value<double>(v);
-}
-
-inline Po::typed_value<Doubles> *f64s(Doubles *v = 0) {
-  return Po::value<Doubles>(v);
-}
-
-/*
-template<typename T>
-inline Po::typed_value<T> *eNum(T *v = 0) {
-  return Po::value<T>(v);
-}
-*/
 
 /**
  * Manages a collection of program options.
@@ -224,12 +118,10 @@ class Properties {
   typedef std::pair<String, Property::ValuePtr> MapPair;
   typedef std::pair<Map::iterator, bool> InsRet;
   typedef std::map<String, String> AliasMap;
-
+  
 public:
   /** Default constructor; creates an empty set */
-  Properties()
-    : m_need_alias_sync(false) {
-  }
+  Properties() {  }
 
   /** Constructor; load properties from a filename
    *
@@ -238,11 +130,17 @@ public:
    * @param allow_unregistered If true, unknown/unregistered properties are
    *        accepted
    */
-  Properties(const String &filename, const PropertiesDesc &desc,
-             bool allow_unregistered = false)
-      : m_need_alias_sync(false) {
+  Properties(const String &filename, PropertiesDesc &desc,
+             bool allow_unregistered = false) {
     load(filename, desc, allow_unregistered);
   }
+
+  /**
+   * Loads the parsed options to properties
+   *
+   * @param opts onfig::Parser::Options
+   */
+  void load_from(Config::Parser::Options opts);
 
   /**
    * Loads a configuration file with properties
@@ -252,7 +150,7 @@ public:
    * @param allow_unregistered If true, unknown/unregistered properties are
    *        accepted
    */
-  void load(const String &filename, const PropertiesDesc &desc,
+  void load(const String &filename, PropertiesDesc &desc,
 	  bool allow_unregistered = false);
   
   /**
@@ -263,7 +161,7 @@ public:
    * @param allow_unregistered If true, unknown/unregistered properties are
    *        accepted
    */
-  String reload(const String &filename, const PropertiesDesc &desc,
+  String reload(const String &filename, PropertiesDesc &desc,
 	  bool allow_unregistered = false);
 
   /**
@@ -273,14 +171,12 @@ public:
    * @param argv The argument array (from main)
    * @param desc The options description
    * @param hidden The hidden options description
-   * @param p The positional options description
    * @param allow_unregistered If true, unknown/unregistered properties are
    *        accepted
    * @throw Error::CONFIG_INVALID_ARGUMENT on error
    */
-  void parse_args(int argc, char *argv[], const PropertiesDesc &desc,
-             const PropertiesDesc *hidden = 0, const PositionalDesc *p = 0,
-             bool allow_unregistered = false);
+  void parse_args(int argc, char *argv[], PropertiesDesc &desc,
+              PropertiesDesc *hidden = 0, bool allow_unregistered = false);
 
   /**
    * Parses command line arguments
@@ -288,14 +184,12 @@ public:
    * @param args A vector of Strings with the command line arguments
    * @param desc The options description
    * @param hidden The hidden options description
-   * @param p The positional options description
    * @param allow_unregistered If true, unknown/unregistered properties are
    *        accepted
    * @throw Error::CONFIG_INVALID_ARGUMENT on error
    */
-  void parse_args(const std::vector<String> &args, const PropertiesDesc &desc,
-             const PropertiesDesc *hidden = 0, const PositionalDesc *p = 0,
-             bool allow_unregistered = false);
+  void parse_args(const std::vector<String> &args, PropertiesDesc &desc,
+              PropertiesDesc *hidden = 0, bool allow_unregistered = false);
 
   /**
    * Get the ptr of property value. Throws if name is not defined.
@@ -329,7 +223,7 @@ public:
     return (Property::ValueDef<T>*)get_value_ptr(name)->get_type_ptr();
   }
 
-  // want to return a base on std::atomic 
+  // issue, returns on base with std::atomic (atmic as type - 'BoolSafe')
   // template <typename T>
   // T* get_ptr(const String &name) {
   //  return get_value_ptr(name)->get_ptr<T>();
@@ -386,7 +280,8 @@ public:
       if (it != m_map.end())
         return (*it).second->get<T>();
       
-      set(name, default_value, true);
+      set(name, default_value);
+    
       return get<T>(name);
     }
     catch (std::exception &e) {
@@ -396,21 +291,11 @@ public:
   }
   /*
   template <typename T>
-  T get(const String &name, T &default_value)  {
+  const T get(const String &name, T &default_value)  {
     T v = get(name, default_value);
     return std::as_const(v);
   }
   */
-
-  /**
-   * Get the underlying boost::any value of 'name'
-   *
-   * @param name The name of the property
-
-   */
-  boost::any operator[](const String &name) {
-    return get_value_ptr(name)->to_any();
-  }
 
   /**
    * Check whether a property is by default value
@@ -419,7 +304,7 @@ public:
    * @return true if the value is default
    */
   bool defaulted(const String &name) {
-    return get_value_ptr(name)->defaulted();
+    return get_value_ptr(name)->is_default();
   }
 
   /** Check whether a property exists
@@ -430,9 +315,11 @@ public:
   bool has(const String &name) {
     return m_map.count(name);
   }
+  /*
   bool has(const String &name) const {
     return m_map.count(name);
   }
+  */
 
   HT_PROPERTIES_ABBR_ACCESSORS()
 
@@ -440,39 +327,72 @@ public:
    * Add property to the map of type T
    *
    * @param name The name of the property
-   * @param v The value of the property
-   * @param defaulted True if the value is default
+   * @param v The Property::ValueDef<T> the property
    * @return An iterator to the new item
    */
   template<typename T>
-  InsRet add(const String &name, T v, bool defaulted = false) {
-    return m_map.insert(MapPair(name, new Property::Value(v, defaulted)));
+  InsRet add(const String &name, T v) {
+    return m_map.insert(MapPair(name, new Property::Value(v)));
   }
   /**
    * Add property to the map
    *
    * @param name The name of the property
    * @param v The Property::ValuePtr of the property
-   * @param defaulted True if the value is default
+   * @return An iterator to the new item
    */
-  void add(const String &name, Property::ValuePtr v) {
-    m_map.insert(MapPair(name, v));
+  InsRet add(const String &name, Property::ValuePtr v) {
+    return m_map.insert(MapPair(name, v));
   }
+
   /**
    * Set a property in the map, create or update, of T type
    *
    * @param name The name of the property
    * @param v The value of the property, name need to correspond to Value Type
-   * @param defaulted True if the value is default
    */
   template<typename T>
-  void set(const String &name, T v, bool defaulted = false)  {
-    InsRet r = add(name, v, defaulted);
+  void set(const String &name, T v, bool defaulted=false)  {
+    InsRet r = add(name, v);
     if (!r.second){
-      m_need_alias_sync = true;
-      (*r.first).second = new Property::Value(v, defaulted);
+      (*r.first).second = new Property::Value(v);
     } else 
       (*r.first).second->set_value(v);
+    if(defaulted)
+      (*r.first).second->default_value();
+  }
+
+  /**
+   * Set a property in the map, create or update, by Property::ValueDef<T> type
+   *
+   * @param name The name of the property
+   * @param v The Property::ValueDef<T>
+   */
+  template<typename T>
+  void set(const String &name, Property::ValueDef<T> v)  {
+    InsRet r = add(name, v.get_value());
+    if (!r.second){
+      (*r.first).second = new Property::Value(v.get_value());
+    } else 
+      (*r.first).second->set_value(v.get_value());
+  }
+
+  /**
+   * Set a property in the map, create or update, from Property::ValuePtr
+   *
+   * @param name The name of the property
+   * @param v The Property::ValuePtr
+   */
+  void set(const String &name, Property::ValuePtr p) {
+    if(m_map.count(name)==0){
+      Property::ValuePtr p_set = Property::make_new(p);
+      if(p->is_default())
+        p_set->default_value();
+      add(name, p_set);
+    } else if(!p->is_default()) {
+      get_value_ptr(name)->set_value_from(p);
+      get_value_ptr(name)->default_value(false);
+    }
   }
 
   /**
@@ -492,19 +412,8 @@ public:
    *
    * @param primary The primary property name
    * @param secondary The secondary property name
-   * @param overwrite True if an existing alias should be overwritten
    */
-  void alias(const String &primary, const String &secondary,
-          bool overwrite = false);
-
-  /**
-   * Sync alias values.
-   *
-   * After this operation all properties that are aliases to each other
-   * have the same value. Value priority: primary non-default >
-   * secondary non-default > primary default > secondary default
-   */
-  void sync_aliases();
+  void alias(const String &primary, const String &secondary);
 
   /**
    * Returns all property names
@@ -532,17 +441,7 @@ public:
    */
   void append_to_string(String &out, bool include_default = false);
 
-  /**
-   * Helper to print boost::any used by property values
-   *
-   * @param a Reference to the boost::any value
-   * @return A string with the formatted value
-   */
-  static String to_str(const boost::any &a);
-
 private:
-  /** Whether the aliases need to be synced */
-  bool m_need_alias_sync;
 
   /** The map containing all properties */
   Map m_map;

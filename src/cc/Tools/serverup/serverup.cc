@@ -82,14 +82,15 @@ namespace {
   struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc(usage).add_options()
-          ("wait", i32()->default_value(2000), "Check wait time in ms")
+          ("wait", i32(2000), "Check wait time in ms")
           ("host", str(), "Specifies the hostname of the server(s)")
-          ("display-address", boo()->default_value(false),
+          ("display-address", boo(false),
            "Displays hostname and port of the server(s), then exits")
-          ("thrift-transport", str(), "thrift-transport")
+          ("thrift-transport", str("framed"), "thrift-transport")
           ;
-      cmdline_hidden_desc().add_options()("server-name", str(), "");
-      cmdline_positional_desc().add("server-name", -1);
+      cmdline_hidden_desc().add_options()
+       ("server-name", str(), "")
+       ("server-name", -1);
     }
     static void init() {
       // we want to override the default behavior that verbose
@@ -333,11 +334,11 @@ namespace {
     InetAddr addr(get_str("thrift-host"), get_i16("thrift-port"));
 	
     try {
-	  Thrift::Transport ttp;
-	  if (strcmp(get_str("thrift-transport").c_str(), "zlib") == 0)
-		  ttp = Thrift::Transport::ZLIB;
-	  else
-		  ttp = Thrift::Transport::FRAMED;
+	    Thrift::Transport ttp;
+	    if (strcmp(get_str("thrift-transport").c_str(), "zlib") == 0)
+		    ttp = Thrift::Transport::ZLIB;
+	    else
+		    ttp = Thrift::Transport::FRAMED;
       Thrift::Client client(ttp, get_str("thrift-host"), get_i16("thrift-port"));
       ThriftGen::Namespace ns = client.open_namespace("sys");
       client.get_table_id(table_id, ns, "METADATA");

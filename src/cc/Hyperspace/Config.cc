@@ -35,13 +35,13 @@ void init_hyperspace_client_options() {
   cmdline_desc().add_options()
     ("hyperspace", str(),
         "hyperspace master server to connect to in <host:port> format")
-    ("hyperspace-timeout", i32()->default_value(30000),
+    ("hyperspace-timeout", i32(30000),
         "Timeout in milliseconds for hyperspace connection")
-    ("keepalive", i32()->default_value(10000),
+    ("keepalive", i32(10000),
         "Interval in milliseconds of keepalive message from Hyperspace client")
-    ("lease-interval", i32()->default_value(60000),
+    ("lease-interval", i32(60000),
         "Hyperspace master lease interval in milliseconds")
-    ("grace-period", i32()->default_value(60000),
+    ("grace-period", i32(60000),
         "Grace period in milliseconds before 'jeopardy' for hyperspace client")
     ;
   alias("hyperspace-timeout", "Hyperspace.Timeout");
@@ -87,14 +87,14 @@ void init_hyperspace_command_shell_options() {
 
 void init_hyperspace_master_options() {
   cmdline_desc().add_options()
-    ("port", i16(),
-        "Hyperspace master listening port")
-    ("dir", str()->default_value("hyperspace"),
-        "Hyperspace root directory name")
-    ("keepalive", i32()->default_value(10000),
-        "Interval in milliseconds of keepalive message from Hyperspace client")
-    ("lease-interval", i32()->default_value(20000),
-        "Hyperspace master lease interval in milliseconds")
+    ("port", i16(), 
+     "Hyperspace master listening port")
+    ("dir", str("hyperspace"), 
+     "Hyperspace root directory name")
+    ("keepalive", i32(10000), 
+     "Interval in milliseconds of keepalive message from Hyperspace client")
+    ("lease-interval", i32(20000),
+     "Hyperspace master lease interval in milliseconds")
     ;
   alias("reactors", "Hyperspace.Replica.Reactors");
   alias("workers", "Hyperspace.Replica.Workers");

@@ -66,9 +66,9 @@ namespace {
   struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc(usage).add_options()
-          ("sleep", i32()->default_value(0),
+          ("sleep", i32(0),
            "Time to sleep between each request (in milliseconds)")
-          ("timeout", i32()->default_value(0),
+          ("timeout", i32(0),
            "Hypertable connection timeout (in milliseconds)")
           ;
     }

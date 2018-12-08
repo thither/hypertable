@@ -53,20 +53,14 @@ namespace Hypertable { namespace Config {
    * @param name The name of the option to search for
    * @return true if there is an option with this name
    */
-  inline bool has(const String &name) {
-    HT_ASSERT(properties);
-    return properties->has(name);
-  }
+  bool has(const String &name);
 
   /** Check if a configuration value is defaulted
    *
    * @param name The name of the option
    * @return true if this option's value is the default value
    */
-  inline bool defaulted(const String &name) {
-    HT_ASSERT(properties);
-    return properties->defaulted(name);
-  }
+  bool defaulted(const String &name);
 
   /** Retrieves a configuration value
    *
@@ -113,17 +107,12 @@ namespace Hypertable { namespace Config {
    *
    * @param desc Reference to the Description object
    */
-  void cmdline_desc(const Desc &desc);
+  void cmdline_desc(Desc &desc);
 
   /** Get the command line hidden options description (for positional options)
    * @return desc Reference to the hidden description object
    */
   Desc &cmdline_hidden_desc();
-
-  /** Get the command line positional options description
-   * @return Reference to the positional escription object
-   */
-  PositionalDesc &cmdline_positional_desc();
 
   /** Get the config file options description
    *
@@ -136,7 +125,7 @@ namespace Hypertable { namespace Config {
    *
    * @param desc Reference to the Description object
    */
-  void file_desc(const Desc &desc);
+  void file_desc(Desc &desc);
 
   /**
    * Initialization helper; parses the argc/argv parameters into properties,
@@ -155,7 +144,7 @@ namespace Hypertable { namespace Config {
    * @param desc Reference to the Description object
    * @throws Error::CONFIG_BAD_CFG_FILE on error
    */
-  void parse_file(const String &fname, const Desc &desc);
+  void parse_file(const String &fname, Desc &desc);
 
   String reparse_file(const String &fname);
 
@@ -170,14 +159,7 @@ namespace Hypertable { namespace Config {
    * @param file_opt Configuration file option name
    * @param overwrite If true then existing aliases are overwritten
    */
-  void alias(const String &cmdline_opt, const String &file_opt,
-             bool overwrite = false);
-
-  /**
-   * Sync alias values. Typically called after parse_* functions to
-   * setup values in the configuration variable map.
-   */
-  void sync_aliases();
+  void alias(const String &cmdline_opt, const String &file_opt);
 
   /**
    * Toggle allow unregistered options. By default unregistered options

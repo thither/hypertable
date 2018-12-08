@@ -120,8 +120,9 @@ Options)";
         ("tsv-output", "Convert log into a set of loadable .tsv files")
         ("stdout", "Write log to stdout with table name as first field")
         ;
-      cmdline_hidden_desc().add_options()("log-dir", str(), "dfs log dir");
-      cmdline_positional_desc().add("log-dir", -1);
+      cmdline_hidden_desc().add_options()
+      ("log-dir", str(), "dfs log dir")
+      ("log-dir", -1);
     }
     static void init() {
       if (!has("log-dir")) {

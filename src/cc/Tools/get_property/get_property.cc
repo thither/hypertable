@@ -36,14 +36,17 @@ namespace {
 
   const char *usage =
     "\n"
-    "Usage: get_property [options] <property>\n\nOptions"
+    "Usage: get_property <property> [options]\n\nOptions"
     ;
 
   struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc(usage);
-      cmdline_hidden_desc().add_options()("property", str(), "");
-      cmdline_positional_desc().add("property", -1);
+      cmdline_hidden_desc().add_options()
+      ("property", str(), "")
+      ("property", 1);  
+      // -1 is an issue to use as a property is recognized and not applied as any args(-1) 
+      // and easier to have one arg to be 1st arg
     }
     static void init() {
       if (has("property"))

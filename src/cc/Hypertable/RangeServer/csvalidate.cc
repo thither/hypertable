@@ -69,8 +69,9 @@ namespace {
         "\n\nOptions").add_options()
         ("repair", "Repair any corruption that is found")
         ;
-      cmdline_hidden_desc().add_options()("filename", str(), "");
-      cmdline_positional_desc().add("filename", -1);
+      cmdline_hidden_desc().add_options()
+      ("filename", str(), "")
+      ("filename", -1);
     }
     static void init() {
       if (!has("filename")) {

@@ -69,40 +69,42 @@ namespace {
       allow_unregistered_options(true);
       cmdline_desc(usage).add_options()
         ("help-config", "Show help message for config properties")
-        ("table", str()->default_value("LoadTest"), "Name of table to query/update")
+        ("table", str("LoadTest"), "Name of table to query/update")
         ("delete-percentage", i32(),
          "When generating update workload make this percentage deletes")
         ("max-bytes", i64(), "Amount of data to generate, measured by number "
          "of key and value bytes produced")
         ("max-keys", i64(), "Maximum number of keys to generate for query load")
-        ("parallel", i32()->default_value(0),
+        ("parallel", i32(0),
          "Spawn threads to execute requests in parallel")
         ("query-delay", i32(), "Delay milliseconds between each query")
         ("query-mode", str(),
          "Whether to query 'index' or 'qualifier' index")
         ("sample-file", str(),
          "Output file to hold request latencies, one per line")
-        ("seed", i32()->default_value(1), "Pseudo-random number generator seed")
-        ("row-seed", i32()->default_value(1), "Pseudo-random number generator seed")
+        ("seed", i32(1), "Pseudo-random number generator seed")
+        ("row-seed", i32(1), "Pseudo-random number generator seed")
         ("spec-file", str(),
          "File containing the DataGenerator specification")
-        ("stdout", boo()->zero_tokens()->default_value(false),
+        ("stdout", boo(false)->zero_token(),
          "Display generated data to stdout instead of sending load to cluster")
-        ("verbose,v", boo()->zero_tokens()->default_value(false),
+        ("verbose,v", boo(false)->zero_token(),
          "Show more verbose output")
-        ("flush", boo()->zero_tokens()->default_value(false), "Flush after each update")
-        ("no-log-sync", boo()->zero_tokens()->default_value(false), "Don't sync rangeserver commit logs on autoflush")
+        ("flush", boo(false)->zero_token(), "Flush after each update")
+        ("no-log-sync", boo(false)->zero_token(), 
+         "Don't sync rangeserver commit logs on autoflush")
         ("no-log", "Don't write to the commit log")
-        ("flush-interval", i64()->default_value(0),
+        ("flush-interval", i64(0),
          "Amount of data after which to mutator buffers are flushed "
          "and commit log is synced. Only used if no-log-sync flag is on")
-        ("shared-mutator-flush-interval", i64()->default_value(0),
+        ("shared-mutator-flush-interval", i64(0),
          "Created a shared mutator using this value as the flush interval")
-        ("thrift", boo()->zero_tokens()->default_value(false),
+        ("thrift", boo(false)->zero_token(),
          "Generate load via Thrift interface instead of C++ client library")
         ("version", "Show version information and exit")
-        ("overwrite-delete-flag", str(), "Force delete flag (DELETE_ROW, DELETE_CELL, DELETE_COLUMN_FAMILY)")
-		("thrift-transport", str()->default_value("framed"), "ThriftBroker.Transport")
+        ("overwrite-delete-flag", str(), 
+         "Force delete flag (DELETE_ROW, DELETE_CELL, DELETE_COLUMN_FAMILY)")
+		    ("thrift-transport", str("framed"), "ThriftBroker.Transport")
         ;
       alias("delete-percentage", "DataGenerator.DeletePercentage");
       alias("max-bytes", "DataGenerator.MaxBytes");
@@ -110,8 +112,8 @@ namespace {
       alias("seed", "DataGenerator.Seed");
       alias("row-seed", "rowkey.seed");
       cmdline_hidden_desc().add_options()
-        ("type", str(), "Type (update or query).");
-      cmdline_positional_desc().add("type", 1);
+        ("type", str(), "Type (update or query).")
+        ("type", 1);
     }
   };
 }
@@ -261,7 +263,7 @@ int main(int argc, char **argv) {
 void parse_command_line(int argc, char **argv, PropertiesPtr &props) {
   const char *ptr;
   String key, value;
-  props->parse_args(argc, argv, cmdline_desc(), 0, 0, true);
+  props->parse_args(argc, argv, cmdline_desc(), 0, true);
   for (int i=1; i<argc; i++) {
     if (argv[i][0] == '-') {
       ptr = strchr(argv[i], '=');
@@ -271,33 +273,33 @@ void parse_command_line(int argc, char **argv, PropertiesPtr &props) {
         value = String(ptr+1);
         trim_if(value, is_any_of("'\""));
         if (key == "delete-percentage") {
-          props->set(key, boost::any( atoi(value.c_str()) ));
-          props->set("DataGenerator.DeletePercentage", boost::any( atoi(value.c_str()) ));
+          props->set(key, atoi(value.c_str()) );
+          props->set("DataGenerator.DeletePercentage",atoi(value.c_str()) );
         }
         else if (key == ("max-bytes")) {
-          props->set(key, boost::any( strtoll(value.c_str(), 0, 0) ));
-          props->set("DataGenerator.MaxBytes", boost::any( strtoll(value.c_str(), 0, 0) ));
+          props->set(key, strtoll(value.c_str(), 0, 0) );
+          props->set("DataGenerator.MaxBytes", strtoll(value.c_str(), 0, 0) );
         }
         else if (key == ("max-keys")) {
-          props->set(key, boost::any( strtoll(value.c_str(), 0, 0) ));
-          props->set("DataGenerator.MaxKeys", boost::any( strtoll(value.c_str(), 0, 0) ));
+          props->set(key, strtoll(value.c_str(), 0, 0) );
+          props->set("DataGenerator.MaxKeys", strtoll(value.c_str(), 0, 0) );
         }
         else if (key == "seed") {
-          props->set(key, boost::any( atoi(value.c_str()) ));
-          props->set("DataGenerator.Seed", boost::any( atoi(value.c_str()) ));
+          props->set(key, atoi(value.c_str()) );
+          props->set("DataGenerator.Seed", atoi(value.c_str()) );
         }
         else if (key == "row-seed") {
-          props->set(key, boost::any( atoi(value.c_str()) ));
-          props->set("rowkey.seed", boost::any( atoi(value.c_str()) ));
+          props->set(key, atoi(value.c_str()) );
+          props->set("rowkey.seed", atoi(value.c_str()) );
         }
         else
-          props->set(key, boost::any(value));
+          props->set(key, value);
       }
       else {
         key = String(argv[i]);
         trim_if(key, is_any_of("-"));
         if (!props->has(key))
-          props->set(key, boost::any( true ));
+          props->set(key, true );
       }
     }
   }

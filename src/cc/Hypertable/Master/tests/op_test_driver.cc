@@ -103,8 +103,9 @@ namespace {
                    "  toggle_table_maintenance\n"
                    "  recreate_index_tables\n"
                    "\nOptions");
-      cmdline_hidden_desc().add_options()("test", str(), "test to run");
-      cmdline_positional_desc().add("test", -1);
+      cmdline_hidden_desc().add_options()
+      ("test", str(), "test to run")
+      ("test", -1);
     }
     static void init() {
       if (!has("test")) {

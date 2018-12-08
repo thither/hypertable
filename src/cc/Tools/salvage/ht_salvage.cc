@@ -186,14 +186,15 @@ Options)";
         ("end-key", str(), "Ignore keys that are greater than <arg>")
         ("start-key", str(), "Ignore keys that are less than or equal to <arg>")
         ("path-regex", str(), "Just salvage CellStores files whose full path matches this regex")
-	("cumulative-size-estimate", i64(),
-	 "Estimate of cumulative size of files.  Used for for progress tracking.")
+      	("cumulative-size-estimate", i64(),
+         "Estimate of cumulative size of files.  Used for for progress tracking.")
         ("exclude-metadata-since", i32(),
          "Exclude files referenced in this METADATA that are older than this many seconds ago")
-	("gzip", "Generate gzipped .tsv files")
+	      ("gzip", "Generate gzipped .tsv files")
         ;
-      cmdline_hidden_desc().add_options()("out-dir", str(), "output dir");
-      cmdline_positional_desc().add("out-dir", -1);
+      cmdline_hidden_desc().add_options()
+      ("out-dir", str(), "output dir")
+      ("out-dir", -1);
     }
     static void init() {
       if (!has("out-dir")) {

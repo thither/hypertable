@@ -54,7 +54,6 @@ namespace {
                       "bloomfilter_options");
 
   PropertiesDesc compressor_hidden_desc, bloomfilter_hidden_desc;
-  PositionalDesc compressor_pos_desc, bloomfilter_pos_desc;
 
   void init_schema_options_desc() {
     lock_guard<mutex> lock(desc_mutex);
@@ -66,31 +65,30 @@ namespace {
 	    ("ultra,20", "Highest setting (probably slower) for zstd")
 	    ("best,9", "Highest setting (probably slower) for zlib, zstd")
       ("normal", "Normal setting for zlib, zstd")
-      ("fp-len", i16()->default_value(19), "Minimum fingerprint length for bmz")
-      ("offset", i16()->default_value(0), "Starting fingerprint offset for bmz")
+      ("fp-len", i16(19), "Minimum fingerprint length for bmz")
+      ("offset", i16(0), "Starting fingerprint offset for bmz")
       ;
     compressor_hidden_desc.add_options()
       ("compressor-type", str(), 
        "Compressor type (bmz|lzo|quicklz|zlib|snappy|zstd|none)")
-      ;
-    compressor_pos_desc.add("compressor-type", 1);
+       ("compressor-type", 1);
 
     bloomfilter_desc.add_options()
       ("bits-per-item", f64(), "Number of bits to use per item "
        "for the Bloom filter")
       ("num-hashes", i32(), "Number of hash functions to use "
        "for the Bloom filter")
-      ("false-positive", f64()->default_value(0.01), "Expected false positive "
+      ("false-positive", f64(0.01), "Expected false positive "
        "probability for the Bloom filter")
-      ("max-approx-items", i32()->default_value(1000), "Number of cell store "
+      ("max-approx-items", i32(1000), "Number of cell store "
        "items used to guess the number of actual Bloom filter entries")
       ;
     bloomfilter_hidden_desc.add_options()
       ("bloom-filter-mode", str(), "Bloom filter mode (rows|rows+cols|none)")
-      // ("bloom-filter-mode", eNum<ConfBloomFilterMode>()->default_value(0)
+      ("bloom-filter-mode", 1);
+      // ("bloom-filter-mode", eNum<ConfBloomFilterMode>(0)
       ;
-      
-    bloomfilter_pos_desc.add("bloom-filter-mode", 1);
+  
     desc_inited = true;
   }
 
@@ -104,8 +102,7 @@ namespace {
       vector<std::string> args;
       boost::split(args, compressor, boost::is_any_of(" \t"));
       HT_TRY("parsing compressor spec",
-             props->parse_args(args, compressor_desc, &compressor_hidden_desc,
-                               &compressor_pos_desc));
+             props->parse_args(args, compressor_desc, &compressor_hidden_desc));
     }
     catch (Exception &e) {
       HT_THROWF(Error::SCHEMA_PARSE_ERROR, "Invalid compressor spec - %s",
@@ -124,8 +121,7 @@ namespace {
 
       boost::split(args, bloomfilter, boost::is_any_of(" \t"));
       HT_TRY("parsing bloom filter spec",
-             props->parse_args(args, bloomfilter_desc, &bloomfilter_hidden_desc,
-                               &bloomfilter_pos_desc));
+             props->parse_args(args, bloomfilter_desc, &bloomfilter_hidden_desc));
     }
     catch (Exception &e) {
       HT_THROWF(Error::SCHEMA_PARSE_ERROR, "Invalid bloom filter spec - %s",
@@ -281,8 +277,7 @@ void AccessGroupOptions::parse_bloom_filter(const std::string &spec, PropertiesP
   vector<std::string> args;
   boost::split(args, spec, boost::is_any_of(" \t"));
   HT_TRY("parsing bloom filter spec",
-         props->parse_args(args, bloomfilter_desc, &bloomfilter_hidden_desc,
-                           &bloomfilter_pos_desc));
+         props->parse_args(args, bloomfilter_desc, &bloomfilter_hidden_desc));
   
   std::string mode = props->get_str("bloom-filter-mode");
   // property name used with enum and string!!, 

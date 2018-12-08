@@ -206,14 +206,13 @@ namespace Config {
 struct TestPolicy : Config::Policy {
   static void init_options() {
     cmdline_desc().add_options()
-      ("repeats,r", i32()->default_value(3), "Number of repeats")
+      ("repeats,r", i32(3), "Number of repeats")
       ("threads,t", i32(), "Number of threads")
-      ("num-items,n", i32()->default_value(100000), "Number of items")
+      ("num-items,n", i32(100000), "Number of items")
       ;
     cmdline_hidden_desc().add_options()
       ("components", strs(), "test components")
-      ;
-    cmdline_positional_desc().add("components", -1);
+      ("components", -1);
   }
 };
 

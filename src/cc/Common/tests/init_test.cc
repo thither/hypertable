@@ -23,32 +23,40 @@
 #include "Common/Init.h"
 
 using namespace Hypertable;
+using namespace Config;
 
 namespace {
 
-struct AppPolicy : Config::Policy {
+struct AppPolicy : Policy {
   static void init_options() {
-	Config::cmdline_desc("Usage: %s [Options] [args]\nOptions").add_options()
+	  cmdline_desc("Usage: %s [Options] [args]\nOptions").add_options()
       ("i16", i16(), "16-bit integer")
       ("i32", i32(), "32-bit integer")
       ("i64", i64(), "64-bit integer")
       ("int64s", i64s(), "a list of 64-bit integers")
-      ("boo", boo()->zero_tokens()->default_value(false), "a boolean arg")
+      ("boo", boo(false)->zero_token(), "a boolean arg")
       ("string", str(), "a string arg")
       ("strs", strs(), "a list of strings")
       ("float64", f64(), "a double arg")
       ("f64s", f64s(), "a list of doubles")
       ;
-	Config::cmdline_hidden_desc().add_options()("args", strs(), "arguments");
-	Config::cmdline_positional_desc().add("args", -1);
+	  cmdline_hidden_desc().add_options()
+      ("args", strs(), "arguments")
+      ("args", -1);
   }
 };
 
-typedef Meta::list<AppPolicy, Config::DefaultPolicy> Policies;
+typedef Meta::list<AppPolicy, DefaultPolicy> Policies;
 
 } // local namespace
 
 int main(int argc, char *argv[]) {
-  Config::init_with_policies<Policies>(argc, argv);
-  Config::properties->print(std::cout);
+  init_with_policies<Policies>(argc, argv);
+  properties->print(std::cout);
+  /*
+  std::cout << "boo=" << properties->str("boo") << "\n";
+  std::cout << "i16=" << properties->str("i16") << "\n";
+  std::cout << "i32=" << properties->str("i32") << "\n";
+  std::cout << "i64=" << properties->str("i64") << "\n";
+  */
 }

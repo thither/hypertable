@@ -40,8 +40,7 @@
 set(BOOST_LIBNAMES 
  system 
  filesystem 
- iostreams 
- program_options 
+ iostreams
  thread 
  chrono)
 

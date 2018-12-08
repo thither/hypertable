@@ -196,10 +196,13 @@ Options)";
         ("show-version", "Display log version number and exit")
         ("verify-dfs", "Verifies DFS cellstores")
         ;
-      cmdline_hidden_desc().add_options()("mode", str(), "'check' or 'repair'");
-      cmdline_hidden_desc().add_options()("metadata-file", str(), "metadata dump file");
-      cmdline_hidden_desc().add_options()("hadoop-file", str(), "dump file of `hadoop -lsr /hypertable/tables`");
-      cmdline_positional_desc().add("mode", 1).add("metadata-file", 1);
+      cmdline_hidden_desc().add_options()
+        ("mode", str(), "'check' or 'repair'")
+        ("mode", 1)
+        ("metadata-file", str(), "metadata dump file")
+        ("metadata-file", 1)
+        ("hadoop-file", str(), "dump file of `hadoop -lsr /hypertable/tables`")
+      ;
     }
     static void init() {
       if (!has("mode")) {

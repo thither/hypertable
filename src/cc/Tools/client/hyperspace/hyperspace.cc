@@ -56,10 +56,20 @@ public:
   virtual void reconnected() { }
 };
 
+struct AppPolicy : Policy {
+  static void init_options() {
+    // or ht-check-hyperspace.sh should not specify SERVICE_HOSTNAME
+    cmdline_hidden_desc().add_options()
+    ("address", str(), "")  
+    ("address", -1);
+  }
+};
+  
 int main(int argc, char **argv) {
   bool silent {};
 
-  typedef Cons<HyperspaceCommandShellPolicy, DefaultCommPolicy> MyPolicy;
+  typedef Meta::list<HyperspaceCommandShellPolicy, DefaultCommPolicy,
+                     AppPolicy> Policies;
 
   try {
     Comm *comm;
@@ -68,7 +78,7 @@ int main(int argc, char **argv) {
     SessionPtr session_ptr;
     SessionHandler session_handler;
 
-    init_with_policy<MyPolicy>(argc, argv);
+    init_with_policies<Policies>(argc, argv);
     HsClientState::exit_status = 0;
     comm = Comm::instance();
 

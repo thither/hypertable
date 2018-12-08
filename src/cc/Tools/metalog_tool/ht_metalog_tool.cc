@@ -300,14 +300,15 @@ Options)";
         ("all", "Used with --dump to display all entities in log (not just latest state)")
         ("balance-plan-change-destination", str(),
          "Change balance plan destination, format = <failed-server>,<plan-type>,<old-rs>,<new-rs>")
-        ("balance-plan-drop-table", str(), "Drop table with this ID from balance plans")
+        ("balance-plan-drop-table", str(), 
+         "Drop table with this ID from balance plans")
         ("balance-plan-incr-generation", "Increment the generation number of the balance plan authority")
         ("balance-plan-clear-current-set", "Clears the \"current set\" of move specifications")
         ("change-move-destinations", str(), "Change move destinations, format is rsN-rsM,rsO-rsP,...")
         ("dump", "Display a textual representation of entities in log")
         ("metadata-tsv", "For each Range, dump StartRow and Location .tsv lines")
         ("select", str(),  "Apply changes on these entities")
-        ("location", str()->default_value(""),
+        ("location", str(""),
          "Used with --metadata-tsv to specify location proxy")
         ("purge", "Purge entities")
         ("acknowledge-load", boo(), "Set the load_acknowledged bit for each Range entity")
@@ -324,8 +325,9 @@ Options)";
          "Translate Range entities matching source to this")
         ("show-version", "Display log version number and exit")
         ;
-      cmdline_hidden_desc().add_options()("log-path", str(), "dfs log path");
-      cmdline_positional_desc().add("log-path", -1);
+      cmdline_hidden_desc().add_options()
+      ("log-path", str(), "dfs log path")
+      ("log-path", -1);
     }
     static void init() {
       if (!has("log-path")) {

@@ -56,7 +56,7 @@ namespace {
 struct AppPolicy : Policy {
   static void init_options() {
     cmdline_desc().add_options()
-      ("root", str()->default_value("fs/local"), "root directory for local "
+      ("root", str("fs/local"), "root directory for local "
           "broker (if relative, it's relative to the installation directory")
       ;
     alias("port", "FsBroker.Local.Port");

@@ -30,7 +30,7 @@ namespace {
 
 enum Mode { MODE_FOO, MODE_BAR };
 
-void basic_test(const PropertiesDesc &desc) {
+void basic_test(PropertiesDesc &desc) {
   static const char *argv[] = { "test", "--string", "foo", "--strs", "s1",
       "--i16", "64k", "--i32", "20M", "--i64", "8g", "--strs", "s2",
       "--int64s", "16G", "--int64s", "32G" };
@@ -49,13 +49,13 @@ void basic_test(const PropertiesDesc &desc) {
   
   props.set("mode", MODE_FOO);
   cout << "mode=" << props.str("mode") << endl;
-  props.print(cout);
+  props.print(cout, true);
 }
-
+/*
 void notify(const String &s) {
   cout << __func__ <<": "<< s << endl;
 }
-
+*/
 }
 
 int main(int argc, char *argv[]) {
@@ -64,14 +64,14 @@ int main(int argc, char *argv[]) {
     PropertiesDesc desc;
     desc.add_options()
       ("help,h", "help")
-      ("boo", boo()->zero_tokens()->default_value(true), "a boolean arg")
-      ("string", str()->notifier(notify), "a string arg")
+      ("boo", boo(true)->zero_token(), "a boolean arg")
+      ("string", str(), "a string arg")  // ->notifier(notify) >> onChange cb
       ("strs", strs(), "a list of strings")
       ("i16", i16(), "a 16-bit integer arg")
       ("i32", i32(), "a 32-bit integer arg")
       ("i64", i64(), "a 64-bit integer arg")
       ("int64s", i64s(), "a list of 64-bit integers")
-      ("f64", f64(&f64test), "a double arg")
+      ("f64", f64(f64test), "a double arg")
       ("float64s", f64s(), "a list of doubles")
       ;
     Properties props;
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     cout << "f64 set=" << props.str("f64") << endl;
     */
 
-    props.print(cout, true);
+    props.print(cout);
     HT_TRY("basic test", basic_test(desc));
   }
   catch (Exception &e) {

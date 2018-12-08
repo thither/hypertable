@@ -45,8 +45,7 @@ namespace {
   struct MyPolicy : Policy {
     static void init_options() {
       cmdline_desc().add_options()
-        ("roll-limit", i64()->default_value(2000),
-            "Commit log roll limit in bytes")
+        ("roll-limit", i64(2000), "Commit log roll limit in bytes")
         ;
       alias("roll-limit", "Hypertable.RangeServer.CommitLog.RollLimit");
     }

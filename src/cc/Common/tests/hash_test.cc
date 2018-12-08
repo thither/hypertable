@@ -47,13 +47,12 @@ struct MyPolicy : Policy {
       ("StringHashSet", "Test with hash_set<string>")
       ("CstrHashMap", "Test with CstrHashMap")
       ("BlobHashSet", "Test with BlobHashSet")
-      ("repeats,r", i32()->default_value(1), "number of repeats for tests")
-      ("length", i16()->default_value(7), "length of test strings")
+      ("repeats,r", i32(1), "number of repeats for tests")
+      ("length", i16(7), "length of test strings")
       ;
     cmdline_hidden_desc().add_options()
-      ("items,n", i32()->default_value(100*K), "number of items")
-      ;
-    cmdline_positional_desc().add("items", -1);
+      ("items,n", i32(100*K), "number of items")
+      ("items", -1);
   }
 };
 
