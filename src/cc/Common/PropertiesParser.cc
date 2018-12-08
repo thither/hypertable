@@ -218,11 +218,16 @@ Parser::Parser(std::ifstream &in, ParserConfig cfg, bool unregistered){
       at = line.find_first_of("]");      
       if(at!=std::string::npos) {
 
-        g_tmp = line.substr(1, at-1);        
-        if(g_tmp.compare(group+"=end")==0) // an end of group  "[groupname=end]"
-          group.clear();
-        else
-          group = g_tmp+".";               // a start of group "[groupname]"
+        g_tmp = line.substr(1, at-1);  
+        if(!group.empty()){
+          group.pop_back(); // remove a dot      
+          if(g_tmp.compare(group+"=end")==0){ // an end of group  "[groupname=end]"
+            group.clear();
+            line.clear();
+            continue;
+          }
+        }
+        group = g_tmp+".";               // a start of group "[groupname]"
         line.clear();
         continue;
       }

@@ -70,60 +70,80 @@ true=true
 
 Config::file_desc()
 Config Properties
-  boo            a boolean arg              false
-  f64s           a list of doubles          []
-  float64        a double arg               3.12
-  i16            16-bit integer             1 
-  i32            32-bit integer             0 
-  i64            64-bit integer             1 
-  int64s         a list of 64-bit integers  []
-  is_no_bool     a boolean arg              true
-  is_one_bool    a boolean arg              false
-  is_rest_bool   a boolean arg              true
-  is_true_bool   a boolean arg              false
-  is_yes_bool    a boolean arg              false
-  missing        a string arg               a missing string in cfg file, default applies
-  string         a string arg               A Default String Value
-  string.qouted  a string arg               A Default String Value
-  strs           a list of strings          []
+  aGroupOne.arg.1  a group arg                0 
+  aGroupOne.arg.2  a group arg                0 
+  aGroupOne.arg.3  a group arg                0 
+  aGroupOne.arg.4  a group arg                0 
+  aGroupOne.arg.5  a group arg                0 
+  boo              a boolean arg              false
+  f64s             a list of doubles          []
+  float64          a double arg               3.12
+  i16              16-bit integer             1 
+  i32              32-bit integer             0 
+  i64              64-bit integer             1 
+  int64s           a list of 64-bit integers  []
+  is_no_bool       a boolean arg              true
+  is_one_bool      a boolean arg              false
+  is_rest_bool     a boolean arg              true
+  is_true_bool     a boolean arg              false
+  is_yes_bool      a boolean arg              false
+  missing          a string arg               a missing string in cfg file, default applies
+  string           a string arg               A Default String Value
+  string.qouted    a string arg               A Default String Value
+  strs             a list of strings          []
 
 Config::file_desc()
 Config Properties
-  boo            a boolean arg              false
-  f64s           a list of doubles          []
-  float64        a double arg               3.12
-  i16            16-bit integer             1 
-  i32            32-bit integer             0 
-  i64            64-bit integer             1 
-  int64s         a list of 64-bit integers  []
-  is_no_bool     a boolean arg              true
-  is_one_bool    a boolean arg              false
-  is_rest_bool   a boolean arg              true
-  is_true_bool   a boolean arg              false
-  is_yes_bool    a boolean arg              false
-  missing        a string arg               a missing string in cfg file, default applies
-  string         a string arg               A Default String Value
-  string.qouted  a string arg               A Default String Value
-  strs           a list of strings          []
+  aGroupOne.arg.1  a group arg                0 
+  aGroupOne.arg.2  a group arg                0 
+  aGroupOne.arg.3  a group arg                0 
+  aGroupOne.arg.4  a group arg                0 
+  aGroupOne.arg.5  a group arg                0 
+  boo              a boolean arg              false
+  f64s             a list of doubles          []
+  float64          a double arg               3.12
+  i16              16-bit integer             1 
+  i32              32-bit integer             0 
+  i64              64-bit integer             1 
+  int64s           a list of 64-bit integers  []
+  is_no_bool       a boolean arg              true
+  is_one_bool      a boolean arg              false
+  is_rest_bool     a boolean arg              true
+  is_true_bool     a boolean arg              false
+  is_yes_bool      a boolean arg              false
+  missing          a string arg               a missing string in cfg file, default applies
+  string           a string arg               A Default String Value
+  string.qouted    a string arg               A Default String Value
+  strs             a list of strings          []
 
 Config Properties
-  boo            a boolean arg              false
-  f64s           a list of doubles          []
-  float64        a double arg               3.12
-  i16            16-bit integer             1 
-  i32            32-bit integer             0 
-  i64            64-bit integer             1 
-  int64s         a list of 64-bit integers  []
-  is_no_bool     a boolean arg              true
-  is_one_bool    a boolean arg              false
-  is_rest_bool   a boolean arg              true
-  is_true_bool   a boolean arg              false
-  is_yes_bool    a boolean arg              false
-  missing        a string arg               a missing string in cfg file, default applies
-  string         a string arg               A Default String Value
-  string.qouted  a string arg               A Default String Value
-  strs           a list of strings          []
+  aGroupOne.arg.1  a group arg                0 
+  aGroupOne.arg.2  a group arg                0 
+  aGroupOne.arg.3  a group arg                0 
+  aGroupOne.arg.4  a group arg                0 
+  aGroupOne.arg.5  a group arg                0 
+  boo              a boolean arg              false
+  f64s             a list of doubles          []
+  float64          a double arg               3.12
+  i16              16-bit integer             1 
+  i32              32-bit integer             0 
+  i64              64-bit integer             1 
+  int64s           a list of 64-bit integers  []
+  is_no_bool       a boolean arg              true
+  is_one_bool      a boolean arg              false
+  is_rest_bool     a boolean arg              true
+  is_true_bool     a boolean arg              false
+  is_yes_bool      a boolean arg              false
+  missing          a string arg               a missing string in cfg file, default applies
+  string           a string arg               A Default String Value
+  string.qouted    a string arg               A Default String Value
+  strs             a list of strings          []
 *** Raw Parsed Options:
+aGroupOne.arg.1=[1]
+aGroupOne.arg.2=[2]
+aGroupOne.arg.3=[3]
+aGroupOne.arg.4=[4]
+aGroupOne.arg.5=[5]
 boo=[true]
 f64s=[1.123, 1.123K, 1.123M, 1.123g]
 float64=[1.1234]
@@ -140,6 +160,11 @@ string=[aStringNoSpaces]
 string.qouted=[a   S t r i n g   W i t h    S p a c e s]
 strs=[StringOne, StringTwo, StringThree]
 *** Parsed Options:
+aGroupOne.arg.1=1
+aGroupOne.arg.2=2
+aGroupOne.arg.3=3
+aGroupOne.arg.4=4
+aGroupOne.arg.5=5
 boo=true
 f64s=[1.123, 1123, 1.123e+06, 1.123e+09]
 float64=1.1234
@@ -157,6 +182,11 @@ string=aStringNoSpaces
 string.qouted=a   S t r i n g   W i t h    S p a c e s
 strs=[StringOne, StringTwo, StringThree]
 true
+aGroupOne.arg.1=1
+aGroupOne.arg.2=2
+aGroupOne.arg.3=3
+aGroupOne.arg.4=4
+aGroupOne.arg.5=5
 boo=true
 dummy=true
 f64s=[1.123, 1123, 1.123e+06, 1.123e+09]

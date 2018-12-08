@@ -98,6 +98,11 @@ int main(int argc, char *argv[]) {
    ("float64", f64(3.12), "a double arg")
    ("f64s", f64s(), "a list of doubles")
    ("missing", str("a missing string in cfg file, default applies"), "a string arg")
+   ("aGroupOne.arg.1", i16(0), "a group arg")
+   ("aGroupOne.arg.2", i16(0), "a group arg")
+   ("aGroupOne.arg.3", i16(0), "a group arg")
+   ("aGroupOne.arg.4", i16(0), "a group arg")
+   ("aGroupOne.arg.5", i16(0), "a group arg")
     ;
     
   std::cout << String("\nConfig::file_desc()");
