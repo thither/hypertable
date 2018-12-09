@@ -330,18 +330,17 @@ void Parser::parse_line(String line){
   cmt = value.find_first_of("#"); // remove followup comment
   if(cmt != std::string::npos)
     value = value.substr(0, cmt);
-  
+
   at = value.find_first_of("\"");
   if(at != std::string::npos) {   // quoted value
     value = value.substr(at+1);
     at = value.find_first_of("\"");
     if(at != std::string::npos)
       value = value.substr(0, at);
-  } else {                // remove spaces
+  } else                 // remove spaces
     value.erase(std::remove_if(value.begin(), value.end(),
                   [](unsigned char x){return std::isspace(x);}),
                 value.end());
-  }
 
   parse_opt(name+"="+value); // << input must be NAME=VALUE !
 
@@ -365,7 +364,6 @@ bool Parser::parse_opt(String s){
   if(!m_cfg.has(name)&&!m_unregistered)
     return false;
     
-
   InsRet r = raw_opts.insert(Pair(name, Strings()));
 
   String value = s.substr(at+1);

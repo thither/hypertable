@@ -45,6 +45,7 @@ struct AppPolicy : Config::Policy {
    ("false", boo(false)->zero_token(), "token defaults to false")
    ("true", boo(true)->zero_token(), "token defaults to true")
    ("is_true", boo(false)->zero_token(), "if set token true")
+   ("a.cmd.arg.qouted", str(), "a qouted string arg with spaces ")
    ;
 
 	Config::cmdline_hidden_desc().add_options()
