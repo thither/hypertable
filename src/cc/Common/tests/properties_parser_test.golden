@@ -3,7 +3,6 @@ Config::cmdline_desc()
 Usage:  [Options] [args]
 Options
   --Hypertable.Config.OnFileChange.Reload2 -[OnFileChange.Reload2]  Set Config File Listener for Reloading cfg file on Change  false
-  --a.cmd.arg.qouted                                                a qouted string arg with spaces                              
   --boo -[b]                                                        a boolean arg                                              false
   --f64s                                                            a list of doubles                                          []
   --false                                                           token defaults to false                                    false
@@ -30,7 +29,6 @@ Merged New ParserConfig
 Usage:  [Options] [args]
 Options
   --Hypertable.Config.OnFileChange.Reload2 -[OnFileChange.Reload2]  Set Config File Listener for Reloading cfg file on Change  false
-  --a.cmd.arg.qouted                                                a qouted string arg with spaces                              
   --app                                                             application filename, zero pos skipped                       
   --arg-1                                                           argument one                                                 
   --args                                                            rest of arguments                                          []
@@ -49,7 +47,6 @@ Options
   --strs                                                            a list of strings                                          []
   --true                                                            token defaults to true                                     true
 *** Raw Parsed Options:
-a.cmd.arg.qouted=[a   q o u t e d   value]
 arg-1=[argOne]
 boo=[true, 1]
 i16=[1k]
@@ -59,7 +56,6 @@ is_true=[1]
 strs=[1, 2, 3, 4, 5, 6]
 *** Parsed Options:
 Hypertable.Config.OnFileChange.Reload2=false
-a.cmd.arg.qouted=a   q o u t e d   value
 arg-1=argOne
 boo=true
 false=false

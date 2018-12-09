@@ -283,8 +283,7 @@ add_executable(properties_parser_test tests/properties_parser_test.cc)
 target_link_libraries(properties_parser_test HyperCommon)
 add_test(Common-Properties-Parser ${TEST_DIFF}
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/properties_parser_test.golden
-  "./properties_parser_test argOne --i16 1k --i32 64K --i64 1G --boo true --strs=1 -strs 2 -strs 3 \
-	--strs 4 -strs=5 --strs=6 --b=1 --is_true --a.cmd.arg.qouted \"a   q o u t e d   value\""
+  ./properties_parser_test argOne --i16 1k --i32 64K --i64 1G --boo true --strs=1 -strs 2 -strs 3 --strs 4 -strs=5 --strs=6 --b=1 --is_true
 )
   
 # container tests
