@@ -57,7 +57,7 @@ namespace {
 
   const char *usage =
     "\n"
-    "Usage: ht_generate_load [options] <type>\n\n"
+    "Usage: ht_generate_load <type> [options]\n\n"
     "Description:\n"
     "  This program is used to generate load on a Hypertable\n"
     "  cluster.  The <type> argument indicates the type of load\n"
