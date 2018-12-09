@@ -168,21 +168,23 @@ void ParserConfig::print(std::ostream& os) {
   size_t len_name=5;
   size_t len_desc=5;
   for (const auto &kv : get_map()) {
-    tmp = (!kv.second.aliases.empty()? format_list(kv.second.aliases).length()+1 : 0);
+    tmp = (!kv.second.aliases.empty()? 
+              format_list(kv.second.aliases).length()+2 : 0);
     if(len_name < tmp+kv.first.length())
       len_name = tmp+kv.first.length();
     if(len_desc < kv.second.desc.length())
       len_desc = kv.second.desc.length();
   }
-  int offset_name = static_cast<int>(len_name);
+  int offset_name = static_cast<int>(len_name)+2;
   int offset_desc = static_cast<int>(len_desc);
 
   for (const auto &kv : get_map()) {
     os << std::left << std::setw(2) << " "
        << std::left << std::setw(offset_name+2) << 
-          format("%s %s", kv.first.c_str(),
+          format("--%s %s", kv.first.c_str(),
               (!kv.second.aliases.empty()? 
-                format_list(kv.second.aliases).c_str() : ""))
+                format("-%s",format_list(kv.second.aliases).c_str()).c_str()
+                : ""))
        << std::left << std::setw(offset_desc+2) << kv.second.desc
        << std::left << std::setw(2) << kv.second.value->str()
        << "\n";
@@ -262,34 +264,39 @@ Parser::Parser(Strings raw_strings, ParserConfig *main,
   for(String raw_opt: raw_strings){
     n++;
 
+    // position based name with position's value
     name = m_cfg.position_name(n);
     if(!name.empty()){
       set_pos_parse(name, raw_opt);
       continue;
     }
 
-    opt.append(
-      !fill && raw_opt.find_first_of("-", 0, 1) != std::string::npos ?
-        (raw_opt.find_first_of("-", 1, 1) != std::string::npos ? 
-          raw_opt.substr(2) : 
-          raw_opt.substr(1)
-        ) :
-      raw_opt
-    );
-    // HT_INFOF("%s => %s", raw_opt.c_str(), opt.c_str());
-    if(!fill && raw_opt.find_first_of("=")==std::string::npos) {
-      if(!m_cfg.has(opt) || !m_cfg.get_default(opt)->is_zero_token()){
-        fill = true;
-        opt.append("=");
-        if(len_o > n)
-          continue;
-      }
-      opt.append("=1"); // zero-token true default 
-    }
+    // if arg is a --name / -name
+    if(!fill && raw_opt.find_first_of("-", 0, 1) != std::string::npos) {
+        name = raw_opt.substr(1);
+        if(name.find_first_of("-", 0, 1) != std::string::npos)
+          name = name.substr(1);
+        opt.append(name);
+
+        // if not arg with name=Value 
+        if(name.find_first_of("=")==std::string::npos){
+          opt.append("=");
+
+          if(!m_cfg.has(name) || !m_cfg.get_default(name)->is_zero_token()){
+            if(len_o > n){
+              fill = true;
+              continue;
+            }
+          }
+          opt.append("1"); // zero-token true default 
+        }
+    } else 
+        opt.append(raw_opt); 
+    
     fill = false;
 
     // HT_INFOF("parsing: %s", opt.c_str());
-    cfg_name = parse_opt(opt); // << input must be NAME=VALUE !
+    cfg_name = parse_opt(opt); // << input need to be NAME=VALUE else false
     if(!cfg_name){
       name = m_cfg.position_name(-1);
       // HT_INFOF("pos -1: %s", name.c_str());
