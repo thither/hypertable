@@ -45,8 +45,10 @@ namespace {
       cmdline_hidden_desc().add_options()
       ("property", str(), "")
       ("property", 1);  
-      // -1 is an issue to use as a property is recognized and not applied as any args(-1) 
-      // and easier to have one arg to be 1st arg
+      // -1 is an issue to use as a property 
+      // if unknown args passed along it will pollute the 'property' arg
+      // as well it might be a case of  a name-arg recognition and not applied as any args(-1) 
+      // and more right to have one arg to be 1st arg
     }
     static void init() {
       if (has("property"))
