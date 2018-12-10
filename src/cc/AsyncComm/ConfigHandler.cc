@@ -75,8 +75,10 @@ void ConfigHandler::handle(Hypertable::EventPtr &event) {
 
     if(ts > m_last_timestamp) {
       HT_DEBUGF("%s", m_props->reload(m_filename, cmdline_hidden_desc(), false).c_str());
-      if (!properties->get_bool("Hypertable.Config.OnFileChange.Reload"))
+      if (!properties->get_bool("Hypertable.Config.OnFileChange.Reload")){
+        HT_INFO("ConfigHandler Hypertable.Config.OnFileChange.Reload set to False, stopping cfg reloads");
         return;
+      }
       m_last_timestamp = ts;
     }
 
