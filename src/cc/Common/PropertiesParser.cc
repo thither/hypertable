@@ -299,10 +299,10 @@ Parser::Parser(Strings raw_strings, ParserConfig *main,
     cfg_name = parse_opt(opt); // << input need to be NAME=VALUE else false
     if(!cfg_name){
       name = m_cfg.position_name(-1);
-      // HT_INFOF("pos -1: %s", name.c_str());
       if(!name.empty())
         set_pos_parse(name, raw_opt);
-      else //  if(n!=0)ignore app-file, if no pos -1 
+      else if(!m_unregistered) 
+        // if no pos -1  if(n!=0)ignore app-file, unregistered arg-positions
         HT_THROWF(Error::CONFIG_GET_ERROR, "unknown cfg  with %s", raw_opt.c_str());
     }
     opt.clear();

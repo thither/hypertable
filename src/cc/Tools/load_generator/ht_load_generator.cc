@@ -263,7 +263,7 @@ int main(int argc, char **argv) {
 void parse_command_line(int argc, char **argv, PropertiesPtr &props) {
   const char *ptr;
   String key, value;
-  props->parse_args(argc, argv, cmdline_desc(), 0, true);
+  props->parse_args(argc, argv, cmdline_desc(), 0, true); // copy from Config::properties
   for (int i=1; i<argc; i++) {
     if (argv[i][0] == '-') {
       ptr = strchr(argv[i], '=');
