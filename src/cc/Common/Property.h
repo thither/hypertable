@@ -56,6 +56,57 @@ typedef std::vector<double> Doubles;
 
 namespace Property {
 
+template <class T>
+class ValueGuardedAtomic {
+  public:
+    ValueGuardedAtomic () noexcept {}
+ 
+ 	  ValueGuardedAtomic (T nv) noexcept {
+      vg.store(nv);
+    }
+ 
+ 	  ValueGuardedAtomic (ValueGuardedAtomic &other) noexcept {
+      vg.store(other.get());
+    }
+ 
+  	~ValueGuardedAtomic () noexcept {};
+    
+    operator ValueGuardedAtomic*()   { 
+      return this;    
+    }
+    
+    ValueGuardedAtomic* operator =(T nv){
+      vg.store(nv);
+      return *this;
+    }
+
+    ValueGuardedAtomic* operator =(ValueGuardedAtomic &other){
+      vg.store(other.get());
+      return *this;
+    }
+    
+    operator T(){
+      return vg.load(); 
+    }
+
+    T get(){
+      return vg.load(); 
+    }
+
+    operator std::atomic<T>*(){
+      return &vg; 
+    }
+
+  private:
+    std::atomic<T> vg;
+};
+}
+
+typedef Property::ValueGuardedAtomic<bool> gBool;
+typedef Property::ValueGuardedAtomic<int32_t> gInt32t;
+
+namespace Property {
+
 /*
 class EnumExt {
     operator EnumExt*(){
@@ -76,7 +127,10 @@ enum ValueType {
   INT64S,
   DOUBLES,
   ENUMEXT,
-  ENUM
+  ENUM,
+  
+  G_BOOL,
+  G_INT32_T,
 };
 
 const ValueType get_value_type(const std::type_info &v_type);
@@ -114,7 +168,9 @@ class TypeDef {
 template <class T>
 class  ValueDef : public TypeDef {
   public:
-    static constexpr bool is_enum() {  return std::is_enum<T>::value; }
+    static constexpr bool is_enum() {  
+      return std::is_enum<T>::value; 
+    }
 
     ValueDef(ValueType typ, Strings values, T defaulted) {
       set_type(typ);
@@ -132,175 +188,45 @@ class  ValueDef : public TypeDef {
       set_value(nv);  
     }
 
-    void set_value(T nv) { v.store(nv);         }
+    void set_value(T nv) { 
+      v = nv; 
+    }
 
     void from_strings(Strings values) {};
 
-    T get_value()         { return v.load();       }
+    T get_value() {
+      return v;       
+    }
 
-    T* get_ptr()          { return &v;      }
+    T* get_ptr() { 
+      return &v;      
+    }
+
+    String str(){
+      return "invalid option type";
+    }
 
     std::ostream& operator<<(std::ostream& ostream) {
       return ostream << str();
     }
-    
-    String str(){
-      switch(get_type()){
-        case ValueType::BOOL: 
-          return get_value() ? "true" : "false";;
-        case ValueType::DOUBLE:
-          return format("%g", get_value());
-        case ValueType::UINT16_T:
-          return format("%u", (unsigned)get_value());
-        case ValueType::INT32_T:
-          return format("%d", get_value());
-        case ValueType::INT64_T:
-          return format("%ld", get_value());
-        case ValueType::ENUM:
-          return "An ENUM TYPE";
-        default:
-          return "invalid option type";
-      }
+
+    operator TypeDef*() { 
+      return this;
     }
-    operator TypeDef*()   { return this;    }
+
     // ValueDef<T> operator *()   { return this;    }
     virtual ~ValueDef()   {}
 
   private:
-    std::atomic<T> v;
+    T v;
 };
-template <>
-class  ValueDef<String> : public TypeDef {
-  public:
-
-    ValueDef(ValueType typ, Strings values, String defaulted) {
-      set_type(typ);
-      if(!values.empty())
-        from_strings(values);
-      else
-        set_value(defaulted);
-    }
-
-    ValueDef(String nv) { 
-      set_type(ValueType::STRING);
-      set_value(nv);  
-    }
-    void set_value(String nv)  {
-       v = nv;       
-         }
-    void from_strings(Strings values){
-      set_value(values.back());
-    }
-    String get_value()         { return v;       }
-    String* get_ptr()          { return &v;      }
-    String str()               { return get_value(); }
-  private:
-    String v;
-};
-template <>
-class  ValueDef<Strings> : public TypeDef {
-  public:
-
-    ValueDef(ValueType typ, Strings values, Strings defaulted) {
-      set_type(typ);
-      if(!values.empty())
-        from_strings(values);
-      else
-        set_value(defaulted);
-    }
-    ValueDef(Strings nv) { 
-      set_type(ValueType::STRINGS);
-      set_value(nv);  
-    }
-    void set_value(Strings nv)  {
-      std::lock_guard<std::mutex> lock(mutex);
-      v = nv;         
-    }
-    void from_strings(Strings values){
-      set_value(values);
-    };
-
-    Strings get_value() { 
-      std::lock_guard<std::mutex> lock(mutex);
-      return v;       
-    }
-    Strings* get_ptr()  { return &v;      }
-    String str()        { return format_list(get_value()); }
-  private:
-    std::mutex mutex;
-    Strings v;
-};
-template <>
-class  ValueDef<Doubles> : public TypeDef {
-  public:
-    ValueDef(ValueType typ, Strings values, Doubles defaulted) {
-      set_type(typ);
-      if(!values.empty())
-        from_strings(values);
-      else
-        set_value(defaulted);
-    }
-    ValueDef(Doubles nv) { 
-      set_type(ValueType::DOUBLES);
-      set_value(nv);  
-    }
-    void set_value(Doubles nv)  {
-      std::lock_guard<std::mutex> lock(mutex);
-      v = nv;         
-    }
-    void from_strings(Strings values){
-      Doubles value;
-      for(String s: values)
-        value.push_back(double_from_string(s));
-      set_value(value);
-    };
-    Doubles get_value() { 
-      std::lock_guard<std::mutex> lock(mutex);
-      return v;       
-    }
-    Doubles* get_ptr()  { return &v;      }
-    String str()        { return format_list(get_value()); }
-  private:
-    std::mutex mutex;
-    Doubles v;
-};
-template <>
-class  ValueDef<Int64s> : public TypeDef {
-  public:
-    ValueDef(ValueType typ, Strings values, Int64s defaulted) {
-      set_type(typ);
-      if(!values.empty())
-        from_strings(values);
-      else
-        set_value(defaulted);
-    }
-    ValueDef(Int64s nv) { 
-      set_type(ValueType::INT64S);
-      set_value(nv);  
-    }
-    void set_value(Int64s nv)  {
-      std::lock_guard<std::mutex> lock(mutex);
-      v = nv;         
-    }
-    void from_strings(Strings values){
-      Int64s value;
-      for(String s: values)
-        value.push_back(int64_t_from_string(s));
-      set_value(value);
-    };
-    Int64s get_value() { 
-      std::lock_guard<std::mutex> lock(mutex);
-      return v;       
-    }
-    Int64s* get_ptr()  { return &v;      }
-    String str()        { return format_list(get_value()); }
-  private:
-    std::mutex mutex;
-    Int64s v;
-};
-
+/* set_value from_strings */
 template <>
 void ValueDef<bool>::from_strings(Strings values);
+template <>
+void ValueDef<gBool>::from_strings(Strings values);
+template <>
+void ValueDef<Strings>::from_strings(Strings values);
 template <>
 void ValueDef<double>::from_strings(Strings values);
 template <>
@@ -308,13 +234,46 @@ void ValueDef<uint16_t>::from_strings(Strings values);
 template <>
 void ValueDef<int32_t>::from_strings(Strings values);
 template <>
+void ValueDef<gInt32t>::from_strings(Strings values);
+template <>
 void ValueDef<int64_t>::from_strings(Strings values);
+template <>
+void ValueDef<Doubles>::from_strings(Strings values);
+template <>
+void ValueDef<Int64s>::from_strings(Strings values);
+template <>
+void ValueDef<String>::from_strings(Strings values);
 
+/* return string representation */
+template <>
+String ValueDef<bool>::str();
+template <>
+String ValueDef<gBool>::str();
+template <>
+String ValueDef<String>::str();
+template <>
+String ValueDef<double>::str();
+template <>
+String ValueDef<uint16_t>::str();
+template <>
+String ValueDef<int32_t>::str();
+template <>
+String ValueDef<gInt32t>::str();
+template <>
+String ValueDef<int64_t>::str();
+template <>
+String ValueDef<Doubles>::str();
+template <>
+String ValueDef<Int64s>::str();
+template <>
+String ValueDef<Strings>::str();
+
+    
 /**
 * Property::Value 
 * holds:
 *   * the pointer to TypeDef and short forms to ValueDef operations
-*   * the whether the value is a default value
+*   * the whether the value is a default value or skippable
  */
 
 class Value;
@@ -328,6 +287,7 @@ class Value {
       m_skippable = skippable;
       set_value(v);
     }
+    
     /* init from (TypeDef*)ValueDef<T> */
     Value(TypeDef* v) {
       type_ptr = v;
@@ -363,16 +323,20 @@ class Value {
           return set_value(from->get<Int64s>());
         case ValueType::DOUBLES:
           return set_value(from->get<Doubles>());
+
+        case ValueType::G_BOOL: 
+          return set_value(from->get<gBool>());
+        case ValueType::G_INT32_T: 
+          return set_value(from->get<gInt32t>());
+
         case ValueType::ENUM:
         default:
-          HT_THROWF(Error::CONFIG_GET_ERROR,
-                    "Bad Type %s", str().c_str());
+          HT_THROWF(Error::CONFIG_GET_ERROR, "Bad Type %s", str().c_str());
       }
     }
 
     template<typename T>
     T get() {
-      //HT_INFOF("T get(): type=%s", typeid(T).name());
       if (type_ptr == nullptr)
         HT_THROWF(Error::CONFIG_GET_ERROR, 
                   "T get(): type=%s (UNKNOWN VALUE TYPE)", typeid(T).name());;
@@ -399,23 +363,35 @@ class Value {
       
       switch(get_type()){
         case ValueType::STRING:
-          return get<String>();
+          return ((ValueDef<String>*)type_ptr)->str();
+
         case ValueType::BOOL: 
-          return get<bool>() ? "true" : "false";;
+          return ((ValueDef<bool>*)type_ptr)->str();
+        case ValueType::G_BOOL: 
+          return ((ValueDef<gBool>*)type_ptr)->str();
+
         case ValueType::DOUBLE:
-          return format("%g", get<double>());
+          return ((ValueDef<double>*)type_ptr)->str();
+
         case ValueType::UINT16_T:
-          return format("%u", (unsigned)get<uint16_t>());
+          return ((ValueDef<uint16_t>*)type_ptr)->str();
+
         case ValueType::INT32_T:
-          return format("%d", get<int32_t>());
+          return ((ValueDef<int32_t>*)type_ptr)->str();
+        case ValueType::G_INT32_T: 
+          return ((ValueDef<gInt32t>*)type_ptr)->str();
+
         case ValueType::INT64_T:
-          return format("%ld", get<int64_t>());
+          return ((ValueDef<int64_t>*)type_ptr)->str();
+
         case ValueType::STRINGS:
-          return format_list(get<Strings>());
+          return ((ValueDef<Strings>*)type_ptr)->str();
         case ValueType::INT64S:
-          return format_list(get<Int64s>());
+          return ((ValueDef<Int64s>*)type_ptr)->str();
         case ValueType::DOUBLES:
-          return format_list(get<Doubles>());
+          return ((ValueDef<Doubles>*)type_ptr)->str();
+
+
         case ValueType::ENUM:
           return "An ENUM TYPE";
         default:
@@ -428,11 +404,14 @@ class Value {
       m_defaulted = defaulted;
       return *this;
     }
-    bool is_skippable() {
-      return m_skippable;
-    }
+
     bool is_default() {
       return m_defaulted;
+    }
+
+    /* a Skippable property (no default value) */
+    bool is_skippable() {
+      return m_skippable;
     }
     
     /* a Zero Token Type */
@@ -444,19 +423,23 @@ class Value {
       return m_no_token;
     }
 
-    operator Value*()   { return this;    }
+    operator Value*() { 
+      return this;
+    }
+
     virtual ~Value() {}
 
   private:
+
     TypeDef* type_ptr = nullptr; //
 
     std::atomic<bool> m_defaulted = false;
     std::atomic<bool> m_no_token = false;
     std::atomic<bool> m_skippable = false;
-    
 
 };
- 
+
+
 ValuePtr make_new(ValuePtr p, Strings values = Strings());
 
 

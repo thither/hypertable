@@ -60,6 +60,12 @@ Property::ValuePtr str(String v);
 Property::ValuePtr strs(Strings v);
 Property::ValuePtr i64s(Int64s v);
 Property::ValuePtr f64s(Doubles v);
+/* cfg methods for guarded types
+*  @param v The default Value and a Type
+*/
+Property::ValuePtr g_boo(bool v);
+Property::ValuePtr g_i32(int32_t v);
+
 /* cfg methods for types, a skippable option
 *  if no option parsed it is skipped
 */

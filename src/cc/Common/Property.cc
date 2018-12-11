@@ -54,12 +54,18 @@ const ValueType get_value_type(const std::type_info &v_type){
     return ValueType::INT64S;  
   if(v_type == typeid(Doubles))
     return ValueType::DOUBLES;
+
+  if(v_type == typeid(gBool))
+    return ValueType::G_BOOL;
+  if(v_type == typeid(gInt32t))
+    return ValueType::G_INT32_T;
   /*
   if(v_type == typeid(EnumExt))
     return ValueType::ENUMEXT;
   */
   return ValueType::UNKNOWN;
 }
+
 /**
  * Convertors & Validators from String
 */
@@ -131,6 +137,7 @@ int32_t int32_t_from_string(String s){
 }
 
 
+
 template <>
 void ValueDef<bool>::from_strings(Strings values) {
   bool res;
@@ -138,6 +145,18 @@ void ValueDef<bool>::from_strings(Strings values) {
   std::transform(str.begin(), str.end(), str.begin(), ::tolower);
   res = (str.compare("1")==0)||(str.compare("true")==0)||(str.compare("yes")==0);
   set_value(res);
+}
+template <>
+void ValueDef<gBool>::from_strings(Strings values) {
+  bool res;
+  String str = values.back();
+  std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+  res = (str.compare("1")==0)||(str.compare("true")==0)||(str.compare("yes")==0);
+  set_value(res);
+}
+template <>
+void ValueDef<String>::from_strings(Strings values){
+  set_value(values.back());
 }
 template <>
 void ValueDef<double>::from_strings(Strings values) {
@@ -152,8 +171,76 @@ void ValueDef<int32_t>::from_strings(Strings values) {
   set_value(int32_t_from_string(values.back()));
 }
 template <>
+void ValueDef<gInt32t>::from_strings(Strings values) {
+  set_value(int32_t_from_string(values.back()));
+}
+template <>
 void ValueDef<int64_t>::from_strings(Strings values) {
   set_value(int64_t_from_string(values.back()));
+}
+template <>
+void ValueDef<Doubles>::from_strings(Strings values){
+  Doubles value;
+  for(String s: values)
+    value.push_back(double_from_string(s));
+  set_value(value);
+}
+template <>
+void ValueDef<Int64s>::from_strings(Strings values){
+  Int64s value;
+  for(String s: values)
+    value.push_back(int64_t_from_string(s));
+  set_value(value);
+}
+template <>
+void ValueDef<Strings>::from_strings(Strings values){
+  set_value(values);
+}
+
+
+template <>
+String ValueDef<bool>::str(){
+  return get_value() ? "true" : "false";;
+}
+template <>
+String ValueDef<gBool>::str(){
+  return (bool)get_value() ? "true" : "false";;
+}
+template <>
+String ValueDef<String>::str(){
+  return get_value();
+}
+template <>
+String ValueDef<double>::str(){
+  return format("%g", get_value());
+}
+template <>
+String ValueDef<uint16_t>::str(){
+  return format("%u", (unsigned)get_value());
+}
+template <>
+String ValueDef<int32_t>::str(){
+  return format("%d", get_value());
+}
+template <>
+String ValueDef<gInt32t>::str(){
+  return format("%d", (int32_t)get_value());
+}
+template <>
+String ValueDef<int64_t>::str(){
+  return format("%ld", get_value());
+}
+template <>
+String ValueDef<Doubles>::str(){
+  return format_list(get_value());
+}
+template <>
+String ValueDef<Int64s>::str(){
+  return format_list(get_value());
+}
+template <>
+String ValueDef<Strings>::str(){
+  return format_list(get_value());
 }
 
 
@@ -161,24 +248,52 @@ void ValueDef<int64_t>::from_strings(Strings values) {
 ValuePtr make_new(ValuePtr p, Strings values){
   ValueType typ = p->get_type();
   switch(typ){
+    
     case ValueType::STRING:
-      return new Value((TypeDef*)new ValueDef<String>(typ, values, p->get<String>()));
+      return new Value(
+        (TypeDef*)new ValueDef<String>(typ, values, p->get<String>()));
+
     case ValueType::BOOL: 
-      return new Value((TypeDef*)new ValueDef<bool>(typ, values, p->get<bool>()));
+      return new Value(
+        (TypeDef*)new ValueDef<bool>(typ, values, p->get<bool>()));
+
     case ValueType::DOUBLE:
-      return new Value((TypeDef*)new ValueDef<double>(typ, values, p->get<double>()));
+      return new Value(
+        (TypeDef*)new ValueDef<double>(typ, values, p->get<double>()));
+
     case ValueType::UINT16_T:
-      return new Value((TypeDef*)new ValueDef<uint16_t>(typ, values, p->get<uint16_t>()));
+      return new Value(
+        (TypeDef*)new ValueDef<uint16_t>(typ, values, p->get<uint16_t>()));
+
     case ValueType::INT32_T:
-      return new Value((TypeDef*)new ValueDef<int32_t>(typ, values, p->get<int32_t>()));
+      return new Value(
+        (TypeDef*)new ValueDef<int32_t>(typ, values, p->get<int32_t>()));
+
     case ValueType::INT64_T:
-      return new Value((TypeDef*)new ValueDef<int64_t>(typ, values, p->get<int64_t>()));
+      return new Value(
+        (TypeDef*)new ValueDef<int64_t>(typ, values, p->get<int64_t>()));
+
     case ValueType::STRINGS:
-      return new Value((TypeDef*)new ValueDef<Strings>(typ, values, p->get<Strings>()));
+      return new Value(
+        (TypeDef*)new ValueDef<Strings>(typ, values, p->get<Strings>()));
+
     case ValueType::INT64S:
-      return new Value((TypeDef*)new ValueDef<Int64s>(typ, values, p->get<Int64s>()));
+      return new Value(
+        (TypeDef*)new ValueDef<Int64s>(typ, values, p->get<Int64s>()));
+
     case ValueType::DOUBLES:
-      return new Value((TypeDef*)new ValueDef<Doubles>(typ, values, p->get<Doubles>()));
+      return new Value(
+        (TypeDef*)new ValueDef<Doubles>(typ, values, p->get<Doubles>()));
+
+      
+    case ValueType::G_BOOL: 
+      return new Value(
+        (TypeDef*)new ValueDef<gBool>(typ, values, p->get<gBool>()));
+
+    case ValueType::G_INT32_T: 
+      return new Value(
+        (TypeDef*)new ValueDef<gInt32t>(typ, values, p->get<gInt32t>()));
+
     case ValueType::ENUM:
     default:
       HT_THROWF(Error::CONFIG_GET_ERROR, 

@@ -81,8 +81,9 @@ namespace Hypertable { namespace Config {
     /// %Config file check interval
     // int32_t *m_chk_interval {};
     /// %Config file check interval value ptr
-    Property::ValueDef<int32_t>* m_chk_interval_ptr;
+    gInt32t* m_chk_interval;
     // Int32tSafe m_chk_interval;
+    gBool* m_reload;
 
     String m_filename;
 

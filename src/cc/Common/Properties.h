@@ -223,11 +223,17 @@ public:
     return (Property::ValueDef<T>*)get_value_ptr(name)->get_type_ptr();
   }
 
-  // issue, returns on base with std::atomic (atmic as type - 'BoolSafe')
-  // template <typename T>
-  // T* get_ptr(const String &name) {
-  //  return get_value_ptr(name)->get_ptr<T>();
-  // }
+  /**
+   * Get the property value ptr
+   *
+   * @param name The name of the property
+   * @throw Error::CONFIG_GET_ERROR if the requested property is not defined
+   * @return T*
+   */
+  template <typename T>
+  T* get_ptr(const String &name) {
+    return get_value_ptr(name)->get_ptr<T>();
+  }
   
   /**
    * Get the String representation of property name 
