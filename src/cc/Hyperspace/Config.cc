@@ -60,7 +60,7 @@ void init_hyperspace_client() {
     bool defaulted = properties->defaulted("hyperspace");
     Strings hosts;
     if (properties->has("Hyperspace.Replica.Host"))
-      hosts = properties->get_strs("Hyperspace.Replica.Host");
+      hosts = properties->get<gStrings>("Hyperspace.Replica.Host");
 
     size_t i;
     for (i=0; i<hosts.size(); i++) {

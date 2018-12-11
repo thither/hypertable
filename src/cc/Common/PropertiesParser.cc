@@ -62,6 +62,7 @@ Property::ValuePtr i64s(Int64s v) {
 Property::ValuePtr f64s(Doubles v) {
   return cfg(v);
 }
+
 // cfg methods for guarded types
 Property::ValuePtr g_boo(bool v) {
   return cfg((gBool)v);
@@ -69,6 +70,10 @@ Property::ValuePtr g_boo(bool v) {
 Property::ValuePtr g_i32(int32_t v) {
   return cfg((gInt32t)v);
 }
+Property::ValuePtr g_strs(Strings v) {
+  return cfg((gStrings)v);
+}
+
 // cfg methods for types, skipable options (no default set)
 Property::ValuePtr boo() {
   return cfg(true, true);
@@ -97,6 +102,12 @@ Property::ValuePtr i64s() {
 Property::ValuePtr f64s() {
   return cfg(Doubles(), true);
 }
+
+// cfg methods for guarded types, skipable options (no default set)
+Property::ValuePtr g_strs() {
+  return cfg((gStrings)Strings(), true);
+}
+
 
 namespace Config {
 

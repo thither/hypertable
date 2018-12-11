@@ -130,7 +130,7 @@ BerkeleyDbFilesystem::BerkeleyDbFilesystem(PropertiesPtr &props,
      * environment needs to make.
      */
     if (props->has("Hyperspace.Replica.Host"))
-      m_replication_info.num_replicas = props->get_strs("Hyperspace.Replica.Host").size();
+      m_replication_info.num_replicas = props->get<gStrings>("Hyperspace.Replica.Host").size();
 
     if (m_replication_info.num_replicas > 1) {
 
@@ -165,7 +165,7 @@ BerkeleyDbFilesystem::BerkeleyDbFilesystem(PropertiesPtr &props,
                             props->get_i32("Hyperspace.Replica.Replication.Timeout")*1000);
 
       int priority = m_replication_info.num_replicas;
-      for (auto replica : props->get_strs("Hyperspace.Replica.Host")) {
+      for (auto replica : (Strings)props->get<gStrings>("Hyperspace.Replica.Host")) {
         bool is_ipv4 = InetAddr::is_ipv4(replica.c_str());
         bool is_localhost=false;
         Endpoint e;

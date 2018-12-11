@@ -38,27 +38,35 @@ namespace Property {
 const ValueType get_value_type(const std::type_info &v_type){
   if(v_type == typeid(double))
     return ValueType::DOUBLE;
+
   if(v_type == typeid(bool))
     return ValueType::BOOL;  
+  if(v_type == typeid(gBool))
+    return ValueType::G_BOOL;
+
   if(v_type == typeid(String))
     return ValueType::STRING;  
   if(v_type == typeid(uint16_t))
     return ValueType::UINT16_T;  
+
   if(v_type == typeid(int32_t))
-    return ValueType::INT32_T;  
+    return ValueType::INT32_T; 
+  if(v_type == typeid(gInt32t))
+    return ValueType::G_INT32_T;
+
   if(v_type == typeid(int64_t))
     return ValueType::INT64_T;  
+
   if(v_type == typeid(Strings))
     return ValueType::STRINGS;  
+  if(v_type == typeid(gStrings))
+    return ValueType::G_STRINGS;
+
   if(v_type == typeid(Int64s))
     return ValueType::INT64S;  
   if(v_type == typeid(Doubles))
     return ValueType::DOUBLES;
 
-  if(v_type == typeid(gBool))
-    return ValueType::G_BOOL;
-  if(v_type == typeid(gInt32t))
-    return ValueType::G_INT32_T;
   /*
   if(v_type == typeid(EnumExt))
     return ValueType::ENUMEXT;
@@ -196,6 +204,10 @@ template <>
 void ValueDef<Strings>::from_strings(Strings values){
   set_value(values);
 }
+template <>
+void ValueDef<gStrings>::from_strings(Strings values){
+  set_value(values);
+}
 
 
 template <>
@@ -242,13 +254,17 @@ template <>
 String ValueDef<Strings>::str(){
   return format_list(get_value());
 }
+template <>
+String ValueDef<gStrings>::str(){
+  return format_list((Strings)get_value());
+}
 
 
 
 ValuePtr make_new(ValuePtr p, Strings values){
   ValueType typ = p->get_type();
   switch(typ){
-    
+
     case ValueType::STRING:
       return new Value(
         (TypeDef*)new ValueDef<String>(typ, values, p->get<String>()));
@@ -256,6 +272,9 @@ ValuePtr make_new(ValuePtr p, Strings values){
     case ValueType::BOOL: 
       return new Value(
         (TypeDef*)new ValueDef<bool>(typ, values, p->get<bool>()));
+    case ValueType::G_BOOL: 
+      return new Value(
+        (TypeDef*)new ValueDef<gBool>(typ, values, p->get<gBool>()));
 
     case ValueType::DOUBLE:
       return new Value(
@@ -268,6 +287,9 @@ ValuePtr make_new(ValuePtr p, Strings values){
     case ValueType::INT32_T:
       return new Value(
         (TypeDef*)new ValueDef<int32_t>(typ, values, p->get<int32_t>()));
+    case ValueType::G_INT32_T: 
+      return new Value(
+        (TypeDef*)new ValueDef<gInt32t>(typ, values, p->get<gInt32t>()));
 
     case ValueType::INT64_T:
       return new Value(
@@ -276,6 +298,9 @@ ValuePtr make_new(ValuePtr p, Strings values){
     case ValueType::STRINGS:
       return new Value(
         (TypeDef*)new ValueDef<Strings>(typ, values, p->get<Strings>()));
+    case ValueType::G_STRINGS:
+      return new Value(
+        (TypeDef*)new ValueDef<gStrings>(typ, values, p->get<gStrings>()));
 
     case ValueType::INT64S:
       return new Value(
@@ -286,14 +311,6 @@ ValuePtr make_new(ValuePtr p, Strings values){
         (TypeDef*)new ValueDef<Doubles>(typ, values, p->get<Doubles>()));
 
       
-    case ValueType::G_BOOL: 
-      return new Value(
-        (TypeDef*)new ValueDef<gBool>(typ, values, p->get<gBool>()));
-
-    case ValueType::G_INT32_T: 
-      return new Value(
-        (TypeDef*)new ValueDef<gInt32t>(typ, values, p->get<gInt32t>()));
-
     case ValueType::ENUM:
     default:
       HT_THROWF(Error::CONFIG_GET_ERROR, 

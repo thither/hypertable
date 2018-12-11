@@ -90,7 +90,7 @@ Session::~Session() {
 String Session::get_next_replica() 
 {
 	lock_guard<mutex> lock(m_mutex);
-	std::vector<String> new_replicas = m_props->get_strs("Hyperspace.Replica.Host");
+	std::vector<String> new_replicas = m_props->get<gStrings>("Hyperspace.Replica.Host");
 
 	for (const auto &replica : m_hyperspace_replicas) {
 		auto itr = std::find(new_replicas.begin(), new_replicas.end(), replica);

@@ -178,7 +178,7 @@ namespace {
       host = properties->get_str("host");
       std::vector<String> vec;
       vec.push_back(host);
-      properties->set("Hyperspace.Replica.Host", vec);
+      properties->set("Hyperspace.Replica.Host", (gStrings)vec);
     }
 
     if (get_bool("display-address")) {

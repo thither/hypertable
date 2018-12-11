@@ -65,6 +65,7 @@ Property::ValuePtr f64s(Doubles v);
 */
 Property::ValuePtr g_boo(bool v);
 Property::ValuePtr g_i32(int32_t v);
+Property::ValuePtr g_strs(Strings v);
 
 /* cfg methods for types, a skippable option
 *  if no option parsed it is skipped
@@ -78,6 +79,11 @@ Property::ValuePtr str();
 Property::ValuePtr strs();
 Property::ValuePtr i64s();
 Property::ValuePtr f64s();
+
+/* cfg methods for guarded  types, a skippable option
+*  if no option parsed it is skipped
+*/
+Property::ValuePtr g_strs();
 
 
  namespace Config {

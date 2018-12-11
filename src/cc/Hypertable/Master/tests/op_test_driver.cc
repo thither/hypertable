@@ -384,7 +384,7 @@ int main(int argc, char **argv) {
     // Default Hyperspace replicat host
     std::vector<String> replicas;
     replicas.push_back("localhost");
-    properties->set("Hyperspace.Replica.Host", replicas);
+    properties->set("Hyperspace.Replica.Host", (gStrings)replicas);
 
     Hyperspace::SessionPtr hyperspace = make_shared<Hyperspace::Session>(Comm::instance(), properties);
 

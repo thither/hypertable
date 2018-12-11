@@ -58,18 +58,20 @@ namespace Property {
 
 template <class T>
 class ValueGuardedAtomic {
+
   public:
+
     ValueGuardedAtomic () noexcept {}
  
- 	  ValueGuardedAtomic (T nv) noexcept {
+    ValueGuardedAtomic (T nv) noexcept {
       vg.store(nv);
     }
  
- 	  ValueGuardedAtomic (ValueGuardedAtomic &other) noexcept {
+    ValueGuardedAtomic (ValueGuardedAtomic &other) noexcept {
       vg.store(other.get());
     }
  
-  	~ValueGuardedAtomic () noexcept {};
+    ~ValueGuardedAtomic () noexcept {};
     
     operator ValueGuardedAtomic*()   { 
       return this;    
@@ -99,11 +101,79 @@ class ValueGuardedAtomic {
 
   private:
     std::atomic<T> vg;
+
 };
+
 }
 
 typedef Property::ValueGuardedAtomic<bool> gBool;
 typedef Property::ValueGuardedAtomic<int32_t> gInt32t;
+
+
+namespace Property {
+
+template <class T>
+class ValueGuardedVector {
+
+  public:
+
+    ValueGuardedVector () noexcept {}
+ 
+    ValueGuardedVector (T nv) noexcept {
+      set(nv);
+    }
+ 
+    ValueGuardedVector (ValueGuardedVector &other) noexcept {
+      set(other.get());
+    }
+ 
+    ~ValueGuardedVector () noexcept {};
+    
+    operator ValueGuardedVector*()   { 
+      return this;    
+    }
+    
+    ValueGuardedVector* operator =(T nv){
+      set(nv);
+      return *this;
+    }
+
+    ValueGuardedVector* operator =(ValueGuardedVector &other){
+      set(other.get());
+      return *this;
+    }
+    
+    void set(T nv)  {
+      std::lock_guard<std::mutex> lock(mutex);	
+      v.swap(nv);
+    }
+    
+    size_t size()  {
+      std::lock_guard<std::mutex> lock(mutex);	
+      return v.size();
+    }
+
+    operator T(){
+      return get(); 
+    }
+
+    T get(){
+      std::lock_guard<std::mutex> lock(mutex);	
+      return v;      
+    }
+
+  private:
+  	
+    std::mutex mutex;	
+    T v;
+
+};
+
+}
+
+typedef Property::ValueGuardedVector<Strings> gStrings;
+
+
 
 namespace Property {
 
@@ -131,6 +201,7 @@ enum ValueType {
   
   G_BOOL,
   G_INT32_T,
+  G_STRINGS,
 };
 
 const ValueType get_value_type(const std::type_info &v_type);
@@ -220,13 +291,14 @@ class  ValueDef : public TypeDef {
   private:
     T v;
 };
+
 /* set_value from_strings */
 template <>
 void ValueDef<bool>::from_strings(Strings values);
 template <>
-void ValueDef<gBool>::from_strings(Strings values);
+void ValueDef<String>::from_strings(Strings values);
 template <>
-void ValueDef<Strings>::from_strings(Strings values);
+void ValueDef<gBool>::from_strings(Strings values);
 template <>
 void ValueDef<double>::from_strings(Strings values);
 template <>
@@ -242,7 +314,9 @@ void ValueDef<Doubles>::from_strings(Strings values);
 template <>
 void ValueDef<Int64s>::from_strings(Strings values);
 template <>
-void ValueDef<String>::from_strings(Strings values);
+void ValueDef<Strings>::from_strings(Strings values);
+template <>
+void ValueDef<gStrings>::from_strings(Strings values);
 
 /* return string representation */
 template <>
@@ -267,6 +341,8 @@ template <>
 String ValueDef<Int64s>::str();
 template <>
 String ValueDef<Strings>::str();
+template <>
+String ValueDef<gStrings>::str();
 
     
 /**
@@ -307,27 +383,35 @@ class Value {
       switch(get_type()){
         case ValueType::STRING:
           return set_value(from->get<String>());
+
         case ValueType::BOOL: 
           return set_value(from->get<bool>());
+        case ValueType::G_BOOL: 
+          return set_value(from->get<gBool>());
+
         case ValueType::DOUBLE:
           return set_value(from->get<double>());
         case ValueType::UINT16_T:
           return set_value(from->get<uint16_t>());
+
         case ValueType::INT32_T:
           return set_value(from->get<int32_t>());
+        case ValueType::G_INT32_T: 
+          return set_value(from->get<gInt32t>());
+
         case ValueType::INT64_T:
           return set_value(from->get<int64_t>());
+
         case ValueType::STRINGS:
           return set_value(from->get<Strings>());
+        case ValueType::G_STRINGS:
+          return set_value(from->get<gStrings>());
+
         case ValueType::INT64S:
           return set_value(from->get<Int64s>());
         case ValueType::DOUBLES:
           return set_value(from->get<Doubles>());
 
-        case ValueType::G_BOOL: 
-          return set_value(from->get<gBool>());
-        case ValueType::G_INT32_T: 
-          return set_value(from->get<gInt32t>());
 
         case ValueType::ENUM:
         default:
@@ -386,6 +470,9 @@ class Value {
 
         case ValueType::STRINGS:
           return ((ValueDef<Strings>*)type_ptr)->str();
+        case ValueType::G_STRINGS: 
+          return ((ValueDef<gStrings>*)type_ptr)->str();
+
         case ValueType::INT64S:
           return ((ValueDef<Int64s>*)type_ptr)->str();
         case ValueType::DOUBLES:

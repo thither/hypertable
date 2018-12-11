@@ -377,7 +377,7 @@ void DefaultPolicy::init_options() {
         "log files after this much time")
     ("Hyperspace.LogGc.MaxUnusedLogs", i32(200), "Number of unused BerkeleyDB "
         "to keep around in case of lagging replicas")
-    ("Hyperspace.Replica.Host", strs(), "Hostname of Hyperspace replica")
+    ("Hyperspace.Replica.Host", g_strs(), "Hostname of Hyperspace replica")
     ("Hyperspace.Replica.Port", i16(15861),
         "Port number on which Hyperspace is or should be listening for requests")
     ("Hyperspace.Replica.Replication.Port", i16(15862),
