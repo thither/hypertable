@@ -31,6 +31,7 @@
 #include <atomic>
 #include <mutex>
 #include <algorithm>
+#include <functional>
 
 #include <Common/Compat.h>
 #include <Common/Logger.h>
@@ -64,44 +65,56 @@ class ValueGuardedAtomic {
     ValueGuardedAtomic () noexcept {}
  
     ValueGuardedAtomic (T nv) noexcept {
-      vg.store(nv);
+      store(nv);
     }
  
     ValueGuardedAtomic (ValueGuardedAtomic &other) noexcept {
-      vg.store(other.get());
+      store(other.get());
     }
  
+    void store(T nv){
+      if(nv == vg.load()) 
+        return;
+      vg.store(nv);
+      if(on_chg_cb)
+        on_chg_cb();
+    }
+
     ~ValueGuardedAtomic () noexcept {};
     
-    operator ValueGuardedAtomic*()   { 
+    operator ValueGuardedAtomic*() { 
       return this;    
     }
     
-    ValueGuardedAtomic* operator =(T nv){
-      vg.store(nv);
+    ValueGuardedAtomic* operator =(T nv) {
+      store(nv);
       return *this;
     }
 
-    ValueGuardedAtomic* operator =(ValueGuardedAtomic &other){
-      vg.store(other.get());
+    ValueGuardedAtomic* operator =(ValueGuardedAtomic &other) {
+      store(other.get());
       return *this;
     }
     
-    operator T(){
+    operator T() {
       return vg.load(); 
     }
 
-    T get(){
+    T get() {
       return vg.load(); 
     }
 
-    operator std::atomic<T>*(){
+    operator std::atomic<T>*() {
       return &vg; 
+    }
+
+    void set_cb_on_chg(std::function<void()> cb) {
+      on_chg_cb = cb;
     }
 
   private:
     std::atomic<T> vg;
-
+    std::function<void()> on_chg_cb;
 };
 
 }
