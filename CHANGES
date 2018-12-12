@@ -15,14 +15,8 @@ Version Master:
    removed unused cases of include Config and using namespace Config
    added files Common/Property.[h,cc] include namespace hypretable::Property
    changed definitions of MiB, KiB, etc. moved to Property file onto Hypertable namespace 
-   added class Property::Value with dependencies classes TypeDef and ValueDef
-   added class ValueDef value type std::atomic for non-trival types and mutex for others
-   added support dynamic and multithread safe for values of Properties (data of Property::ValueDef<T>)
+   added class Property::Value with dependencies classes TypeDef and ValueDef<T>
    changed Properties MapPair to <String, Property::ValuePtr>
-   added class AsyncComm/ConfigHandler checks on file changes and apply updated properties
-   added config option Hypertable.Config.OnFileChange.Reload=True change to False will halt from reloading
-   added config option Hypertable.Config.OnFileChange.Reload.Interval=600000 
-   added use of Hypertable.Config.OnFileChange.Reload for Master,Range,Thrift,FsBroker(C++) and Hyperspace
    added files Common/PropertiesParser.[h,cc] classes ParserConfig, Parser
    changed parsed cfg option validation and convertion is done by Property::ValueDef<T>
    changed use of configurations(cmdline,file desc) to new PropertiesParser configurations
@@ -30,9 +24,24 @@ Version Master:
    added test Common/properties_parser_test
    depcicated boost::program_options(libboost_program_options) 
    removed test Common/config_test 
+   added classes Property::ValueGuardedAtomic<T> and Property::ValueGuardedVector<T> 
+   added supporting types Guarded Types gBool, gInt32t, gStrings
+   added cfg methods g_boo(Bool), g_i32(int32_t), g_strs(Strings) to PropertiesParser
+   added class AsyncComm/ConfigHandler checks on file changes and update properties for Guarded Value Types
+   added config option Hypertable.Config.OnFileChange.Reload=True change to False will halt from reloading
+   added config option Hypertable.Config.OnFileChange.Reload.Interval=600000 
+   added use of Hypertable.Config.OnFileChange.Reload for
+         Master, Range, Thrift, FsBroker(C++) and Hyperspace
+   changed Silent and Verbose cfg properties to Guarded Bool (cfg file change apply at run time servers-side)
+   added changeable at runtime configs for ThriftBroker SlowQueryLog.Enable and SlowQueryLog.LatencyThreshold
+   added set_slow_query_logging call-back on ThriftBroker.SlowQueryLog.Enable change stop/start logging
+   changed Hyperspace Configurations with Guarded types (g_i32) for
+           Maintenance.Interval, Checkpoint.Size, LogGc.Interval, LogGc.MaxUnusedLogs, 
+           KeepAlive.Interval, Lease.Interval, GracePeriod
+
    added cfg_reload a command and interpreter statement to Hyperspace(client-side)
 
-   TODO: test Hyperspace related changes in big(3+ replicas) cluster environment
+   TODO: test Hyperspace related (bdb) changes in big(3+ replicas) cluster environment
          change(opt) from hardcoded predefined configurations descriptions to a hypertable-essential.ext file
          an EnumExt holder for an ENUM property value (corresponding enum to Name/Aliases and versa)
          apply possible configurations to be dynamic property at run time
