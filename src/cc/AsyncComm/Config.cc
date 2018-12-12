@@ -44,7 +44,7 @@ void init_comm_options() {
 void init_comm() {
   int32_t num_cores = System::get_processor_count();
 
-  if (get_bool("verbose"))
+  if (get<gBool>("verbose"))
     std::cout <<"CPU cores count="<< num_cores << std::endl;
 
   int32_t reactors = get("reactors", num_cores);

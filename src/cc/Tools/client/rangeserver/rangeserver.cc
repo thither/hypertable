@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
 
     int timeout = get_i32("timeout");
     InetAddr addr(get_str("rs-host"), get_i16("rs-port"));
-    silent = has("silent") && get_bool("silent");
+    silent = has("silent") && get<gBool>("silent");
 
     if (has("no-hyperspace"))
       no_hyperspace = true;

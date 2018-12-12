@@ -214,7 +214,7 @@ Options)";
         exit(1);
       }
       if (has("verbose"))
-	gVerbose = get_bool("verbose");
+	      gVerbose = get<gBool>("verbose");
     }
   };
 

@@ -378,7 +378,7 @@ int main(int argc, char **argv) {
     init_with_policies<Policies>(argc, argv);
 
     gBoolPtr silent = properties->get_ptr<gBool>("silent");
-    bool verbose = get_bool("verbose");
+    bool verbose = get<gBool>("verbose");
     uint32_t wait_ms = get_i32("wait");
     String server_name = get("server-name", String());
 

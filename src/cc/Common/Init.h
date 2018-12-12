@@ -64,7 +64,7 @@ namespace Hypertable { namespace Config {
       parse_args(argc, argv);
       PolicyT::init();
 
-      if (get_bool("verbose"))
+      if (get<gBool>("verbose"))
         properties->print(std::cout);
     }
     catch (Exception &e) {

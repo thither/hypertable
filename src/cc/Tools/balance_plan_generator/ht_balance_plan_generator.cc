@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
     init_with_policies<Policies>(argc, argv);
 
     if (has("verbose")) {
-      verbose = get_bool("verbose");
+      verbose = get<gBool>("verbose");
     }
 
     table_str = get_str("table");

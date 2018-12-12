@@ -610,7 +610,7 @@ int main(int argc, char **argv) {
     }
 
     if (has("verbose"))
-      verbose = get_bool("verbose");
+      verbose = get<gBool>("verbose");
     dry_run = has("dry-run");
     gzip = has("gzip");
 

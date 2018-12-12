@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     init_with_policies<Policies>(argc, argv);
     bool profile = has("profile");
     output_only = has("output-only");
-    silent = has("silent") && get_bool("silent");
+    silent = has("silent") && get<gBool>("silent");
 
     if (has("silent-startup")) {
       ConsoleOutputSquelcher dummy;
