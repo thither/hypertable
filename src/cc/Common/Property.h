@@ -517,6 +517,9 @@ class Value {
     bool is_guarded(){
       return m_guarded;
     }
+    void guarded(bool guarded){
+      m_guarded = guarded;
+    }
 
     operator Value*() { 
       return this;

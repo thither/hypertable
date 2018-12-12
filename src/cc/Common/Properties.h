@@ -391,14 +391,22 @@ public:
    * @param v The Property::ValuePtr
    */
   void set(const String &name, Property::ValuePtr p) {
+    Property::ValuePtr p_set;
     if(m_map.count(name)==0){
-      Property::ValuePtr p_set = Property::make_new(p);
+      p_set = Property::make_new(p);
+      
       if(p->is_default())
         p_set->default_value();
+      
+      if(p->is_guarded())
+        p_set->guarded(true);
+        
       add(name, p_set);
+
     } else if(!p->is_default()) {
-      get_value_ptr(name)->set_value_from(p);
-      get_value_ptr(name)->default_value(false);
+      p_set = get_value_ptr(name);
+      p_set->set_value_from(p);
+      p_set->default_value(false);
     }
   }
 
