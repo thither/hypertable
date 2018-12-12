@@ -855,9 +855,9 @@ namespace Hyperspace {
     ThreadHandleMap m_thread_handle_map;
 
     /// Checkpoint size threshold in kilobytes
-    uint32_t m_checkpoint_size_kb;
-    uint32_t m_max_unused_logs;
-    std::chrono::steady_clock::duration m_log_gc_interval;
+    gInt32tPtr m_checkpoint_size_kb;
+    gInt32tPtr m_max_unused_logs;
+    gInt32tPtr m_log_gc_interval;
     std::chrono::steady_clock::time_point m_last_log_gc_time;
   };
 

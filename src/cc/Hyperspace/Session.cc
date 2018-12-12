@@ -55,23 +55,25 @@ Session::Session(Comm *comm, PropertiesPtr &props)
     m_state(STATE_JEOPARDY), m_last_callback_id(0) {
 
   HT_TRY("getting config values",
+    m_datagram_send_port = props->get_i16("Hyperspace.Client.Datagram.SendPort");
+    m_hyperspace_port = props->get_i16("Hyperspace.Replica.Port");
+
+    m_keep_alive_interval = props->get_ptr<gInt32t>("Hyperspace.KeepAlive.Interval");
+    m_lease_interval = props->get_ptr<gInt32t>("Hyperspace.Lease.Interval");
+    m_grace_period = props->get_ptr<gInt32t>("Hyperspace.GracePeriod");
+
     m_verbose = props->get_bool("Hypertable.Verbose");
     m_silent = props->get_bool("Hypertable.Silent");
     m_reconnect = props->get_bool("Hyperspace.Session.Reconnect");
-    m_grace_period = props->get_i32("Hyperspace.GracePeriod");
-    m_lease_interval = props->get_i32("Hyperspace.Lease.Interval");
-    m_hyperspace_port = props->get_i16("Hyperspace.Replica.Port");
-    m_datagram_send_port = props->get_i16("Hyperspace.Client.Datagram.SendPort");
-    m_keep_alive_interval = props->get_i32("Hyperspace.KeepAlive.Interval");
   );
 
   if (m_reconnect)
     HT_INFO("Hyperspace session setup to reconnect");
 
-  m_timeout_ms = m_lease_interval * 2;
+  // m_timeout_ms = m_lease_interval->get() * 2;
 
   m_expire_time = chrono::steady_clock::now() +
-	  chrono::milliseconds(m_grace_period);
+	  chrono::milliseconds(m_grace_period->get());
 
   m_keepalive_handler_ptr = std::make_shared<ClientKeepaliveHandler>(m_comm, this);
   m_keepalive_handler_ptr->start();
@@ -123,14 +125,14 @@ void Session::update_master_addr(const String &host)
 void Session::handle_sleep() {
   lock_guard<mutex> lock(m_mutex);
   m_expire_time = chrono::steady_clock::now() +
-    chrono::milliseconds(m_grace_period);
+    chrono::milliseconds(m_grace_period->get());
 }
 
 void Session::handle_wakeup() {
   {
     lock_guard<mutex> lock(m_mutex);
     m_expire_time = chrono::steady_clock::now() +
-      chrono::milliseconds(m_grace_period);
+      chrono::milliseconds(m_grace_period->get());
   }
   if (m_state == Session::STATE_JEOPARDY)
     state_transition(Session::STATE_SAFE);
@@ -1230,7 +1232,7 @@ int Session::state_transition(int state) {
       for(CallbackMap::iterator it = m_callbacks.begin(); it != m_callbacks.end(); it++)
         (it->second)->jeopardy();
       m_expire_time = chrono::steady_clock::now() +
-        chrono::milliseconds(m_grace_period);
+        chrono::milliseconds(m_grace_period->get());
     }
   }
   else if (m_state == STATE_DISCONNECTED) {
@@ -1239,7 +1241,7 @@ int Session::state_transition(int state) {
         for(CallbackMap::iterator it = m_callbacks.begin(); it != m_callbacks.end(); it++)
           (it->second)->disconnected();
       m_expire_time = chrono::steady_clock::now() +
-        chrono::milliseconds(m_grace_period);
+        chrono::milliseconds(m_grace_period->get());
     }
   }
   else if (m_state == STATE_EXPIRED) {
@@ -1390,7 +1392,8 @@ Session::send_message(CommBufPtr &cbuf_ptr, DispatchHandler *handler,
                       Timer *timer) {
   lock_guard<mutex> lock(m_mutex);
   int error;
-  uint32_t timeout_ms = timer ? (time_t)timer->remaining() : m_timeout_ms;
+  uint32_t timeout_ms = timer ? (time_t)timer->remaining() 
+                              : m_lease_interval->get() * 2;
 
   if ((error = m_comm->send_request(m_master_addr, timeout_ms, cbuf_ptr,
       handler)) != Error::OK) {

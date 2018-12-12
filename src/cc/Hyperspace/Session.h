@@ -670,7 +670,7 @@ namespace Hyperspace {
 
     void advance_expire_time(std::chrono::steady_clock::time_point now) {
       std::lock_guard<std::mutex> lock(m_mutex);
-      m_expire_time = now + std::chrono::milliseconds(m_lease_interval);
+      m_expire_time = now + std::chrono::milliseconds(m_lease_interval->get());
     }
 
     void update_master_addr(const String &host);
@@ -704,13 +704,15 @@ namespace Hyperspace {
 	*/
 	String get_next_replica();
 
+	uint16_t     m_hyperspace_port;
+	uint16_t     m_datagram_send_port;
+  
+	gInt32tPtr   m_lease_interval;
+	gInt32tPtr	 m_keep_alive_interval;
 
 	std::atomic<bool>         m_verbose = false;
 	std::atomic<bool>         m_reconnect;
-	std::atomic<uint16_t>     m_hyperspace_port;
-	std::atomic<uint16_t>     m_datagram_send_port;
-	std::atomic<uint32_t>     m_lease_interval;
-	std::atomic<uint32_t>	    m_keep_alive_interval;
+  
 
   private:
 
@@ -731,8 +733,8 @@ namespace Hyperspace {
     PropertiesPtr             m_props;
     bool                      m_silent;
     int                       m_state;
-    uint32_t                  m_grace_period;
-    uint32_t                  m_timeout_ms;
+    gInt32tPtr                m_grace_period;
+    // uint32_t                  m_timeout_ms;
     std::chrono::steady_clock::time_point m_expire_time;
     InetAddr                  m_master_addr;
     ClientKeepaliveHandlerPtr m_keepalive_handler_ptr;

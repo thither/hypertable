@@ -137,10 +137,11 @@ Hyperspace::Master::Master(ConnectionManagerPtr &conn_mgr, PropertiesPtr &props,
     m_maintenance_outstanding(false),
     m_shutdown(false), m_bdb_fs(0) {
 
+  m_lease_interval = props->get_ptr<gInt32t>("Hyperspace.Lease.Interval");
   m_verbose = props->get_bool("verbose");
-  m_lease_interval = props->get_i32("Hyperspace.Lease.Interval");
-  m_keep_alive_interval = props->get_i32("Hyperspace.KeepAlive.Interval");
-  m_maintenance_interval = props->get_i32("Hyperspace.Maintenance.Interval");
+
+  //m_keep_alive_interval = props->get_i32("Hyperspace.KeepAlive.Interval");
+  //m_maintenance_interval = props->get_ptr<gInt32t>("Hyperspace.Maintenance.Interval");
 
   Path base_dir(props->get_str("Hyperspace.Replica.Dir"));
 
@@ -1838,7 +1839,7 @@ void Hyperspace::Master::handle_wakeup() {
 
   std::chrono::milliseconds lease_credit = 
     std::chrono::duration_cast<std::chrono::milliseconds>(now - m_sleep_time) +
-    std::chrono::milliseconds(m_lease_interval);
+    std::chrono::milliseconds(m_lease_interval->get());
 
   // extend all leases
   {

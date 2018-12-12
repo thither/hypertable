@@ -44,7 +44,7 @@ ClientKeepaliveHandler::ClientKeepaliveHandler(Comm *comm, Session *session)
 
 	auto now = chrono::steady_clock::now();
 	m_last_keep_alive_send_time = now;
-	m_jeopardy_time = now + chrono::milliseconds(m_session->m_lease_interval);
+	m_jeopardy_time = now + chrono::milliseconds(m_session->m_lease_interval->get());
 	
 	String replica = m_session->get_next_replica();
 
@@ -72,7 +72,7 @@ void ClientKeepaliveHandler::start() {
     exit(EXIT_FAILURE);
   }
 
-  if ((error = m_comm->set_timer(m_session->m_keep_alive_interval, shared_from_this()))
+  if ((error = m_comm->set_timer(m_session->m_keep_alive_interval->get(), shared_from_this()))
       != Error::OK) {
     HT_ERRORF("Problem setting timer - %s", Error::get_text(error));
     exit(EXIT_FAILURE);
@@ -134,7 +134,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
             exit(EXIT_FAILURE);
           }
 
-          if ((error = m_comm->set_timer(m_session->m_keep_alive_interval, shared_from_this())) != Error::OK) {
+          if ((error = m_comm->set_timer(m_session->m_keep_alive_interval->get(), shared_from_this())) != Error::OK) {
             HT_ERRORF("Problem setting timer - %s", Error::get_text(error));
             exit(EXIT_FAILURE);
           }
@@ -155,7 +155,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
 
           // update jeopardy time
           m_jeopardy_time = m_last_keep_alive_send_time +
-            chrono::milliseconds(m_session->m_lease_interval);
+            chrono::milliseconds(m_session->m_lease_interval->get());
 
           session_id = decode_i64(&decode_ptr, &decode_remain);
           error = decode_i32(&decode_ptr, &decode_remain);
@@ -169,7 +169,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
           if (m_session_id == 0) {
             m_session_id = session_id;
             if (!m_conn_handler) {
-              m_conn_handler = make_shared<ClientConnectionHandler>(m_comm, m_session, m_session->m_lease_interval);
+              m_conn_handler = make_shared<ClientConnectionHandler>(m_comm, m_session);
               m_conn_handler->set_verbose_mode(m_session->m_verbose);
               m_conn_handler->set_session_id(m_session_id);
             }
@@ -377,7 +377,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
       exit(EXIT_FAILURE);
     }
 
-    if ((error = m_comm->set_timer(m_session->m_keep_alive_interval, shared_from_this()))
+    if ((error = m_comm->set_timer(m_session->m_keep_alive_interval->get(), shared_from_this()))
         != Error::OK) {
       HT_ERRORF("Problem setting timer - %s", Error::get_text(error));
       exit(EXIT_FAILURE);
@@ -403,7 +403,7 @@ void ClientKeepaliveHandler::expire_session() {
   if (m_session->m_reconnect) {
     auto now = chrono::steady_clock::now();
     m_last_keep_alive_send_time = now;
-    m_jeopardy_time = now + chrono::milliseconds(m_session->m_lease_interval);
+    m_jeopardy_time = now + chrono::milliseconds(m_session->m_lease_interval->get());
 
     m_local_addr = InetAddr(INADDR_ANY, m_session->m_datagram_send_port);
 
@@ -419,7 +419,7 @@ void ClientKeepaliveHandler::expire_session() {
       exit(EXIT_FAILURE);
     }
 
-    if ((error = m_comm->set_timer(m_session->m_keep_alive_interval, shared_from_this()))
+    if ((error = m_comm->set_timer(m_session->m_keep_alive_interval->get(), shared_from_this()))
         != Error::OK) {
       HT_ERRORF("Problem setting timer - %s", Error::get_text(error));
       exit(EXIT_FAILURE);

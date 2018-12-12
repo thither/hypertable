@@ -367,15 +367,15 @@ void DefaultPolicy::init_options() {
         "takes precedence over Hypertable.Request.Timeout")
     ("Hyperspace.Timeout", i32(30000), "Timeout (millisec) "
         "for hyperspace requests (preferred to Hypertable.Request.Timeout")
-    ("Hyperspace.Maintenance.Interval", i32(60000), "Hyperspace "
+    ("Hyperspace.Maintenance.Interval", g_i32(60000), "Hyperspace "
         " maintenance interval (checkpoint BerkeleyDB, log cleanup etc)")
-    ("Hyperspace.Checkpoint.Size", i32(1*M), "Run BerkeleyDB checkpoint"
+    ("Hyperspace.Checkpoint.Size", g_i32(1*M), "Run BerkeleyDB checkpoint"
         " when logs exceed this size limit")
     ("Hyperspace.Client.Datagram.SendPort", i16(0),
         "Client UDP send port for keepalive packets")
-    ("Hyperspace.LogGc.Interval", i32(60000), "Check for unused BerkeleyDB "
+    ("Hyperspace.LogGc.Interval", g_i32(60000), "Check for unused BerkeleyDB "
         "log files after this much time")
-    ("Hyperspace.LogGc.MaxUnusedLogs", i32(200), "Number of unused BerkeleyDB "
+    ("Hyperspace.LogGc.MaxUnusedLogs", g_i32(200), "Number of unused BerkeleyDB "
         "to keep around in case of lagging replicas")
     ("Hyperspace.Replica.Host", g_strs(), "Hostname of Hyperspace replica")
     ("Hyperspace.Replica.Port", i16(15861),
@@ -393,11 +393,11 @@ void DefaultPolicy::init_options() {
          "Root of hyperspace file and directory "
         "heirarchy in local filesystem (if relative path, then is relative to "
         "the Hypertable data directory root)")
-    ("Hyperspace.KeepAlive.Interval", i32(30000),
+    ("Hyperspace.KeepAlive.Interval", g_i32(30000),
         "Hyperspace Keepalive interval (see Chubby paper)")
-    ("Hyperspace.Lease.Interval", i32(60000),
+    ("Hyperspace.Lease.Interval", g_i32(60000),
         "Hyperspace Lease interval (see Chubby paper)")
-    ("Hyperspace.GracePeriod", i32(60000),
+    ("Hyperspace.GracePeriod", g_i32(60000),
         "Hyperspace Grace period (see Chubby paper)")
     ("Hyperspace.Session.Reconnect", boo(false),
         "Reconnect to Hyperspace on session expiry")

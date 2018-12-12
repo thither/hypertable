@@ -76,9 +76,9 @@ BerkeleyDbFilesystem::BerkeleyDbFilesystem(PropertiesPtr &props,
                                            bool force_recover)
     : m_base_dir(basedir), m_env((u_int32_t)0) {
 
-  m_checkpoint_size_kb = props->get_i32("Hyperspace.Checkpoint.Size") / 1000;
-  m_max_unused_logs = props->get_i32("Hyperspace.LogGc.MaxUnusedLogs");
-  m_log_gc_interval = std::chrono::milliseconds(props->get_i32("Hyperspace.LogGc.Interval"));
+  m_checkpoint_size_kb = props->get_ptr<gInt32t>("Hyperspace.Checkpoint.Size");
+  m_max_unused_logs = props->get_ptr<gInt32t>("Hyperspace.LogGc.MaxUnusedLogs");
+  m_log_gc_interval = props->get_ptr<gInt32t>("Hyperspace.LogGc.Interval");
   m_last_log_gc_time = std::chrono::steady_clock::now();
 
   u_int32_t env_flags =
@@ -103,8 +103,9 @@ BerkeleyDbFilesystem::BerkeleyDbFilesystem(PropertiesPtr &props,
     String localip = System::net_info().primary_addr;
     HT_INFOF("localhost=%s localip=%s", localhost.c_str(), localip.c_str());
 
-	// an enstance pointer for useing with call-backs
-	m_replication_info.m_cls = this;
+	  // an enstance pointer for useing with call-backs
+	  m_replication_info.m_cls = this;
+    
     m_env.set_lk_detect(DB_LOCK_DEFAULT);
     m_env.set_app_private(&m_replication_info);
     m_env.set_event_notify(db_event_callback);
@@ -593,10 +594,11 @@ void BerkeleyDbFilesystem::do_checkpoint() {
 
   // do checkpoint, don't bother to check if this is the master
   // since its just ignored be slaves
-  HT_DEBUG_OUT << "Do checkpoint if log > " << m_checkpoint_size_kb << "KB" << HT_END;
+  HT_DEBUG_OUT << "Do checkpoint if log > " 
+               << (m_checkpoint_size_kb->get() / 1000) << "KB" << HT_END;
   int ret;
   try {
-    ret = m_env.txn_checkpoint(m_checkpoint_size_kb, 0, 0);
+    ret = m_env.txn_checkpoint((m_checkpoint_size_kb->get() / 1000), 0, 0);
     if (ret != 0) {
       HT_FATAL_OUT << "Unable to do checkpoint got ret=" << ret << HT_END;
     }
@@ -608,7 +610,7 @@ void BerkeleyDbFilesystem::do_checkpoint() {
   auto now = std::chrono::steady_clock::now();
   auto time_elapsed = now - m_last_log_gc_time;
 
-  if (time_elapsed > m_log_gc_interval) {
+  if (time_elapsed > std::chrono::milliseconds(m_log_gc_interval->get())) {
     m_last_log_gc_time = now;
 
     // delete all but the last max_unused_logs files
@@ -633,7 +635,8 @@ void BerkeleyDbFilesystem::do_checkpoint() {
       for (log = unused_logs; *log != NULL; ++log)
         unused_logs_count++;
 
-      for (log = unused_logs; *log != NULL && unused_logs_count > m_max_unused_logs;
+      for (log = unused_logs; *log != NULL 
+                              && unused_logs_count > (u_int32_t)m_max_unused_logs->get();
            ++log, --unused_logs_count) {
         // delete log file
         Path file(*log);
