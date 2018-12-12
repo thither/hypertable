@@ -59,15 +59,15 @@ using namespace std;
 
 atomic<int> LocalBroker::ms_next_fd {0};
 
-LocalBroker::LocalBroker(PropertiesPtr &cfg) {
-  m_verbose = cfg->get_bool("verbose");
-  m_no_removal = cfg->get_bool("FsBroker.DisableFileRemoval");
-  if (cfg->has("DfsBroker.Local.DirectIO"))
-    m_directio = cfg->get_bool("DfsBroker.Local.DirectIO");
+LocalBroker::LocalBroker(PropertiesPtr &props) {
+  m_verbose = props->get_ptr<gBool>("verbose");
+  m_no_removal = props->get_bool("FsBroker.DisableFileRemoval");
+  if (props->has("DfsBroker.Local.DirectIO"))
+    m_directio = props->get_bool("DfsBroker.Local.DirectIO");
   else
-    m_directio = cfg->get_bool("FsBroker.Local.DirectIO");
+    m_directio = props->get_bool("FsBroker.Local.DirectIO");
 
-  m_metrics_handler = std::make_shared<MetricsHandler>(cfg, "local");
+  m_metrics_handler = std::make_shared<MetricsHandler>(props, "local");
   m_metrics_handler->start_collecting();
 
 #if defined(__linux__)
@@ -83,13 +83,13 @@ LocalBroker::LocalBroker(PropertiesPtr &cfg) {
    * Determine root directory
    */
   Path root;
-  if (cfg->has("DfsBroker.Local.Root"))
-    root = Path(cfg->get_str("DfsBroker.Local.Root"));
+  if (props->has("DfsBroker.Local.Root"))
+    root = Path(props->get_str("DfsBroker.Local.Root"));
   else
-    root = Path(cfg->get_str("root", ""));
+    root = Path(props->get_str("root", ""));
 
   if (!root.is_complete()) {
-    Path data_dir = cfg->get_str("Hypertable.DataDirectory");
+    Path data_dir = props->get_str("Hypertable.DataDirectory");
     root = data_dir / root;
   }
 
@@ -501,7 +501,7 @@ void LocalBroker::rmdir(ResponseCallback *cb, const char *dname) {
   String cmd_str;
   int error;
 
-  if (m_verbose)
+  if (m_verbose->get())
     HT_INFOF("rmdir dir='%s'", dname);
 
   if (dname[0] == '/')

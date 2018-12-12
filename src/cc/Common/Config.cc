@@ -230,10 +230,10 @@ void DefaultPolicy::init_options() {
     ("help,h", "Show this help message and exit")
     ("help-config", "Show help message for config properties")
     ("version", "Show version information and exit")
-    ("verbose,v", boo(false)->zero_token(), "Show more verbose output")
+    ("verbose,v", g_boo(false)->zero_token(), "Show more verbose output")
     ("debug", boo(false)->zero_token(), "Show debug output (shortcut of --logging-level debug)")
     ("quiet", boo(false)->zero_token(), "Negate verbose")
-    ("silent", boo()->zero_token(), "Show as little output as possible")
+    ("silent", g_boo(false)->zero_token(), "Show as little output as possible")
     ("logging-level,l", str("info"), "Logging level: debug, info, notice, warn, error, crit, alert, fatal")
     ("config", str(default_config), "Configuration file.\n")
     ("induce-failure", str(), "Arguments for inducing failure")
@@ -258,9 +258,9 @@ void DefaultPolicy::init_options() {
     ("Comm.UsePoll", boo(false), "Use POSIX poll() interface")
     ("Hypertable.Cluster.Name", str(),
      "Name of cluster used in Monitoring UI and admin notification messages")
-    ("Hypertable.Verbose", boo(false),
+    ("Hypertable.Verbose", g_boo(false),
         "Enable verbose output (system wide)")
-    ("Hypertable.Silent", boo(false),
+    ("Hypertable.Silent", g_boo(false),
         "Disable verbose output (system wide)")
     ("Hypertable.Logging.Level", str("info"),
         "Set system wide logging level (default: info)")
@@ -659,7 +659,7 @@ void DefaultPolicy::init() {
 
   if (verbose && properties->get_bool("quiet")) {
     verbose = false;
-    properties->set("verbose", false);
+    properties->set("verbose", (gBool)false);
   }
   if (properties->get_bool("debug")) {
     loglevel = "debug";

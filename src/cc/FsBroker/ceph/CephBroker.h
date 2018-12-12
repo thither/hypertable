@@ -104,7 +104,7 @@ namespace Hypertable {
 			/// Server status information
 			Hypertable::Status m_status;
 
-			bool m_verbose;
+			gBoolPtr m_verbose;
 			String m_root_dir;
 		};
 	}

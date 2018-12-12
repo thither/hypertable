@@ -135,7 +135,7 @@ namespace Hypertable {
       std::priority_queue<ConnectionStatePtr, std::vector<ConnectionStatePtr>,
           LtConnectionState> retry_queue;
       /// Set to <i>true</i> to prevent connect failure log message
-      bool quiet_mode;
+      gBoolPtr quiet_mode;
       /// Set to <i>true</i> to signal shutdown in progress
       bool shutdown;
     };
@@ -153,7 +153,7 @@ namespace Hypertable {
     ConnectionManager(Comm *comm = 0) {
       m_impl = std::make_shared<SharedImpl>();
       m_impl->comm = comm ? comm : Comm::instance();
-      m_impl->quiet_mode = false;
+      m_impl->quiet_mode = (gBool)false;
       m_impl->shutdown = false;
     }
 
@@ -326,7 +326,7 @@ namespace Hypertable {
      *
      * @param mode The new value for the SharedImpl#quiet_mode flag
      */
-    void set_quiet_mode(bool mode) { m_impl->quiet_mode = mode; }
+    void set_quiet_mode(gBoolPtr mode) { m_impl->quiet_mode = mode; }
 
     /** Primary dispatch handler method.  The ConnectionManager is a dispatch
      * handler and is registered as the handler for all of the connections that

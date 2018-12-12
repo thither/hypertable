@@ -324,7 +324,7 @@ namespace Hyperspace {
     typedef std::vector<SessionDataPtr> SessionDataVec;
     typedef std::unordered_map<uint64_t, SessionDataPtr> SessionMap;
 
-    bool          m_verbose;
+    gBoolPtr      m_verbose;
     gInt32tPtr    m_lease_interval;
     // uint32_t      m_keep_alive_interval;
     // gInt32t       m_maintenance_interval;

@@ -79,8 +79,6 @@ namespace Hyperspace {
       return error;
     }
 
-    void set_verbose_mode(bool verbose) { m_verbose = verbose; }
-
     void disable_callbacks() { m_callbacks_enabled = false; }
 
     void close();
@@ -93,7 +91,6 @@ namespace Hyperspace {
     uint64_t m_session_id {};
     int m_state {};
     struct sockaddr_in m_master_addr;
-    bool m_verbose {};
     bool m_callbacks_enabled {};
   };
 

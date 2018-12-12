@@ -88,7 +88,7 @@ namespace {
          "File containing the DataGenerator specification")
         ("stdout", boo(false)->zero_token(),
          "Display generated data to stdout instead of sending load to cluster")
-        ("verbose,v", boo(false)->zero_token(),
+        ("verbose,v", g_boo(false)->zero_token(),
          "Show more verbose output")
         ("flush", boo(false)->zero_token(), "Flush after each update")
         ("no-log-sync", boo(false)->zero_token(), 

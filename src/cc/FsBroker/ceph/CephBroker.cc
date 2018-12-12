@@ -63,14 +63,14 @@ OpenFileDataCeph::~OpenFileDataCeph() {
 	ceph_close(cmount, fd);
 }
 
-CephBroker::CephBroker(PropertiesPtr& cfg)
+CephBroker::CephBroker(PropertiesPtr& props)
 	: cmount(NULL)
 {
 	int ret;
-	String id(cfg->get_str("CephBroker.Id"));
-	m_verbose = cfg->get_bool("Hypertable.Verbose");
-	m_root_dir = cfg->get_str("CephBroker.RootDir");
-	String mon_addr(cfg->get_str("CephBroker.MonAddr"));
+	String id(props->get_str("CephBroker.Id"));
+  m_verbose = props->get_ptr<gBool>("verbose");
+	m_root_dir = props->get_str("CephBroker.RootDir");
+	String mon_addr(props->get_str("CephBroker.MonAddr"));
 
 	HT_INFO("Calling ceph_create");
 	ret = ceph_create(&cmount, id.empty() ? NULL : id.c_str());
@@ -180,7 +180,7 @@ void CephBroker::create(Response::Callback::Open *cb, const char *fname, uint32_
 }
 
 void CephBroker::close(ResponseCallback *cb, uint32_t fd) {
-	if (m_verbose) {
+	if (m_verbose->get()) {
 		HT_INFOF("close fd=%d", fd);
 	}
 	OpenFileDataCephPtr fdata;

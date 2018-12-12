@@ -235,7 +235,7 @@ ConnectionManager::send_connect_request(ConnectionStatePtr &conn_state) {
     conn_state->cond.notify_all();
   }
   else if (error != Error::COMM_BROKEN_CONNECTION) {
-    if (!m_impl->quiet_mode) {
+    if (!m_impl->quiet_mode->get()) {
       if (conn_state->service_name != "")
         HT_INFOF("Connection attempt to %s at %s failed - %s.  Will retry "
                  "again in %d milliseconds...", conn_state->service_name.c_str(),
@@ -376,7 +376,7 @@ ConnectionManager::handle(EventPtr &event) {
         conn_state->cond.notify_all();
       }
       else {
-        if (!m_impl->quiet_mode)
+        if (!m_impl->quiet_mode->get())
           HT_INFOF("Received event %s", event->to_str().c_str());
         string message = (event->type == Event::DISCONNECT) ?
           "Disconnected" : Error::get_text(event->error);
@@ -425,7 +425,7 @@ void ConnectionManager::send_initialization_request(ConnectionStatePtr &conn_sta
   if (error == Error::COMM_BROKEN_CONNECTION ||
       error == Error::COMM_NOT_CONNECTED ||
       error == Error::COMM_INVALID_PROXY) {
-    if (!m_impl->quiet_mode)
+    if (!m_impl->quiet_mode->get())
       HT_INFOF("Received error %d", error);
     conn_state->state = State::DISCONNECTED;
     schedule_retry(conn_state, Error::get_text(error));
@@ -438,7 +438,7 @@ void ConnectionManager::send_initialization_request(ConnectionStatePtr &conn_sta
 
 void ConnectionManager::schedule_retry(ConnectionStatePtr &conn_state,
                                        const string &message) {
-  if (!m_impl->quiet_mode)
+  if (!m_impl->quiet_mode->get())
     HT_INFOF("%s: Problem connecting to %s, will retry in %d "
              "milliseconds...", message.c_str(),
              conn_state->service_name.c_str(), (int)conn_state->timeout_ms);

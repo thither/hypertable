@@ -35,7 +35,7 @@ using namespace std;
 
 ClientConnectionHandler::ClientConnectionHandler(Comm *comm, Session *session) 
   : m_comm(comm), m_session(session), m_session_id(0), m_state(DISCONNECTED),
-    m_verbose(false), m_callbacks_enabled(true) {
+    m_callbacks_enabled(true) {
   memset(&m_master_addr, 0, sizeof(struct sockaddr_in));
 }
 
@@ -67,7 +67,7 @@ void ClientConnectionHandler::handle(Hypertable::EventPtr &event_ptr) {
   }
   else if (event_ptr->type == Hypertable::Event::DISCONNECT) {
 
-    if (m_verbose) {
+    if (m_session->m_verbose->get()) {
       HT_WARNF("%s", event_ptr->to_str().c_str());
     }
 

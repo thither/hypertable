@@ -94,7 +94,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
   }
 
   /*
-  if (m_session->m_verbose) {
+  if (m_session->m_verbose->get()) {
     HT_INFOF("%s", event->to_str().c_str());
   }
   **/
@@ -170,7 +170,6 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
             m_session_id = session_id;
             if (!m_conn_handler) {
               m_conn_handler = make_shared<ClientConnectionHandler>(m_comm, m_session);
-              m_conn_handler->set_verbose_mode(m_session->m_verbose);
               m_conn_handler->set_session_id(m_session_id);
             }
           }
@@ -318,7 +317,7 @@ void ClientKeepaliveHandler::handle(Hypertable::EventPtr &event) {
 
           }
           /*
-          if (m_verbose) {
+          if (m_session->m_verbose->get()) {
             HT_INFOF("session_id = %lld", m_session_id);
           }
           **/

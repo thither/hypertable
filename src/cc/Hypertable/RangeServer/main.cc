@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 
   try {
 
-    Global::verbose = get_bool("verbose");
+    Global::verbose = properties->get_ptr<gBool>("verbose");
 
     if (has("induce-failure")) {
       if (FailureInducer::instance == 0)

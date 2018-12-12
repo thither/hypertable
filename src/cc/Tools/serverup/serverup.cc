@@ -377,10 +377,10 @@ int main(int argc, char **argv) {
   try {
     init_with_policies<Policies>(argc, argv);
 
-    bool silent = get_bool("silent");
+    gBoolPtr silent = properties->get_ptr<gBool>("silent");
+    bool verbose = get_bool("verbose");
     uint32_t wait_ms = get_i32("wait");
     String server_name = get("server-name", String());
-    bool verbose = get_bool("verbose");
 
     ConnectionManagerPtr conn_mgr = make_shared<ConnectionManager>();
     conn_mgr->set_quiet_mode(silent);
@@ -416,7 +416,7 @@ int main(int argc, char **argv) {
 #endif
     }
 
-    if (!silent)
+    if (!silent->get())
       cout << (down ? "false" : "true") << endl;
   }
   catch (Exception &e) {

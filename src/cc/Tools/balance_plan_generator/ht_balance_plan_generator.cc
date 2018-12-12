@@ -73,7 +73,7 @@ namespace {
         ("rs-metrics-loaded",  boo(false)->zero_token(),
          "If true then assume RS_METRICS is already loaded in namespace/table")
         ("load-balancer", str("basic-distribute-load"), "Type of load balancer to be used.")
-        ("verbose,v", boo(false)->zero_token(), "Show more verbose output")
+        ("verbose,v", g_boo(false)->zero_token(), "Show more verbose output")
         ("balance-plan-file,b",  str(""), "File in which to dump balance plan.")
         ("rs-metrics-dump", str(), "File containing dump of 'sys/RS_METRICS' table.");
     }

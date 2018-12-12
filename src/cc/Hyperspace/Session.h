@@ -639,7 +639,7 @@ namespace Hyperspace {
      *
      * @param verbose value of verbose flag
      */
-    void set_verbose_flag(bool verbose) { m_verbose = verbose; }
+    void set_verbose_flag(bool verbose) { *m_verbose = verbose; }
 
     /** Transions state (internal method)
      *
@@ -710,9 +710,10 @@ namespace Hyperspace {
 	gInt32tPtr   m_lease_interval;
 	gInt32tPtr	 m_keep_alive_interval;
 
-	std::atomic<bool>         m_verbose = false;
+  gBoolPtr     m_silent;
+  gBoolPtr     m_verbose;
+
 	std::atomic<bool>         m_reconnect;
-  
 
   private:
 
@@ -731,7 +732,6 @@ namespace Hyperspace {
     std::condition_variable   m_cond;
     Comm                      *m_comm;
     PropertiesPtr             m_props;
-    bool                      m_silent;
     int                       m_state;
     gInt32tPtr                m_grace_period;
     // uint32_t                  m_timeout_ms;

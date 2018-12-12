@@ -71,18 +71,18 @@ using namespace std;
 
 atomic<int> MaprBroker::ms_next_fd {0};
 
-MaprBroker::MaprBroker(PropertiesPtr &cfg) {
-  m_verbose = cfg->get_bool("verbose");
-  m_aggregate_writes = cfg->get_bool("DfsBroker.Mapr.aggregate.writes", true);
-  m_readbuffering = cfg->get_bool("DfsBroker.Mapr.readbuffering", true);
+MaprBroker::MaprBroker(PropertiesPtr &props) {
+  m_verbose = props->get_ptr<gBool>("verbose");
+  m_aggregate_writes = props->get_bool("DfsBroker.Mapr.aggregate.writes", true);
+  m_readbuffering = props->get_bool("DfsBroker.Mapr.readbuffering", true);
 
-  m_metrics_handler = std::make_shared<MetricsHandler>(cfg, "mapr");
+  m_metrics_handler = std::make_shared<MetricsHandler>(props, "mapr");
   m_metrics_handler->start_collecting();
 
   m_builder = hdfsNewBuilder();
   //hdfsBuilderConfSetStr(m_builder, const char *key, const char *val);
-  //m_namenode_host = cfg->get_str("DfsBroker.Hdfs.NameNode.Host");
-  //m_namenode_port = cfg->get_i16("DfsBroker.Hdfs.NameNode.Port");
+  //m_namenode_host = props->get_str("DfsBroker.Hdfs.NameNode.Host");
+  //m_namenode_port = props->get_i16("DfsBroker.Hdfs.NameNode.Port");
   hdfsBuilderSetNameNode(m_builder, "default");  //"default" > read from hadoop XML config from LIBHDFS3_CONF=path
   hdfsBuilderSetNameNodePort(m_builder, m_namenode_port);
   m_filesystem = hdfsBuilderConnect(m_builder);
@@ -478,7 +478,7 @@ void MaprBroker::rmdir(ResponseCallback *cb, const char *dname) {
 
   boost::trim_right_if(removal_dir, boost::is_any_of("/"));
 
-  if (m_verbose)
+  if (m_verbose->get())
     HT_DEBUGF("rmdir dir='%s'", dname);
 
   try {

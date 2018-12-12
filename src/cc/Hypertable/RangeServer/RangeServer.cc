@@ -128,7 +128,7 @@ Apps::RangeServer::RangeServer(PropertiesPtr &props, ConnectionManagerPtr &conn_
   HT_ASSERT(m_cores != 0);
   SubProperties cfg(props, "Hypertable.RangeServer.");
 
-  m_verbose = props->get_bool("verbose");
+  m_verbose = props->get_ptr<gBool>("verbose");
   Global::auto_re_init_location = cfg.get_bool("Location.AutoReInitiate", false);
   Global::row_size_unlimited = cfg.get_bool("Range.RowSize.Unlimited", false);
   Global::ignore_cells_with_clock_skew 

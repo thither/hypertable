@@ -51,21 +51,20 @@ using namespace Serialization;
 
 
 Session::Session(Comm *comm, PropertiesPtr &props)
-  : m_comm(comm), m_props(props), m_silent(false),
-    m_state(STATE_JEOPARDY), m_last_callback_id(0) {
+  : m_comm(comm), m_props(props), m_state(STATE_JEOPARDY), m_last_callback_id(0) {
 
-  HT_TRY("getting config values",
-    m_datagram_send_port = props->get_i16("Hyperspace.Client.Datagram.SendPort");
-    m_hyperspace_port = props->get_i16("Hyperspace.Replica.Port");
+  m_datagram_send_port = props->get_i16("Hyperspace.Client.Datagram.SendPort");
+  m_hyperspace_port = props->get_i16("Hyperspace.Replica.Port");
 
-    m_keep_alive_interval = props->get_ptr<gInt32t>("Hyperspace.KeepAlive.Interval");
-    m_lease_interval = props->get_ptr<gInt32t>("Hyperspace.Lease.Interval");
-    m_grace_period = props->get_ptr<gInt32t>("Hyperspace.GracePeriod");
+  m_keep_alive_interval = props->get_ptr<gInt32t>("Hyperspace.KeepAlive.Interval");
+  m_lease_interval = props->get_ptr<gInt32t>("Hyperspace.Lease.Interval");
+  m_grace_period = props->get_ptr<gInt32t>("Hyperspace.GracePeriod");
 
-    m_verbose = props->get_bool("Hypertable.Verbose");
-    m_silent = props->get_bool("Hypertable.Silent");
-    m_reconnect = props->get_bool("Hyperspace.Session.Reconnect");
-  );
+  m_silent = props->get_ptr<gBool>("Hypertable.Silent");
+  m_verbose = props->get_ptr<gBool>("Hypertable.Verbose");
+
+  m_reconnect = props->get_bool("Hyperspace.Session.Reconnect");
+
 
   if (m_reconnect)
     HT_INFO("Hyperspace session setup to reconnect");
@@ -1398,7 +1397,7 @@ Session::send_message(CommBufPtr &cbuf_ptr, DispatchHandler *handler,
   if ((error = m_comm->send_request(m_master_addr, timeout_ms, cbuf_ptr,
       handler)) != Error::OK) {
     std::string str;
-    if (!m_silent)
+    if (!m_silent->get())
       HT_WARNF("Comm::send_request to htHyperspace at %s failed - %s",
                m_master_addr.format().c_str(), Error::get_text(error));
   }
