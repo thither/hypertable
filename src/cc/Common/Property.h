@@ -58,7 +58,7 @@ namespace Property {
 
 template <class T>
 class ValueGuardedAtomic {
-
+  
   public:
 
     ValueGuardedAtomic () noexcept {}
@@ -106,8 +106,10 @@ class ValueGuardedAtomic {
 
 }
 
-typedef Property::ValueGuardedAtomic<bool> gBool;
-typedef Property::ValueGuardedAtomic<int32_t> gInt32t;
+typedef Property::ValueGuardedAtomic<bool>      gBool;
+typedef Property::ValueGuardedAtomic<int32_t>   gInt32t;
+typedef gBool*    gBoolPtr;
+typedef gInt32t*  gInt32tPtr;
 
 
 namespace Property {
@@ -163,7 +165,7 @@ class ValueGuardedVector {
     }
 
   private:
-  	
+
     std::mutex mutex;	
     T v;
 
@@ -172,7 +174,7 @@ class ValueGuardedVector {
 }
 
 typedef Property::ValueGuardedVector<Strings> gStrings;
-
+typedef gStrings* gStringsPtr;
 
 
 namespace Property {
@@ -296,9 +298,9 @@ class  ValueDef : public TypeDef {
 template <>
 void ValueDef<bool>::from_strings(Strings values);
 template <>
-void ValueDef<String>::from_strings(Strings values);
-template <>
 void ValueDef<gBool>::from_strings(Strings values);
+template <>
+void ValueDef<String>::from_strings(Strings values);
 template <>
 void ValueDef<double>::from_strings(Strings values);
 template <>
@@ -359,8 +361,9 @@ class Value {
   public:
 
     template<typename T>
-    Value(T v, bool skippable=false) {
+    Value(T v, bool skippable=false, bool guarded=false) {
       m_skippable = skippable;
+      m_guarded = guarded;
       set_value(v);
     }
     
@@ -510,6 +513,11 @@ class Value {
       return m_no_token;
     }
 
+    /* a Guarded Type */
+    bool is_guarded(){
+      return m_guarded;
+    }
+
     operator Value*() { 
       return this;
     }
@@ -523,6 +531,7 @@ class Value {
     std::atomic<bool> m_defaulted = false;
     std::atomic<bool> m_no_token = false;
     std::atomic<bool> m_skippable = false;
+    std::atomic<bool> m_guarded = false;
 
 };
 

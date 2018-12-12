@@ -60,7 +60,7 @@ Properties::reload(const String &fname, PropertiesDesc &desc,
     out.append("\n(parsing)\n");
     
     Config::Parser prs(in, desc, allow_unregistered);
-    load_from(prs.get_options());
+    load_from(prs.get_options(), true);
 
     out.append("\n(parsed)\n");
 
@@ -92,10 +92,11 @@ Properties::parse_args(const std::vector<String> &args,
 }
  
 void 
-Properties::load_from(Config::Parser::Options opts) {
+Properties::load_from(Config::Parser::Options opts, bool only_guarded) {
   AliasMap::iterator it;
   for(const auto &kv : opts){
-    if(has(kv.first) && kv.second->is_default())
+    if(has(kv.first) && (kv.second->is_default() 
+                          || (only_guarded && !kv.second->is_guarded())))
       continue;
 
     set(kv.first, kv.second);

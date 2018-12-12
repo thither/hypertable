@@ -139,8 +139,9 @@ public:
    * Loads the parsed options to properties
    *
    * @param opts onfig::Parser::Options
+   * @param only_guarded update only huarded property
    */
-  void load_from(Config::Parser::Options opts);
+  void load_from(Config::Parser::Options opts, bool only_guarded = false);
 
   /**
    * Loads a configuration file with properties

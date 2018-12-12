@@ -79,11 +79,9 @@ namespace Hypertable { namespace Config {
     time_t m_last_timestamp;
 
     /// %Config file check interval
-    // int32_t *m_chk_interval {};
     /// %Config file check interval value ptr
-    gInt32t* m_chk_interval;
-    // Int32tSafe m_chk_interval;
-    gBool* m_reload;
+    gInt32tPtr  m_chk_interval;
+    gBoolPtr    m_reload;
 
     String m_filename;
 

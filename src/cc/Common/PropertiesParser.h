@@ -44,7 +44,7 @@ namespace Hypertable {
 
 // Config::cfg(Int32tSafe default_value, true)
 template<typename T>
-inline Property::ValuePtr cfg(T v = 0, bool skippable=false) {
+inline Property::ValuePtr cfg(T v = 0, bool skippable=false, bool guarded=false) {
   return new Property::Value(v, skippable);
 }
 
