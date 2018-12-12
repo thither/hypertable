@@ -418,6 +418,8 @@ void Parser::add_opt(const String name, Property::ValuePtr p, Strings raw_opt){
   Property::ValuePtr p_set = Property::make_new(p, raw_opt);
   if(raw_opt.empty())
     p_set->default_value();
+  if(p->is_guarded())
+    p_set->guarded(true);
   m_opts.insert(OptPair(name, p_set));
 }
   
