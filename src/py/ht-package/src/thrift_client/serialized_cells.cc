@@ -51,21 +51,21 @@ PYBIND11_MODULE(serialized_cells, m) {
     ;
 
   py::class_<SerializedCellsReader, std::unique_ptr<SerializedCellsReader>> (m, "Reader")
-	.def(py::init<py::bytes &, uint32_t>())
-	.def("has_next", &SerializedCellsReader::next)
+	  .def(py::init<py::bytes &, uint32_t>())
+	  .def("has_next", &SerializedCellsReader::next)
     .def("get_cell", &SerializedCellsReader::get_cell)
-	.def("row", []( SerializedCellsReader &scr) {
-		return py::bytes(scr.row());
-	})
-	.def("column_family", []( SerializedCellsReader &scr) {
-		return py::bytes(scr.column_family());
-	})
-	.def("column_qualifier", []( SerializedCellsReader &scr) {
-		return py::bytes(scr.column_qualifier());
-	})
-	.def("value_str", []( SerializedCellsReader &scr) {
-		return py::bytes(String(scr.value_str(), scr.value_len()));
-	})
+	  .def("row", []( SerializedCellsReader &scr) {
+		  return py::bytes(scr.row());
+	  })
+	  .def("column_family", []( SerializedCellsReader &scr) {
+		  return py::bytes(scr.column_family());
+	  })
+	  .def("column_qualifier", []( SerializedCellsReader &scr) {
+		  return py::bytes(scr.column_qualifier());
+	  })
+	  .def("value_str", []( SerializedCellsReader &scr) {
+		  return py::bytes(String(scr.value_str(), scr.value_len()));
+	  })
     .def("value", &SerializedCellsReader::value_str)
     .def("value_len", &SerializedCellsReader::value_len)
     .def("timestamp", &SerializedCellsReader::timestamp)
@@ -75,15 +75,15 @@ PYBIND11_MODULE(serialized_cells, m) {
   ;
 
   py::class_<SerializedCellsWriter, std::unique_ptr<SerializedCellsWriter>>(m, "Writer")
-	.def(py::init<int32_t, bool>())
+	  .def(py::init<int32_t, bool>())
     .def("add", afn)
     .def("finalize", &SerializedCellsWriter::finalize)
     .def("empty", &SerializedCellsWriter::empty)
     .def("clear", &SerializedCellsWriter::clear)
     .def("__len__", lenfn)
-	.def("get", [](const SerializedCellsWriter &scw) {
-		return py::bytes(String((const char *)scw.get_buffer(), (const int32_t)scw.get_buffer_length()));
-	})
+	  .def("get", [](const SerializedCellsWriter &scw) {
+		  return py::bytes(String((const char *)scw.get_buffer(), (const int32_t)scw.get_buffer_length()));
+	  })
 	 
      //.def_buffer("get", &get_buffer)  // std::unique_ptr<SerializedCellsWriter>
   ;
