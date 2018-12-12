@@ -637,9 +637,9 @@ void DefaultPolicy::init_options() {
         "worker threads for thrift broker")
     ("ThriftBroker.Hyperspace.Session.Reconnect", boo(true),
         "ThriftBroker will reconnect to Hyperspace on session expiry")
-    ("ThriftBroker.SlowQueryLog.Enable", boo(true),
+    ("ThriftBroker.SlowQueryLog.Enable", g_boo(true),
         "Enable slow query logging")
-    ("ThriftBroker.SlowQueryLog.LatencyThreshold", i32(10000),
+    ("ThriftBroker.SlowQueryLog.LatencyThreshold", g_i32(10000),
         "Latency threshold above which a query is considered slow")
 	("ThriftBroker.Transport", str("framed"),
 		"Thrift Broker transport - framed/zlib")
@@ -655,7 +655,7 @@ void DefaultPolicy::init_options() {
 
 void DefaultPolicy::init() {
   String loglevel = properties->get_str("logging-level");
-  bool verbose = properties->get_bool("verbose");
+  bool verbose = properties->get<gBool>("verbose");
 
   if (verbose && properties->get_bool("quiet")) {
     verbose = false;
