@@ -64,6 +64,17 @@ namespace Logger {
     };
   } // namespace Priority
 
+
+  /** Property Extended Enum Cfg calls */
+  namespace cfg {
+
+    int from_string(String loglevel);
+
+    String repr(int value);
+
+  } // namespace cfg
+
+
   /** The LogWriter class writes to stdout. It's not used directly, but
    * rather through the macros below (i.e. HT_ERROR_OUT, HT_ERRORF etc).
    */

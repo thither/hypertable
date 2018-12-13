@@ -212,7 +212,7 @@ add_executable(init_test tests/init_test.cc)
 target_link_libraries(init_test HyperCommon)
 add_test(Common-init ${TEST_DIFF}
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/init_test.golden
-  ./init_test --i16 1k --i32 64K --i64 1G --boo)
+  ./init_test --i16 1k --i32 64K --i64 1G --boo --enum_ext two)
   
 # md5 base 64 test
 HT_ADD_TEST(

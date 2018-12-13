@@ -67,10 +67,9 @@ const ValueType get_value_type(const std::type_info &v_type){
   if(v_type == typeid(Doubles))
     return ValueType::DOUBLES;
 
-  /*
   if(v_type == typeid(EnumExt))
     return ValueType::ENUMEXT;
-  */
+    
   return ValueType::UNKNOWN;
 }
 
@@ -145,6 +144,13 @@ int32_t int32_t_from_string(String s){
 }
 
 
+template <>
+ValueDef<EnumExt>::ValueDef(ValueType typ, Strings values, EnumExt defaulted) {
+  set_type(typ);
+  get_ptr()->set_from(defaulted);  // assign call functions if set
+  if(!values.empty())
+    from_strings(values);
+}
 
 template <>
 void ValueDef<bool>::from_strings(Strings values) {
@@ -208,6 +214,10 @@ template <>
 void ValueDef<gStrings>::from_strings(Strings values){
   set_value(values);
 }
+template <>
+void ValueDef<EnumExt>::from_strings(Strings values){
+  get_ptr()->from_string(values.back());
+}
 
 
 template <>
@@ -258,8 +268,101 @@ template <>
 String ValueDef<gStrings>::str(){
   return format_list((Strings)get_value());
 }
+template <>
+String ValueDef<EnumExt>::str(){
+  return v.to_str();
+}
 
 
+
+void Value::set_value_from(ValuePtr from){
+  switch(get_type()){
+    case ValueType::STRING:
+      return set_value(from->get<String>());
+
+    case ValueType::BOOL: 
+      return set_value(from->get<bool>());
+    case ValueType::G_BOOL: 
+      return set_value(from->get<gBool>());
+
+    case ValueType::DOUBLE:
+      return set_value(from->get<double>());
+    case ValueType::UINT16_T:
+      return set_value(from->get<uint16_t>());
+
+    case ValueType::INT32_T:
+      return set_value(from->get<int32_t>());
+    case ValueType::G_INT32_T: 
+      return set_value(from->get<gInt32t>());
+
+    case ValueType::INT64_T:
+      return set_value(from->get<int64_t>());
+
+    case ValueType::STRINGS:
+      return set_value(from->get<Strings>());
+    case ValueType::G_STRINGS:
+      return set_value(from->get<gStrings>());
+
+    case ValueType::INT64S:
+      return set_value(from->get<Int64s>());
+    case ValueType::DOUBLES:
+      return set_value(from->get<Doubles>());
+
+    case ValueType::ENUMEXT:
+      return set_value(from->get<EnumExt>());
+
+    case ValueType::ENUM:
+    default:
+      HT_THROWF(Error::CONFIG_GET_ERROR, "Bad Type %s", str().c_str());
+  }
+}
+
+String Value::str(){
+  if (type_ptr == nullptr)
+    return "nullptr";
+      
+  switch(get_type()){
+    case ValueType::STRING:
+      return ((ValueDef<String>*)type_ptr)->str();
+
+    case ValueType::BOOL: 
+      return ((ValueDef<bool>*)type_ptr)->str();
+    case ValueType::G_BOOL: 
+      return ((ValueDef<gBool>*)type_ptr)->str();
+
+    case ValueType::DOUBLE:
+      return ((ValueDef<double>*)type_ptr)->str();
+
+    case ValueType::UINT16_T:
+      return ((ValueDef<uint16_t>*)type_ptr)->str();
+
+    case ValueType::INT32_T:
+      return ((ValueDef<int32_t>*)type_ptr)->str();
+    case ValueType::G_INT32_T: 
+      return ((ValueDef<gInt32t>*)type_ptr)->str();
+
+    case ValueType::INT64_T:
+      return ((ValueDef<int64_t>*)type_ptr)->str();
+
+    case ValueType::STRINGS:
+      return ((ValueDef<Strings>*)type_ptr)->str();
+    case ValueType::G_STRINGS: 
+      return ((ValueDef<gStrings>*)type_ptr)->str();
+
+    case ValueType::INT64S:
+      return ((ValueDef<Int64s>*)type_ptr)->str();
+    case ValueType::DOUBLES:
+      return ((ValueDef<Doubles>*)type_ptr)->str();
+
+    case ValueType::ENUMEXT:
+      return ((ValueDef<EnumExt>*)type_ptr)->str();
+
+    case ValueType::ENUM:
+      return "An ENUM TYPE";
+    default:
+      return "invalid option type";
+  }
+}
 
 ValuePtr make_new(ValuePtr p, Strings values){
   ValueType typ = p->get_type();
@@ -310,6 +413,9 @@ ValuePtr make_new(ValuePtr p, Strings values){
       return new Value(
         (TypeDef*)new ValueDef<Doubles>(typ, values, p->get<Doubles>()));
 
+    case ValueType::ENUMEXT:
+      return new Value(
+        (TypeDef*)new ValueDef<EnumExt>(typ, values, p->get<EnumExt>()));
       
     case ValueType::ENUM:
     default:

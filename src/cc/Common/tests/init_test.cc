@@ -24,11 +24,46 @@
 
 using namespace Hypertable;
 using namespace Config;
+  
+namespace cfg {
+  enum enum_cfg {
+    ONE,
+    TWO,
+    THREE
+  };
 
+  int enum_from_string(String idx) {
+    if (idx == "one")
+      return enum_cfg::ONE;
+    if (idx == "two")
+      return enum_cfg::TWO;
+    if (idx == "three")
+      return enum_cfg::THREE;
+    return -1;
+  }
+
+  String enum_repr(int value) {
+    switch(value){
+      case enum_cfg::ONE:
+        return "one";
+      case enum_cfg::TWO:
+        return "two";
+      case enum_cfg::THREE:
+        return "three";
+      default:
+        return format("undefined cfg_enum: %d", value);
+    }
+  }
+}
 namespace {
+
 
 struct AppPolicy : Policy {
   static void init_options() {
+    
+    Property::EnumExt an_enum_cfg(cfg::enum_cfg::THREE);
+    an_enum_cfg.set_from_string(cfg::enum_from_string).set_repr(cfg::enum_repr);
+        
 	  cmdline_desc("Usage: %s [Options] [args]\nOptions").add_options()
       ("i16", i16(), "16-bit integer")
       ("i32", i32(), "32-bit integer")
@@ -39,6 +74,7 @@ struct AppPolicy : Policy {
       ("strs", strs(), "a list of strings")
       ("float64", f64(), "a double arg")
       ("f64s", f64s(), "a list of doubles")
+      ("enum_ext", enum_ext(an_enum_cfg), "a list of doubles")
       ;
 	  cmdline_hidden_desc().add_options()
       ("args", strs(), "arguments")

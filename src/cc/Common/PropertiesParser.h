@@ -60,6 +60,7 @@ Property::ValuePtr str(String v);
 Property::ValuePtr strs(Strings v);
 Property::ValuePtr i64s(Int64s v);
 Property::ValuePtr f64s(Doubles v);
+Property::ValuePtr enum_ext(EnumExt v);
 /* cfg methods for guarded types
 *  @param v The default Value and a Type
 */

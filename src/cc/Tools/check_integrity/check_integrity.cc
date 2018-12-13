@@ -77,7 +77,7 @@ namespace {
       // we want to override the default behavior that verbose
       // turns on debugging by clearing the defaulted flag
       if (defaulted("logging-level"))
-        properties->set("logging-level", String("fatal"));
+        properties->set("logging-level", EnumExt(Logger::Priority::FATAL));
     }
   };
 

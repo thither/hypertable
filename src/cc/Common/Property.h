@@ -192,13 +192,107 @@ typedef gStrings* gStringsPtr;
 
 namespace Property {
 
-/*
 class EnumExt {
-    operator EnumExt*(){
-      return this;
+  public:
+    
+    EnumExt(int nv = -1) { 
+      set_value(nv);
     }
+
+    void set_value(int nv){
+      value = nv;
+    }
+
+    EnumExt* operator =(int nv){
+      set_value(nv);
+      return *this;
+    }
+
+    bool operator==(EnumExt a) const { return value == a.value; }
+    bool operator!=(EnumExt a) const { return value != a.value; }
+
+    operator EnumExt*() { return this;  }
+    operator int()      { return value; }
+    operator String()   { return str(); }
+    
+
+    EnumExt* operator =(EnumExt other){
+      set_from(other);
+      return *this;
+    }
+
+    void set_from(EnumExt &other){
+      if((int)other != -1)
+        set_value((int)other);
+      if(!other.cb_set) 
+        return;
+      
+      set_repr(other.get_call_repr());
+      set_from_string(other.get_call_from_string());
+    }
+
+    EnumExt& set_from_string(std::function<int(String)> cb) {
+      call_from_string = cb;
+      cb_set = true;
+      return *this;
+    }
+    
+    EnumExt& set_repr(std::function<String(int)> cb) {
+      call_repr = cb;
+      cb_set = true;
+      return *this;
+    }
+
+    int from_string(String opt) {
+      int nv = get_call_from_string()(opt);
+      if(nv > -1)
+        set_value(nv);
+      else {
+        if(value == -1)
+          HT_THROWF(Error::CONFIG_GET_ERROR, 
+             "Bad Value %s, no corresponding enum", opt.c_str());
+        else
+          HT_WARNF("Bad cfg Value %s, no corresponding enum", opt.c_str());
+      }
+      return value;
+    }
+    
+    std::function<int(String)> get_call_from_string(){
+      return call_from_string;
+    }
+
+    std::function<String(int)> get_call_repr(){
+      return call_repr;
+    }
+
+    String str() {
+      return get_call_repr()(value);
+    }
+
+    String to_str() {
+      return format("%d:%s", value, get_call_repr()(value).c_str());
+    }
+
+    bool cb_set = false;
+
+    virtual ~EnumExt() {};
+
+  private:
+    int value;
+    std::function<int(String)> call_from_string = [](String opt){
+      HT_THROWF(Error::CONFIG_GET_ERROR, "Bad Value %s, no from_string cb set", opt.c_str());
+      return -1;
+    };
+    std::function<String(int)> call_repr = [](int v){return "No repr cb defined!";};
 };
-*/
+
+}
+
+typedef Property::EnumExt EnumExt;
+// typedef gStrings* gStringsPtr;
+
+
+namespace Property {
 
 enum ValueType {
   UNKNOWN,
@@ -274,7 +368,7 @@ class  ValueDef : public TypeDef {
       set_value(nv);  
     }
 
-    void set_value(T nv) { 
+    void set_value(T nv) {
       v = nv; 
     }
 
@@ -307,6 +401,10 @@ class  ValueDef : public TypeDef {
     T v;
 };
 
+template <>
+ValueDef<EnumExt>::ValueDef(ValueType typ, Strings values, EnumExt defaulted);
+
+
 /* set_value from_strings */
 template <>
 void ValueDef<bool>::from_strings(Strings values);
@@ -332,6 +430,8 @@ template <>
 void ValueDef<Strings>::from_strings(Strings values);
 template <>
 void ValueDef<gStrings>::from_strings(Strings values);
+template <>
+void ValueDef<EnumExt>::from_strings(Strings values);
 
 /* return string representation */
 template <>
@@ -358,6 +458,9 @@ template <>
 String ValueDef<Strings>::str();
 template <>
 String ValueDef<gStrings>::str();
+template <>
+String ValueDef<EnumExt>::str();
+
 
     
 /**
@@ -395,45 +498,8 @@ class Value {
       ((ValueDef<T>*)type_ptr)->set_value(v);
     }
 
-    void set_value_from(ValuePtr from){
-      switch(get_type()){
-        case ValueType::STRING:
-          return set_value(from->get<String>());
-
-        case ValueType::BOOL: 
-          return set_value(from->get<bool>());
-        case ValueType::G_BOOL: 
-          return set_value(from->get<gBool>());
-
-        case ValueType::DOUBLE:
-          return set_value(from->get<double>());
-        case ValueType::UINT16_T:
-          return set_value(from->get<uint16_t>());
-
-        case ValueType::INT32_T:
-          return set_value(from->get<int32_t>());
-        case ValueType::G_INT32_T: 
-          return set_value(from->get<gInt32t>());
-
-        case ValueType::INT64_T:
-          return set_value(from->get<int64_t>());
-
-        case ValueType::STRINGS:
-          return set_value(from->get<Strings>());
-        case ValueType::G_STRINGS:
-          return set_value(from->get<gStrings>());
-
-        case ValueType::INT64S:
-          return set_value(from->get<Int64s>());
-        case ValueType::DOUBLES:
-          return set_value(from->get<Doubles>());
-
-
-        case ValueType::ENUM:
-        default:
-          HT_THROWF(Error::CONFIG_GET_ERROR, "Bad Type %s", str().c_str());
-      }
-    }
+    /* set value from from other ValuePtr */
+    void set_value_from(ValuePtr from);
 
     template<typename T>
     T get() {
@@ -457,50 +523,8 @@ class Value {
       return type_ptr->get_type();
     }
     
-    String str(){
-      if (type_ptr == nullptr)
-        return "nullptr";
-      
-      switch(get_type()){
-        case ValueType::STRING:
-          return ((ValueDef<String>*)type_ptr)->str();
-
-        case ValueType::BOOL: 
-          return ((ValueDef<bool>*)type_ptr)->str();
-        case ValueType::G_BOOL: 
-          return ((ValueDef<gBool>*)type_ptr)->str();
-
-        case ValueType::DOUBLE:
-          return ((ValueDef<double>*)type_ptr)->str();
-
-        case ValueType::UINT16_T:
-          return ((ValueDef<uint16_t>*)type_ptr)->str();
-
-        case ValueType::INT32_T:
-          return ((ValueDef<int32_t>*)type_ptr)->str();
-        case ValueType::G_INT32_T: 
-          return ((ValueDef<gInt32t>*)type_ptr)->str();
-
-        case ValueType::INT64_T:
-          return ((ValueDef<int64_t>*)type_ptr)->str();
-
-        case ValueType::STRINGS:
-          return ((ValueDef<Strings>*)type_ptr)->str();
-        case ValueType::G_STRINGS: 
-          return ((ValueDef<gStrings>*)type_ptr)->str();
-
-        case ValueType::INT64S:
-          return ((ValueDef<Int64s>*)type_ptr)->str();
-        case ValueType::DOUBLES:
-          return ((ValueDef<Doubles>*)type_ptr)->str();
-
-
-        case ValueType::ENUM:
-          return "An ENUM TYPE";
-        default:
-          return "invalid option type";
-      }
-    }
+    /* represent value in string */
+    String str();
     
     /* a Default Value */
     ValuePtr default_value(bool defaulted=true){

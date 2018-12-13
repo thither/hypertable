@@ -63,6 +63,10 @@ Property::ValuePtr f64s(Doubles v) {
   return cfg(v);
 }
 
+Property::ValuePtr enum_ext(EnumExt v) {
+  return cfg(v);
+}
+
 // cfg methods for guarded types
 Property::ValuePtr g_boo(bool v) {
   return cfg((gBool)v, false, true);

@@ -225,7 +225,10 @@ void DefaultPolicy::init_options() {
     default_config = config.string();
   }
   String default_data_dir = System::install_dir;
-
+    
+  Property::EnumExt logging_level(Logger::Priority::INFO);
+  logging_level.set_from_string(Logger::cfg::from_string).set_repr(Logger::cfg::repr);
+        
   cmdline_desc().add_options()
     ("help,h", "Show this help message and exit")
     ("help-config", "Show help message for config properties")
@@ -234,7 +237,8 @@ void DefaultPolicy::init_options() {
     ("debug", boo(false)->zero_token(), "Show debug output (shortcut of --logging-level debug)")
     ("quiet", boo(false)->zero_token(), "Negate verbose")
     ("silent", g_boo(false)->zero_token(), "Show as little output as possible")
-    ("logging-level,l", str("info"), "Logging level: debug, info, notice, warn, error, crit, alert, fatal")
+    ("logging-level,l", enum_ext(logging_level), 
+     "Logging level: debug, info, notice, warn, error, crit, alert, fatal")
     ("config", str(default_config), "Configuration file.\n")
     ("induce-failure", str(), "Arguments for inducing failure")
     ("timeout,t", i32(), "System wide timeout in milliseconds")
@@ -252,6 +256,7 @@ void DefaultPolicy::init_options() {
 
   // pre boost 1.35 doesn't support allow_unregistered, so we have to have the
   // full cfg definition here, which might not be a bad thing.
+  
   file_desc().add_options()
     ("Comm.DispatchDelay", i32(0), "[TESTING ONLY] "
         "Delay dispatching of read requests by this number of milliseconds")
@@ -262,7 +267,7 @@ void DefaultPolicy::init_options() {
         "Enable verbose output (system wide)")
     ("Hypertable.Silent", g_boo(false),
         "Disable verbose output (system wide)")
-    ("Hypertable.Logging.Level", str("info"),
+    ("Hypertable.Logging.Level", enum_ext(logging_level),
         "Set system wide logging level (default: info)")
     ("Hypertable.Config.OnFileChange.Reload", g_boo(false),
         "Set Config File Listener for Reloading cfg on Change")
@@ -654,7 +659,7 @@ void DefaultPolicy::init_options() {
 }
 
 void DefaultPolicy::init() {
-  String loglevel = properties->get_str("logging-level");
+  EnumExt loglevel = properties->get<EnumExt>("logging-level");
   bool verbose = properties->get<gBool>("verbose");
 
   if (verbose && properties->get_bool("quiet")) {
@@ -662,30 +667,14 @@ void DefaultPolicy::init() {
     properties->set("verbose", (gBool)false);
   }
   if (properties->get_bool("debug")) {
-    loglevel = "debug";
-    properties->set("logging-level", loglevel);
+    loglevel = Logger::Priority::DEBUG;
   }
-
-  if (loglevel == "info")
-    Logger::get()->set_level(Logger::Priority::INFO);
-  else if (loglevel == "debug")
-    Logger::get()->set_level(Logger::Priority::DEBUG);
-  else if (loglevel == "notice")
-    Logger::get()->set_level(Logger::Priority::NOTICE);
-  else if (loglevel == "warn")
-    Logger::get()->set_level(Logger::Priority::WARN);
-  else if (loglevel == "error")
-    Logger::get()->set_level(Logger::Priority::ERROR);
-  else if (loglevel == "crit")
-    Logger::get()->set_level(Logger::Priority::CRIT);
-  else if (loglevel == "alert")
-    Logger::get()->set_level(Logger::Priority::ALERT);
-  else if (loglevel == "fatal")
-    Logger::get()->set_level(Logger::Priority::FATAL);
-  else {
-    HT_ERROR_OUT << "unknown logging level: "<< loglevel << HT_END;
+  if((int)loglevel==-1){
+    HT_ERROR_OUT << "unknown logging level: "<< loglevel.str() << HT_END;
     std::quick_exit(EXIT_SUCCESS);
   }
+  Logger::get()->set_level((int)loglevel);
+
   if (verbose) {
     HT_NOTICE_OUT << "Initializing " << System::exe_name << " (Hypertable "
         << version_string() << ")..." << HT_END;
