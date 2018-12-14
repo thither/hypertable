@@ -1,6 +1,9 @@
 #
 # Hypertable Configuration
-# base(for tests) configurations file 
+#
+
+# Dynamic Configuration Files
+Hypertable.Config.OnFileChange.file=@INSTALL_DIR@/conf/hypertable-dyn.cfg
 
 # HDFS Broker specific properties
 # The following property should be set to the absolute path to the
@@ -21,9 +24,6 @@ FsBroker.Local.Root=fs/local
 Qfs.MetaServer.Name=localhost
 Qfs.MetaServer.Port=20000
 
-# The following property should be repeated for each Hyperspace
-# replica node
-Hyperspace.Replica.Host=localhost
 
 # Crontab entry for when aggresive maintenance can take place in the
 # RangeServer.  Consult Unix man page crontab(5) for a description of the
@@ -40,5 +40,8 @@ Hypertable.RangeServer.Monitoring.DataDirectories="/"
 # Specifies a descriptive name for the cluster that will show up in
 # the monitoring UI
 Hypertable.Cluster.Name="My Cluster"
+
+Hypertable.RangeServer.Location.AutoReInitiate=True
+
 
 

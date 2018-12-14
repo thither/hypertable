@@ -75,16 +75,15 @@ namespace Hypertable { namespace Config {
     /// Comm layer
     Comm *m_comm;
 
-    /// %Timestamp of last file time check
-    time_t m_last_timestamp;
-
     /// %Config file check interval
-    /// %Config file check interval value ptr
     gInt32tPtr  m_chk_interval;
+
+    /// %Config file check interval value ptr
     gBoolPtr    m_reload;
 
-    String m_filename;
-
+    /// %Config files with last check timestamp
+    std::map<String, time_t> cfg_files;
+    typedef std::pair<String, time_t> FilePair;
   };
 
   /// Smart pointer to ConfigHandler

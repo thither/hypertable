@@ -38,6 +38,7 @@ namespace Hypertable { namespace Config {
 
 ConfigHandler::ConfigHandler(PropertiesPtr &props) {
   m_props = props;
+  m_comm = Comm::instance();
 
   m_chk_interval = m_props->get_ptr<gInt32t>("Hypertable.Config.OnFileChange.Reload.Interval");
   m_reload = m_props->get_ptr<gBool>("Hypertable.Config.OnFileChange.Reload");
@@ -45,9 +46,18 @@ ConfigHandler::ConfigHandler(PropertiesPtr &props) {
   //HT_INFOF("ConfigHandler interval->get():%d", m_chk_interval->get());
   //HT_INFOF("ConfigHandler interval->get():%d", (int32_t)m_chk_interval->get());
   
-  m_filename = m_props->get_str("config");
-  m_comm = Comm::instance();
-  m_last_timestamp = FileUtils::modification(m_filename);;
+  if(!has("Hypertable.Config.OnFileChange.file")){
+
+    String filename = m_props->get_str("config");
+    cfg_files.insert(FilePair(filename, FileUtils::modification(filename)));
+ 
+  } else {
+
+    Strings files = get_strs("Hypertable.Config.OnFileChange.file");
+    for (Strings::iterator it=files.begin(); it<files.end(); it++){
+      cfg_files.insert(FilePair(*it, FileUtils::modification(*it)));
+    }
+  }
 }
 
 ConfigHandler::~ConfigHandler() {
@@ -66,30 +76,35 @@ void ConfigHandler::run() {
 }
 
 void ConfigHandler::handle(Hypertable::EventPtr &event) {
-  int error;
+  
 
   if (event->type == Hypertable::Event::TIMER) {
     
-    errno = 0;
-    time_t ts = FileUtils::modification(m_filename);
-    HT_DEBUGF("ConfigHandler interval:%d last_ts: %ld ts: %ld", 
-              (int32_t)m_chk_interval->get(), m_last_timestamp, ts);
-    if(errno>0) 
-      HT_WARNF("cfg file Problem '%s' - %s", m_filename.c_str(), strerror(errno));
-
-    if(ts > m_last_timestamp) {
-      HT_INFO(m_props->reload(m_filename, cmdline_hidden_desc(), false).c_str());
-      HT_INFOF("ConfigHandler interval:%d last_ts: %ld ts: %ld",  
-               (int32_t)m_chk_interval->get(), m_last_timestamp, ts);
-      if (!m_reload->get()){
-        HT_INFO("ConfigHandler Hypertable.Config.OnFileChange.Reload set to False,"
-                 "stopping cfg reloads");
-        return;
+    String filename;
+    for(auto &kv : cfg_files){
+      filename = kv.first;
+      
+      errno = 0;
+      time_t ts = FileUtils::modification(filename);
+      if(errno>0) 
+        HT_WARNF("cfg file Problem '%s' - %s", filename.c_str(), strerror(errno));
+      
+      if(ts > kv.second) {
+        HT_INFO(m_props->reload(filename, cmdline_hidden_desc(), false).c_str());
+      
+        if (!m_reload->get()){
+          HT_INFO("ConfigHandler Hypertable.Config.OnFileChange.Reload set to False,"
+                   "stopping cfg reloads");
+          return;
+        }
+        kv.second = ts;
+        HT_DEBUGF("ConfigHandler interval:%d modified: %ld file: %s", 
+                  (int32_t)m_chk_interval->get(), ts, filename.c_str());
       }
-      m_last_timestamp = ts;
     }
 
-    if ((error = m_comm->set_timer((int32_t)m_chk_interval->get(), shared_from_this())) 
+    int error;
+    if ((error = m_comm->set_timer((int32_t)m_chk_interval->get(), shared_from_this()))
               != Error::OK)
       HT_FATALF("Problem setting timer - %s", Error::get_text(error));
 
@@ -98,5 +113,6 @@ void ConfigHandler::handle(Hypertable::EventPtr &event) {
     HT_FATALF("Unrecognized event - %s", event->to_str().c_str());
 
 }
+
 
 }}

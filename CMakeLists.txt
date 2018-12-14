@@ -424,6 +424,10 @@ file(GLOB CONFS conf/[^.]*)
 install(FILES ${CONFS} DESTINATION conf)
 install(PROGRAMS ${HYPERTABLE_BINARY_DIR}/ht DESTINATION bin)
 
+configure_file(conf/hypertable.cfg.in conf/hypertable.cfg @ONLY)
+install(FILES ${HYPERTABLE_BINARY_DIR}/conf/hypertable.cfg DESTINATION conf)
+
+
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB SCRIPTS bin/*.sh)
   install(PROGRAMS ${SCRIPTS} DESTINATION bin)

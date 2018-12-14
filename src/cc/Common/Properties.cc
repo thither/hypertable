@@ -39,6 +39,24 @@ Properties::load(const String &fname, PropertiesDesc &desc,
   std::ifstream in(fname.c_str());
   Config::Parser prs(in, desc, allow_unregistered);
   load_from(prs.get_options());
+} 
+
+void
+Properties::load_files_by(const String &names_prop, PropertiesDesc &desc, 
+                            bool allow_unregistered) {
+  if(names_prop.empty() || !has(names_prop)) 
+    return;
+
+  Strings files = get_strs(names_prop);
+  for (Strings::iterator it=files.begin(); it<files.end(); it++){
+	  try {
+      load(*it, desc, allow_unregistered);
+    }
+	  catch (std::exception &e) {
+		  HT_WARNF("%s has bad cfg file %s: %s", 
+                names_prop.c_str(), (*it).c_str(), e.what());
+    }
+  }
 }
 
 String 
@@ -49,23 +67,16 @@ Properties::reload(const String &fname, PropertiesDesc &desc,
 		std::ifstream in(fname.c_str());
 
     HT_INFOF("Reloading Configuration File %s", fname.c_str());
-
-		if (!in){
-      HT_WARNF("Error::CONFIG_BAD_CFG_FILE error: %s", strerror(errno));
-      return format("Error::BAD CFG FILE, error: %s", strerror(errno));
-    }
-    out.append("\n\nCurrent Configurations:\n");
-    append_to_string(out, true);
-
-    out.append("\n(parsing)\n");
+		if (!in) throw;
     
+    out.append("\n\nCurrent Configurations:\n");
+    append_to_string(out);
+
     Config::Parser prs(in, desc, allow_unregistered);
     load_from(prs.get_options(), true);
 
-    out.append("\n(parsed)\n");
-
     out.append("\n\nNew Configurations:\n");
-    append_to_string(out, true);
+    append_to_string(out);
     return out;
 	}
 	catch (std::exception &e) {

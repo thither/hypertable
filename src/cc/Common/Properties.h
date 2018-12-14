@@ -153,7 +153,18 @@ public:
    */
   void load(const String &filename, PropertiesDesc &desc,
 	  bool allow_unregistered = false);
-  
+
+  /**
+   * Loads a configuration files by property name
+  *
+   * @param names_prop The name of property name
+   * @param desc A property description
+   * @param allow_unregistered If true, unknown/unregistered properties are
+   *        accepted
+   */
+  void load_files_by(const String &names_prop, PropertiesDesc &desc, 
+	  bool allow_unregistered = false);
+    
   /**
    * ReLoads a configuration file with properties
    *

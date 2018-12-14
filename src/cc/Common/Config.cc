@@ -49,7 +49,6 @@ std::recursive_mutex rec_mutex;
 PropertiesPtr properties;
 
 static String filename;
-static bool file_loaded = false;
 static bool allow_unregistered = false;
 
 static Desc *cmdline_descp = NULL;
@@ -120,9 +119,9 @@ void file_desc( Desc &desc) {
 void parse_args(int argc, char *argv[]) {
   std::lock_guard<std::recursive_mutex> lock(rec_mutex);
 
-  Config::Parser prs(argc, argv, cmdline_desc(), cmdline_hidden_desc(), 
-                    allow_unregistered_options());
-  properties->load_from(prs.get_options());
+  properties->load_from(
+      Config::Parser(argc, argv, cmdline_desc(), cmdline_hidden_desc(), 
+                    allow_unregistered_options()).get_options());
     
   // some built-in behavior
   if (has("help")) {
@@ -145,15 +144,18 @@ void parse_args(int argc, char *argv[]) {
   // Only try to parse config file if it exists or not default
   if (FileUtils::exists(filename)) {
     parse_file(filename, cmdline_hidden_desc());
-    file_loaded = true;
-  }
-  else if (!defaulted("config"))
+    // Inforce cmdline properties
+    properties->load_from(
+        Config::Parser(argc, argv, cmdline_desc(), cmdline_hidden_desc(), 
+                        allow_unregistered_options()).get_options());
+  } else if (!defaulted("config"))
     HT_THROW(Error::FILE_NOT_FOUND, filename);
 }
 
-void
-parse_file(const String &fname, Desc &desc) {
-	properties->load(fname, desc, allow_unregistered);
+void parse_file(const String &fname, Desc &desc) {
+    properties->load(fname, desc, allow_unregistered);
+    properties->load_files_by(
+        "Hypertable.Config.OnFileChange.file", desc, allow_unregistered);
 }
 
 String reparse_file(const String &fname) {
@@ -269,6 +271,8 @@ void DefaultPolicy::init_options() {
         "Disable verbose output (system wide)")
     ("Hypertable.Logging.Level", enum_ext(logging_level),
         "Set system wide logging level (default: info)")
+    ("Hypertable.Config.OnFileChange.file", strs(),
+        "a Set of Config File/s loaded on start or change")
     ("Hypertable.Config.OnFileChange.Reload", g_boo(false),
         "Set Config File Listener for Reloading cfg on Change")
     ("Hypertable.Config.OnFileChange.Reload.Interval", g_i32(600000),
