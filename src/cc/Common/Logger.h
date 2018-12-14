@@ -36,6 +36,7 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <atomic>
 
 #include "FixedStream.h"
 
@@ -158,7 +159,7 @@ namespace Logger {
       String m_name;
 
       /** The current priority (everything above is filtered) */
-      int m_priority;
+      std::atomic<int> m_priority;
 
       /** The output file handle */
       FILE *m_file;

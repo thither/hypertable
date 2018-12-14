@@ -126,6 +126,20 @@ String cfg::repr(int value) {
     switch(value){
       case Logger::Priority::INFO:
         return "info";
+      case Logger::Priority::DEBUG:
+        return "debug";
+      case Logger::Priority::NOTICE:
+        return "notice";
+      case Logger::Priority::WARN:
+        return "warn";
+      case Logger::Priority::ERROR:
+        return "error";
+      case Logger::Priority::CRIT:
+        return "crit";
+      case Logger::Priority::ALERT:
+        return "alert";
+      case Logger::Priority::FATAL:
+        return "fatal";
       default:
         return format("undefined logging level: %d", value);
     }

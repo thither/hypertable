@@ -228,7 +228,7 @@ void DefaultPolicy::init_options() {
   }
   String default_data_dir = System::install_dir;
     
-  Property::EnumExt logging_level(Logger::Priority::INFO);
+  gEnumExt logging_level(Logger::Priority::INFO);
   logging_level.set_from_string(Logger::cfg::from_string).set_repr(Logger::cfg::repr);
         
   cmdline_desc().add_options()
@@ -239,7 +239,7 @@ void DefaultPolicy::init_options() {
     ("debug", boo(false)->zero_token(), "Show debug output (shortcut of --logging-level debug)")
     ("quiet", boo(false)->zero_token(), "Negate verbose")
     ("silent", g_boo(false)->zero_token(), "Show as little output as possible")
-    ("logging-level,l", enum_ext(logging_level), 
+    ("logging-level,l", g_enum_ext(logging_level), 
      "Logging level: debug, info, notice, warn, error, crit, alert, fatal")
     ("config", str(default_config), "Configuration file.\n")
     ("induce-failure", str(), "Arguments for inducing failure")
@@ -269,7 +269,7 @@ void DefaultPolicy::init_options() {
         "Enable verbose output (system wide)")
     ("Hypertable.Silent", g_boo(false),
         "Disable verbose output (system wide)")
-    ("Hypertable.Logging.Level", enum_ext(logging_level),
+    ("Hypertable.Logging.Level", g_enum_ext(logging_level),
         "Set system wide logging level (default: info)")
     ("Hypertable.Config.OnFileChange.file", strs(),
         "a Set of Config File/s loaded on start or change")
@@ -663,7 +663,7 @@ void DefaultPolicy::init_options() {
 }
 
 void DefaultPolicy::init() {
-  EnumExt loglevel = properties->get<EnumExt>("logging-level");
+  gEnumExtPtr loglevel = properties->get_ptr<gEnumExt>("logging-level");
   bool verbose = properties->get<gBool>("verbose");
 
   if (verbose && properties->get_bool("quiet")) {
@@ -671,13 +671,15 @@ void DefaultPolicy::init() {
     properties->set("verbose", (gBool)false);
   }
   if (properties->get_bool("debug")) {
-    loglevel = Logger::Priority::DEBUG;
+    loglevel->set_value(Logger::Priority::DEBUG);
   }
-  if((int)loglevel==-1){
-    HT_ERROR_OUT << "unknown logging level: "<< loglevel.str() << HT_END;
+  if(loglevel->get()==-1){
+    HT_ERROR_OUT << "unknown logging level: "<< loglevel->str() << HT_END;
     std::quick_exit(EXIT_SUCCESS);
   }
-  Logger::get()->set_level((int)loglevel);
+  
+  Logger::get()->set_level(loglevel->get());
+  loglevel->set_cb_on_chg([](int value){Logger::get()->set_level(value);});
 
   if (verbose) {
     HT_NOTICE_OUT << "Initializing " << System::exe_name << " (Hypertable "

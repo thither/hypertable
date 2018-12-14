@@ -61,7 +61,7 @@ namespace {
 struct AppPolicy : Policy {
   static void init_options() {
     
-    Property::EnumExt an_enum_cfg(cfg::enum_cfg::THREE);
+    EnumExt an_enum_cfg(cfg::enum_cfg::THREE);
     an_enum_cfg.set_from_string(cfg::enum_from_string).set_repr(cfg::enum_repr);
         
 	  cmdline_desc("Usage: %s [Options] [args]\nOptions").add_options()
