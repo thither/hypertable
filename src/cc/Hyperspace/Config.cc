@@ -37,11 +37,11 @@ void init_hyperspace_client_options() {
         "hyperspace master server to connect to in <host:port> format")
     ("hyperspace-timeout", i32(30000),
         "Timeout in milliseconds for hyperspace connection")
-    ("keepalive", i32(10000),
+    ("keepalive", g_i32(10000),
         "Interval in milliseconds of keepalive message from Hyperspace client")
-    ("lease-interval", i32(60000),
+    ("lease-interval", g_i32(60000),
         "Hyperspace master lease interval in milliseconds")
-    ("grace-period", i32(60000),
+    ("grace-period", g_i32(60000),
         "Grace period in milliseconds before 'jeopardy' for hyperspace client")
     ;
   alias("hyperspace-timeout", "Hyperspace.Timeout");
@@ -91,9 +91,9 @@ void init_hyperspace_master_options() {
      "Hyperspace master listening port")
     ("dir", str("hyperspace"), 
      "Hyperspace root directory name")
-    ("keepalive", i32(10000), 
+    ("keepalive", g_i32(10000), 
      "Interval in milliseconds of keepalive message from Hyperspace client")
-    ("lease-interval", i32(20000),
+    ("lease-interval", g_i32(20000),
      "Hyperspace master lease interval in milliseconds")
     ;
   alias("reactors", "Hyperspace.Replica.Reactors");
