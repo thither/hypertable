@@ -12,6 +12,7 @@ Version Master:
    added stricness to Berkeley DB events REP_DUPMASTER and DB_EVENT_REP_LOCAL_SITE_REMOVED, exit with HT_FATAL
    added dbenv->rep_sync(0) to on DB_EVENT_REP_CLIENT and DB_EVENT_REP_NEWMASTER(for client)
    changed finish_election in both cases of newly elected or was a master at DB_EVENT_REP_MASTER event
+   depcicated boost::program_options(libboost_program_options) 
    removed unused cases of include Config and using namespace Config
    added files Common/Property.[h,cc] include namespace hypretable::Property
    changed definitions of MiB, KiB, etc. moved to Property file onto Hypertable namespace 
@@ -22,11 +23,9 @@ Version Master:
    changed use of configurations(cmdline,file desc) to new PropertiesParser configurations
    organized Common/Properties.[cc,h] and Config namespace and align to the new Config::Parser/ParserConfig
    added test Common/properties_parser_test
-   depcicated boost::program_options(libboost_program_options) 
    removed test Common/config_test 
-   added classes Property::ValueGuardedAtomic<T> and Property::ValueGuardedVector<T> 
-   added supporting types Guarded Types gBool, gInt32t, gStrings
-   added cfg methods g_boo(Bool), g_i32(int32_t), g_strs(Strings) to PropertiesParser
+   added file Common/PropertyValueGuarded.h define gBool, gInt32t and gStrings types 
+   added cfg methods g_boo(Bool), g_i32(int32_t), g_strs(Strings), g_enum_ext(gEnumExt) to PropertiesParser
    added callback set_cb_on_chg, an on change setter, to Property::ValueGuardedAtomic<T>
    added config option Hypertable.Config.OnFileChange.Reload=True change to False will halt from reloading
    added config option Hypertable.Config.OnFileChange.Reload.Interval=600000 
@@ -46,8 +45,8 @@ Version Master:
    changed Hyperspace Configurations with Guarded types (g_i32) for
            Maintenance.Interval, Checkpoint.Size, LogGc.Interval, LogGc.MaxUnusedLogs, 
            KeepAlive.Interval, Lease.Interval, GracePeriod
-   added Property::EnumExt class, a property to handle configurations of enum types 
-   changed Hypertable.Logging.Level(logging-level) configurations defined with EnumExt property 
+   added new files Common/PropertyValueEnumExt.h,c define EnumExt and gEnumExt types
+   changed property Hypertable.Logging.Level defined with gEnumExt, level is changeable at runtime
 
    added cfg_reload a command and interpreter statement to Hyperspace(client-side) (experimental)
 
