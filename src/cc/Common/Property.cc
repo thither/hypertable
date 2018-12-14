@@ -69,6 +69,8 @@ const ValueType get_value_type(const std::type_info &v_type){
 
   if(v_type == typeid(EnumExt))
     return ValueType::ENUMEXT;
+  if(v_type == typeid(gEnumExt))
+    return ValueType::G_ENUMEXT;
     
   return ValueType::UNKNOWN;
 }
@@ -151,6 +153,13 @@ ValueDef<EnumExt>::ValueDef(ValueType typ, Strings values, EnumExt defaulted) {
   if(!values.empty())
     from_strings(values);
 }
+template <>
+ValueDef<gEnumExt>::ValueDef(ValueType typ, Strings values, gEnumExt defaulted) {
+  set_type(typ);
+  get_ptr()->set_from(defaulted);  // assign call functions if set
+  if(!values.empty())
+    from_strings(values);
+}
 
 template <>
 void ValueDef<bool>::from_strings(Strings values) {
@@ -218,6 +227,10 @@ template <>
 void ValueDef<EnumExt>::from_strings(Strings values){
   get_ptr()->from_string(values.back());
 }
+template <>
+void ValueDef<gEnumExt>::from_strings(Strings values){
+  get_ptr()->from_string(values.back());
+}
 
 
 template <>
@@ -272,6 +285,10 @@ template <>
 String ValueDef<EnumExt>::str(){
   return v.to_str();
 }
+template <>
+String ValueDef<gEnumExt>::str(){
+  return v.to_str();
+}
 
 
 
@@ -310,6 +327,8 @@ void Value::set_value_from(ValuePtr from){
 
     case ValueType::ENUMEXT:
       return set_value(from->get<EnumExt>());
+    case ValueType::G_ENUMEXT:
+      return set_value(from->get<gEnumExt>());
 
     case ValueType::ENUM:
     default:
@@ -356,6 +375,8 @@ String Value::str(){
 
     case ValueType::ENUMEXT:
       return ((ValueDef<EnumExt>*)type_ptr)->str();
+    case ValueType::G_ENUMEXT:
+      return ((ValueDef<gEnumExt>*)type_ptr)->str();
 
     case ValueType::ENUM:
       return "An ENUM TYPE";
@@ -416,6 +437,9 @@ ValuePtr make_new(ValuePtr p, Strings values){
     case ValueType::ENUMEXT:
       return new Value(
         (TypeDef*)new ValueDef<EnumExt>(typ, values, p->get<EnumExt>()));
+    case ValueType::G_ENUMEXT:
+      return new Value(
+        (TypeDef*)new ValueDef<gEnumExt>(typ, values, p->get<gEnumExt>()));
       
     case ValueType::ENUM:
     default:

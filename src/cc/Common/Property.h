@@ -34,6 +34,9 @@
 #include <functional>
 
 #include <Common/Compat.h>
+#include <Common/PropertyValueEnumExt.h>
+#include <Common/PropertyValueGuarded.h>
+
 #include <Common/Logger.h>
 #include <Common/Error.h>
 
@@ -50,246 +53,6 @@ const uint64_t MiB = KiB * 1024;
 const uint64_t G = M * 1000;
 const uint64_t GiB = MiB * 1024;
 
-typedef std::vector<String> Strings;
-typedef std::vector<int64_t> Int64s;
-typedef std::vector<double> Doubles;
-
-
-namespace Property {
-
-template <class T>
-class ValueGuardedAtomic {
-  
-  public:
-
-    ValueGuardedAtomic () noexcept {}
- 
-    ValueGuardedAtomic (T nv) noexcept {
-      store(nv);
-    }
- 
-    ValueGuardedAtomic (ValueGuardedAtomic &other) noexcept {
-      store(other.get());
-    }
- 
-    void store(T nv){
-      if(nv == vg.load()) 
-        return;
-      vg.store(nv);
-      if(on_chg_cb)
-        on_chg_cb();
-    }
-
-    ~ValueGuardedAtomic () noexcept {};
-    
-    operator ValueGuardedAtomic*() { 
-      return this;    
-    }
-    
-    ValueGuardedAtomic* operator =(T nv) {
-      store(nv);
-      return *this;
-    }
-
-    ValueGuardedAtomic* operator =(ValueGuardedAtomic &other) {
-      store(other.get());
-      return *this;
-    }
-    
-    operator T() {
-      return vg.load(); 
-    }
-
-    T get() {
-      return vg.load(); 
-    }
-
-    operator std::atomic<T>*() {
-      return &vg; 
-    }
-
-    void set_cb_on_chg(std::function<void()> cb) {
-      on_chg_cb = cb;
-    }
-
-  private:
-    std::atomic<T> vg;
-    std::function<void()> on_chg_cb;
-};
-
-}
-
-typedef Property::ValueGuardedAtomic<bool>      gBool;
-typedef Property::ValueGuardedAtomic<int32_t>   gInt32t;
-typedef gBool*    gBoolPtr;
-typedef gInt32t*  gInt32tPtr;
-
-
-namespace Property {
-
-template <class T>
-class ValueGuardedVector {
-
-  public:
-
-    ValueGuardedVector () noexcept {}
- 
-    ValueGuardedVector (T nv) noexcept {
-      set(nv);
-    }
- 
-    ValueGuardedVector (ValueGuardedVector &other) noexcept {
-      set(other.get());
-    }
- 
-    ~ValueGuardedVector () noexcept {};
-    
-    operator ValueGuardedVector*()   { 
-      return this;    
-    }
-    
-    ValueGuardedVector* operator =(T nv){
-      set(nv);
-      return *this;
-    }
-
-    ValueGuardedVector* operator =(ValueGuardedVector &other){
-      set(other.get());
-      return *this;
-    }
-    
-    void set(T nv)  {
-      std::lock_guard<std::mutex> lock(mutex);	
-      v.swap(nv);
-    }
-    
-    size_t size()  {
-      std::lock_guard<std::mutex> lock(mutex);	
-      return v.size();
-    }
-
-    operator T(){
-      return get(); 
-    }
-
-    T get(){
-      std::lock_guard<std::mutex> lock(mutex);	
-      return v;      
-    }
-
-  private:
-
-    std::mutex mutex;	
-    T v;
-
-};
-
-}
-
-typedef Property::ValueGuardedVector<Strings> gStrings;
-typedef gStrings* gStringsPtr;
-
-
-namespace Property {
-
-class EnumExt {
-  public:
-    
-    EnumExt(int nv = -1) { 
-      set_value(nv);
-    }
-
-    void set_value(int nv){
-      value = nv;
-    }
-
-    EnumExt* operator =(int nv){
-      set_value(nv);
-      return *this;
-    }
-
-    bool operator==(EnumExt a) const { return value == a.value; }
-    bool operator!=(EnumExt a) const { return value != a.value; }
-
-    operator EnumExt*() { return this;  }
-    operator int()      { return value; }
-    operator String()   { return str(); }
-    
-
-    EnumExt* operator =(EnumExt other){
-      set_from(other);
-      return *this;
-    }
-
-    void set_from(EnumExt &other){
-      if((int)other != -1)
-        set_value((int)other);
-      if(!other.cb_set) 
-        return;
-      
-      set_repr(other.get_call_repr());
-      set_from_string(other.get_call_from_string());
-    }
-
-    EnumExt& set_from_string(std::function<int(String)> cb) {
-      call_from_string = cb;
-      cb_set = true;
-      return *this;
-    }
-    
-    EnumExt& set_repr(std::function<String(int)> cb) {
-      call_repr = cb;
-      cb_set = true;
-      return *this;
-    }
-
-    int from_string(String opt) {
-      int nv = get_call_from_string()(opt);
-      if(nv > -1)
-        set_value(nv);
-      else {
-        if(value == -1)
-          HT_THROWF(Error::CONFIG_GET_ERROR, 
-             "Bad Value %s, no corresponding enum", opt.c_str());
-        else
-          HT_WARNF("Bad cfg Value %s, no corresponding enum", opt.c_str());
-      }
-      return value;
-    }
-    
-    std::function<int(String)> get_call_from_string(){
-      return call_from_string;
-    }
-
-    std::function<String(int)> get_call_repr(){
-      return call_repr;
-    }
-
-    String str() {
-      return get_call_repr()(value);
-    }
-
-    String to_str() {
-      return format("%d:%s", value, get_call_repr()(value).c_str());
-    }
-
-    bool cb_set = false;
-
-    virtual ~EnumExt() {};
-
-  private:
-    int value;
-    std::function<int(String)> call_from_string = [](String opt){
-      HT_THROWF(Error::CONFIG_GET_ERROR, "Bad Value %s, no from_string cb set", opt.c_str());
-      return -1;
-    };
-    std::function<String(int)> call_repr = [](int v){return "No repr cb defined!";};
-};
-
-}
-
-typedef Property::EnumExt EnumExt;
-// typedef gStrings* gStringsPtr;
 
 
 namespace Property {
@@ -311,6 +74,7 @@ enum ValueType {
   G_BOOL,
   G_INT32_T,
   G_STRINGS,
+  G_ENUMEXT
 };
 
 const ValueType get_value_type(const std::type_info &v_type);
@@ -403,6 +167,8 @@ class  ValueDef : public TypeDef {
 
 template <>
 ValueDef<EnumExt>::ValueDef(ValueType typ, Strings values, EnumExt defaulted);
+template <>
+ValueDef<gEnumExt>::ValueDef(ValueType typ, Strings values, gEnumExt defaulted);
 
 
 /* set_value from_strings */
@@ -432,6 +198,8 @@ template <>
 void ValueDef<gStrings>::from_strings(Strings values);
 template <>
 void ValueDef<EnumExt>::from_strings(Strings values);
+template <>
+void ValueDef<gEnumExt>::from_strings(Strings values);
 
 /* return string representation */
 template <>
@@ -460,6 +228,8 @@ template <>
 String ValueDef<gStrings>::str();
 template <>
 String ValueDef<EnumExt>::str();
+template <>
+String ValueDef<gEnumExt>::str();
 
 
     

@@ -57,6 +57,7 @@ MetricsCollectorGanglia.cc
 MetricsProcess.cc
 MurmurHash.cc
 Property.cc
+PropertyValueEnumExt.cc
 PropertiesParser.cc
 Properties.cc
 Random.cc

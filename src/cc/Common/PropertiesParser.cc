@@ -62,7 +62,6 @@ Property::ValuePtr i64s(Int64s v) {
 Property::ValuePtr f64s(Doubles v) {
   return cfg(v);
 }
-
 Property::ValuePtr enum_ext(EnumExt v) {
   return cfg(v);
 }
@@ -76,6 +75,9 @@ Property::ValuePtr g_i32(int32_t v) {
 }
 Property::ValuePtr g_strs(Strings v) {
   return cfg((gStrings)v, false, true);
+}
+Property::ValuePtr g_enum_ext(gEnumExt v) {
+  return cfg(v, false, true);
 }
 
 // cfg methods for types, skipable options (no default set)

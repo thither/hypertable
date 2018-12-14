@@ -67,6 +67,7 @@ Property::ValuePtr enum_ext(EnumExt v);
 Property::ValuePtr g_boo(bool v);
 Property::ValuePtr g_i32(int32_t v);
 Property::ValuePtr g_strs(Strings v);
+Property::ValuePtr g_enum_ext(gEnumExt v);
 
 /* cfg methods for types, a skippable option
 *  if no option parsed it is skipped
