@@ -48,6 +48,12 @@ Version Master:
    changed Hyperspace Configurations with Guarded types (g_i32) for
            Maintenance.Interval, Checkpoint.Size, LogGc.Interval, LogGc.MaxUnusedLogs, 
            KeepAlive.Interval, Lease.Interval, GracePeriod
+   changed Port, Workers and Reactors for cfg(Local, Qfs, Kfs, Mapr, Ceph) for the server-side
+           to "FsBroker.Listen.Port",  "FsBroker.Listen.Workers",  "FsBroker.Listen.Reactors"
+   changed all FsBroker configuration options to start with "FsBroker."
+           specific apply on namespaces: Local, Hdfs, Mapr, Ceph, Qfs
+           common options are on "FsBroker." configuration namespace
+   removed completely prior DEPRECATED configuration options
    added cfg_reload a command and interpreter statement to Hyperspace(client-side) (experimental)
    TODO: test Hyperspace related (bdb) changes in big(3+ replicas) cluster environment
          apply possible/reasonable configurations to be dynamic property at run time
