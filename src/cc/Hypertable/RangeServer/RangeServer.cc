@@ -261,7 +261,7 @@ Apps::RangeServer::RangeServer(PropertiesPtr &props, ConnectionManagerPtr &conn_
 
   FsBroker::Lib::ClientPtr dfsclient = std::make_shared<FsBroker::Lib::Client>(conn_mgr, props);
 
-  int dfs_timeout = properties->get_pref<int32_t>(
+  int dfs_timeout = props->get_pref<int32_t>(
                     {"FsBroker.Timeout", "Hypertable.Request.Timeout"});
 
   if (!dfsclient->wait_for_connection(dfs_timeout))
