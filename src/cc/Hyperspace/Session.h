@@ -709,8 +709,7 @@ namespace Hyperspace {
   
 	gInt32tPtr   m_lease_interval;
 	gInt32tPtr	 m_keep_alive_interval;
-
-  gBoolPtr     m_silent;
+  
   gBoolPtr     m_verbose;
 
 	std::atomic<bool>         m_reconnect;
@@ -745,6 +744,7 @@ namespace Hyperspace {
     uint16_t                  m_hyperspace_replica_nxt = 0;
     String                    m_hyperspace_master;
 
+    bool                      m_silent;
     /// Delivers suspend/resume notifications (e.g. laptop close/open).
     SleepWakeNotifier         *m_sleep_wake_notifier;
   };

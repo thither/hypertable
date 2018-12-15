@@ -59,12 +59,11 @@ Session::Session(Comm *comm, PropertiesPtr &props)
   m_keep_alive_interval = props->get_ptr<gInt32t>("Hyperspace.KeepAlive.Interval");
   m_lease_interval = props->get_ptr<gInt32t>("Hyperspace.Lease.Interval");
   m_grace_period = props->get_ptr<gInt32t>("Hyperspace.GracePeriod");
-
-  m_silent = props->get_ptr<gBool>("Hypertable.Silent");
+  
   m_verbose = props->get_ptr<gBool>("Hypertable.Verbose");
+  m_silent = props->has("Hypertable.Silent") && props->get_bool("Hypertable.Silent");
 
   m_reconnect = props->get_bool("Hyperspace.Session.Reconnect");
-
 
   if (m_reconnect)
     HT_INFO("Hyperspace session setup to reconnect");
@@ -1397,7 +1396,7 @@ Session::send_message(CommBufPtr &cbuf_ptr, DispatchHandler *handler,
   if ((error = m_comm->send_request(m_master_addr, timeout_ms, cbuf_ptr,
       handler)) != Error::OK) {
     std::string str;
-    if (!m_silent->get())
+    if (!m_silent)
       HT_WARNF("Comm::send_request to htHyperspace at %s failed - %s",
                m_master_addr.format().c_str(), Error::get_text(error));
   }

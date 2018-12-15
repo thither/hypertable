@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
     bool nowait = has("nowait");
 
     output_only = has("output-only");
-    silent = has("silent") && get<gBool>("silent");
+    silent = has("silent") && get_bool("silent");
 
     if (has("DfsBroker.Port"))
       port = get_i16("DfsBroker.Port");

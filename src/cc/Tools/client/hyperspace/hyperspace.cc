@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
     comm = Comm::instance();
 
     int32_t timeout = has("timeout") ? get_i32("timeout") : 10000;
-    silent = has("silent") && get<gBool>("silent");
+    silent = has("silent") && get_bool("silent");
 
     session_ptr = std::make_shared<Hyperspace::Session>(comm, properties);
     session_ptr->add_callback(&session_handler);

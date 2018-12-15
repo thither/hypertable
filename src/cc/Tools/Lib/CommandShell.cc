@@ -214,7 +214,7 @@ CommandShell::CommandShell(const string &prompt_str, const string &service_name,
 
   m_verbose = m_props->has("verbose") ? (bool)m_props->get<gBool>("verbose") : false;
   m_batch_mode = m_props->has("batch");
-  m_silent = m_props->has("silent") ? (bool)m_props->get<gBool>("silent") : false;
+  m_silent = m_props->has("silent") && m_props->get_bool("silent");
   m_test_mode = m_props->has("test-mode");
   if (m_test_mode) {
     Logger::get()->set_test_mode();

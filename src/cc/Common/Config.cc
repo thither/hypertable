@@ -238,7 +238,8 @@ void DefaultPolicy::init_options() {
     ("verbose,v", g_boo(false)->zero_token(), "Show more verbose output")
     ("debug", boo(false)->zero_token(), "Show debug output (shortcut of --logging-level debug)")
     ("quiet", boo(false)->zero_token(), "Negate verbose")
-    ("silent", g_boo(false)->zero_token(), "Show as little output as possible")
+    ("silent", boo()->zero_token(),
+     "as Not Interactive or Show as little output as possible")
     ("logging-level,l", g_enum_ext(logging_level), 
      "Logging level: debug, info, notice, warn, error, crit, alert, fatal")
     ("config", str(default_config), "Configuration file.\n")
@@ -267,7 +268,7 @@ void DefaultPolicy::init_options() {
      "Name of cluster used in Monitoring UI and admin notification messages")
     ("Hypertable.Verbose", g_boo(false),
         "Enable verbose output (system wide)")
-    ("Hypertable.Silent", g_boo(false),
+    ("Hypertable.Silent", boo(),
         "Disable verbose output (system wide)")
     ("Hypertable.Logging.Level", g_enum_ext(logging_level),
         "Set system wide logging level (default: info)")

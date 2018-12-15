@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
 
     int timeout = get_i32("timeout");
     InetAddr addr(get_str("master-host"), get_i16("master-port"));
-    silent = has("silent") && get<gBool>("silent");
+    silent = has("silent") && get_bool("silent");
 
     Comm *comm = Comm::instance();
 
