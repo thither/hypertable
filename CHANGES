@@ -947,7 +947,7 @@ Version 0.9.6.0:
     issue 749: ignore BAD_PATHNAME exception when DUMPing a file in hyperspace shell
     Fixed spurious failures of test Purge-indices-2
     issue 817: fixed handling of DELETE in LOAD DATA INFILE
-    issue 727: new config setting FsBroker.Hdfs.Hadoop.ConfDir
+    issue 727: new config setting HdfsBroker.Hadoop.ConfDir
     issue 731: added new ScanSpec options to hadoop streaming mapreduce
     issue 700: update to boost 1.49
     issue 811: update mml if RangeServer address or IP changes
@@ -1166,7 +1166,7 @@ Version 0.9.5.1:
     Changed exception and api call logging in ThriftBroker.
     Fixed bug in snappy codec
     Got rid of arrival_clocks in favor of arrival_time in Comm layer
-    Fixed shutdown hook in FsBroker.Hdfs
+    Fixed shutdown hook in HdfsBroker
     Changed exit calls to _exit to prevent core dumps on async abrupt end tests
     issue 691: During relinuish, if range removed from live set, set flag to prevent re-removal
     Added property Hypertable.RangeServer.IgnoreClockSkewErrors to make RangeServer ignore clock skew errors.
@@ -1878,7 +1878,7 @@ Version 0.9.3.0:
     Replaced sleep with perl select() command in random-wait.sh
     Fixed bug in ConnectionManager::remove - Fixed broken regressions
     Fixed trailing '\n' problem in prune_tsv
-    Fixed CLOSED_WAIT problem with serverup and FsBroker.Hdfs
+    Fixed CLOSED_WAIT problem with serverup and HdfsBroker
     [Issue 340] Added Thrift MutatorFlag IGNORE_UNKNOWN_CFS.
     Added "--exec/-e" and "--command-file" switches to CommandShell to execute commands.
     Fixed memory corruption issue triggered when the interval mutator fails on successive writes.
@@ -2046,7 +2046,7 @@ Version 0.9.2.5:
     Fixed mutator log sync regression test and cleaning up dumplog.
     Added Hypertable.HqlInterpreter.Mutator.NoLogSync property
     Added command line switch --no-log-sync to hypertable cli for setting the aforementioned property
-    Fixed a couple of rare NullPointerExceptions in FsBroker.Hdfs
+    Fixed a couple of rare NullPointerExceptions in HdfsBroker
     Added flags argument to ThriftClient open_mutator
     Modified load generator tool to support no log sync and flush interval flags.
     Fixed bug in commit log garbage collection that was caused some cells to be dropped.
@@ -2152,7 +2152,7 @@ Version 0.9.2.3:
   * Changed random_read_test to use new config/property system
   * Added --flush option to random_write_test to flush after every write
   * Changed default # of maintenance threads in RangeServer to min(2, number-of-cores)
-  * Changed seek+read to pread in FsBroker.Hdfs::PositionRead
+  * Changed seek+read to pread in HdfsBroker::PositionRead
   * Fixed RangeServer to return TABLE_NOT_FOUND errors when table not found
   * Issue 253: Alternative thrift interface for cells as arrays.
   * Got rid of hardcoded 30000 ms timeouts in Master
@@ -2270,7 +2270,7 @@ Version 0.9.2.0:
   * [issue 216] Fixed problem where clock skew was causing updates to be dropped
   * [issue 201] Fixed deadlock recently introduced with support for SplitOff=high
   * Made commit log more robust
-  * Added calls to FSDataOutputStream.sync() for FLUSH for FsBroker.Hdfs
+  * Added calls to FSDataOutputStream.sync() for FLUSH for HdfsBroker
   * Fixed range server metalog reader
   * Made RangeServer::load_range() call in Master::report_split() synchronous
   * Fix for ReactorRunner to not use handle if de-registering its fd failed
@@ -2314,7 +2314,7 @@ Version 0.9.1.1:
   * Fixed bug in MetadataRoot::get_next_files
   * Added commit log gc integration test
   * Fixed bug in commit log gc logic
-  * [issue162] Fixed pread bug in FsBroker.Hdfs
+  * [issue162] Fixed pread bug in HdfsBroker
   * Upgraded to Hadoop 0.19.0
   * Fixed seg fault in Comm destruction sequence
   * Fixed shutdown logic in ConnectionManager
@@ -2388,7 +2388,7 @@ Version 0.9.0.12:
   * Fixed bug in MergeScanner and added optimized MergeScanner for scans with m_return_deletes
   * Upgraded to Hadoop 0.18.2
   * Fixed random read performance regression
-  * Fixed descriptor leak in FsBroker.Hdfs
+  * Fixed descriptor leak in HdfsBroker
   * [issue 166] Fixed problem of bad disk usage accounting which caused SEGFAULT
   * Added log rotation via cronolog
   * Added option for dump_metalog to copy a metalog
@@ -2429,13 +2429,13 @@ Version 0.9.0.10:
   * Fixed a bug in RangeServer::schedule_log_cleanup_compactions that prevents log cleanup compactions from happening. (thanks Donald)
   * Made Hyperspace client throw exceptions
   * Changed epoll to level triggered for < 2.6.17, edge triggered for newer
-  * Fixed problem in FsBroker.Hdfs which caused it to close all handles
+  * Fixed problem in HdfsBroker which caused it to close all handles
   * Fixed problem with accept() logic in edge-triggered mode
   * Fixed problem in FindBerkeleyDB.cmake also fixed link problem in dfsclient
   * Got rid of all calls to rand(), etc.  More work on random benchmark tools
   * Moved rand startup wait out of RangeServer and into Capistrano
   * Added full deprecation warnings to build
-  * Eliminated infinite loop in AsyncComm; Fixed FsBroker.Hdfs shutdown
+  * Eliminated infinite loop in AsyncComm; Fixed HdfsBroker shutdown
   * Upgraded TableReader::next(...) output values so that not only key but also column family and qualifiers are known to the reducer
   * Initial checkin of freebase example
 
@@ -2514,7 +2514,7 @@ Version 0.9.0.6:
 (2008-06-14)
 
   * Ported Hyperspace to Berkeley DB
-  * Fixed core dump in FsBroker.Hdfs when --verbose is not set
+  * Fixed core dump in HdfsBroker when --verbose is not set
   * [issue 110] Fixed scanner infinite looping on large objects
   * Fixed buffer overrun problem in Hyperspace keepalive message
   * Cleaned up TableMutator retry logic
@@ -2531,7 +2531,7 @@ Version 0.9.0.5:
   * [issue 99] Added TableMutator::retry()
   * [issue 18] Added support for '~' expansion in hypertable
   * [issue 10] Implemented proper serialization for Serialization.h functions
-  * [Issue 104] Fixed hang problem in FsBroker.Hdfs
+  * [Issue 104] Fixed hang problem in HdfsBroker
   * Changed serialization byte ordering to little endian
   * Purge old cells to avoid repeated deletion of old files
   * Various portability fixes
@@ -2582,7 +2582,7 @@ Version 0.9.0.5:
   * Allow keys to be built from multiple columns in LOAD DATA INFILE
   * Fixed segfault caused by race condition in sampleClient
   * Commit log re-write
-  * Fixed FsBroker.Hdfs::rmdir to return FileNotFound
+  * Fixed HdfsBroker::rmdir to return FileNotFound
   * Moved header checksum to end of header; Improved split row selection
   * FS interface cleanup. Use exception where appropriate.
   * Cleaned up BlockCompressionHeader code
