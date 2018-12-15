@@ -14,8 +14,6 @@ Version Master:
    changed finish_election in both cases of newly elected or was a master at DB_EVENT_REP_MASTER event
    removed unused cases of include Config and using namespace Config
    depcicated boost::program_options(libboost_program_options) 
-   
-   
    added files Common/Property.[h,cc] include namespace hypretable::Property
    changed definitions of MiB, KiB, etc. at Common/Property.h in Hypertable namespace 
    added class Property::Value with dependencies classes TypeDef and ValueDef<T>
@@ -50,9 +48,7 @@ Version Master:
    changed Hyperspace Configurations with Guarded types (g_i32) for
            Maintenance.Interval, Checkpoint.Size, LogGc.Interval, LogGc.MaxUnusedLogs, 
            KeepAlive.Interval, Lease.Interval, GracePeriod
-
    added cfg_reload a command and interpreter statement to Hyperspace(client-side) (experimental)
-
    TODO: test Hyperspace related (bdb) changes in big(3+ replicas) cluster environment
          apply possible/reasonable configurations to be dynamic property at run time
 
