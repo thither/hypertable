@@ -279,6 +279,21 @@ public:
                 name.c_str(), e.what());
     }
   }
+  
+  /**
+   * Get the value of option of type T by preference. Throws if option is not defined.
+   *
+   * @param namee The names of preference for the property
+   * @throw Error::CONFIG_GET_ERROR if the requested property is not defined
+   */
+  template <typename T>
+  T get_pref(Strings names){
+    for(String name : names)
+      if (has(name))
+        return get<T>(name);
+    HT_THROWF(Error::CONFIG_GET_ERROR, "getting pref value by '%s'",
+                                        format_list(names).c_str());
+  }
 
   /**
    * Get the value of option of type T. Returns supplied default value if

@@ -97,7 +97,9 @@ int main(int argc, char **argv) {
     bool hit_start = false;
     uint64_t total_count = 0;
     uint64_t store_count = 0;
-    int timeout = get_i32("FsBroker.Timeout");
+    
+    int timeout = properties->get_pref<int32_t>(
+                    {"FsBroker.Timeout", "Hypertable.Request.Timeout"});
 
     // Create Hypertable client object
     ClientPtr hypertable_client = make_shared<Hypertable::Client>(argv[0]);
