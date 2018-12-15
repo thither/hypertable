@@ -51,7 +51,7 @@ PYBIND11_MODULE(serialized_cells, m) {
     ;
 
   py::class_<SerializedCellsReader, std::unique_ptr<SerializedCellsReader>> (m, "Reader")
-    .def(py::init<py::bytes &, uint32_t>())
+    .def(py::init<py::bytes , uint32_t>())
     .def("has_next", &SerializedCellsReader::next)
     .def("get_cell", &SerializedCellsReader::get_cell)
     .def("row", []( SerializedCellsReader &scr) {

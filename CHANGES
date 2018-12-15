@@ -12,26 +12,30 @@ Version Master:
    added stricness to Berkeley DB events REP_DUPMASTER and DB_EVENT_REP_LOCAL_SITE_REMOVED, exit with HT_FATAL
    added dbenv->rep_sync(0) to on DB_EVENT_REP_CLIENT and DB_EVENT_REP_NEWMASTER(for client)
    changed finish_election in both cases of newly elected or was a master at DB_EVENT_REP_MASTER event
-   depcicated boost::program_options(libboost_program_options) 
    removed unused cases of include Config and using namespace Config
+   depcicated boost::program_options(libboost_program_options) 
+   
+   
    added files Common/Property.[h,cc] include namespace hypretable::Property
-   changed definitions of MiB, KiB, etc. moved to Property file onto Hypertable namespace 
+   changed definitions of MiB, KiB, etc. at Common/Property.h in Hypertable namespace 
    added class Property::Value with dependencies classes TypeDef and ValueDef<T>
-   changed Properties MapPair to <String, Property::ValuePtr>
-   added files Common/PropertiesParser.[h,cc] classes ParserConfig, Parser
+   added files Common/PropertyValueEnumExt.h,c define EnumExt and gEnumExt types
+   added callback set_cb_on_chg, an on change setter, to gEnumExt
+   added file Common/PropertyValueGuarded.h define gBool, gInt32t and gStrings types 
+   added callback set_cb_on_chg, an on change setter, to Property::ValueGuardedAtomic<T>
+   added files Common/PropertiesParser.[h,cc] with classes ParserConfig, Parser
+   added cfg methods g_boo(Bool), g_i32(int32_t), g_strs(Strings), g_enum_ext(gEnumExt) to PropertiesParser
    changed parsed cfg option validation and convertion is done by Property::ValueDef<T>
-   changed use of configurations(cmdline,file desc) to new PropertiesParser configurations
-   organized Common/Properties.[cc,h] and Config namespace and align to the new Config::Parser/ParserConfig
    added test Common/properties_parser_test
    removed test Common/config_test 
-   added file Common/PropertyValueGuarded.h define gBool, gInt32t and gStrings types 
-   added cfg methods g_boo(Bool), g_i32(int32_t), g_strs(Strings), g_enum_ext(gEnumExt) to PropertiesParser
-   added callback set_cb_on_chg, an on change setter, to Property::ValueGuardedAtomic<T>
+   changed Properties MapPair to <String, Property::ValuePtr>
+   organized Common/Properties.[cc,h] and Config namespace and align to the new Config::Parser/ParserConfig
+   changed cfg descriptions(cmdline,file desc) to new PropertiesParser configurations
    added config option Hypertable.Config.OnFileChange.Reload=True change to False will halt from reloading
    added config option Hypertable.Config.OnFileChange.Reload.Interval=600000 
    added config option Hypertable.Config.OnFileChange.file=path/hypertable-dyn.cfg (a strings type property) 
    added method Properties::load_files_by, loads cfg files from property name
-   added if main cfg has OnFileChange.file, these are loaded as well with Config init
+   added to Config init, if main cfg file set with OnFileChange.file configured files loaded as well
    added file conf/hypertable-dyn.cfg the default configs of dynamic properties 
    changed cmake install hypertable.cfg.ini (hypertable.cfg remain for tests)
    added class AsyncComm/ConfigHandler 
@@ -39,14 +43,13 @@ Version Master:
          checks on files change and update properties for Guarded Value Types only
    added use of ConfigHandler by Hypertable.Config.OnFileChange.Reload for
          Master, Range, Thrift, FsBroker(C++) and Hyperspace
-   changed Verbose cfg property to Guarded Bool
+   changed property Hypertable.Logging.Level defined with gEnumExt, level is changeable at runtime
+   changed property Hypertable.Verbose / --verbose to tyoe gBool a g_boo() cfg
    added changeable at runtime configs for ThriftBroker SlowQueryLog.Enable and SlowQueryLog.LatencyThreshold
    added set_slow_query_logging call-back on ThriftBroker.SlowQueryLog.Enable change stop/start logging
    changed Hyperspace Configurations with Guarded types (g_i32) for
            Maintenance.Interval, Checkpoint.Size, LogGc.Interval, LogGc.MaxUnusedLogs, 
            KeepAlive.Interval, Lease.Interval, GracePeriod
-   added new files Common/PropertyValueEnumExt.h,c define EnumExt and gEnumExt types
-   changed property Hypertable.Logging.Level defined with gEnumExt, level is changeable at runtime
 
    added cfg_reload a command and interpreter statement to Hyperspace(client-side) (experimental)
 
