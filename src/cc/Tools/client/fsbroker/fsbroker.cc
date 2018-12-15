@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
     
     String host = get_str("FsBroker.Host");
     ::uint16_t port = get_i16("FsBroker.Port");
-    ::uint32_t timeout_ms  = props->get_pref<int32_t>({"FsBroker.Timeout", "timeout"});
+    ::uint32_t timeout_ms  = properties->get_pref<int32_t>({"FsBroker.Timeout", "timeout"});
 
     bool nowait = has("nowait");
     output_only = has("output-only");
