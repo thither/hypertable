@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     init_with_policy<Policies>(argc, argv);
 
     if (properties->has(lookup_property))
-      TRY(properties->str(lookup_property), true);
+      TRY(properties->str(lookup_property), true)
     else 
       cout << lookup_property << "-PROPERTY-DOES-NOT-EXIST";
     
