@@ -85,9 +85,8 @@ Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &props)
 	String host = props->get_str("FsBroker.Host");
 	uint16_t port = props->get_i16("FsBroker.Port");
 
-	
-  int m_timeout_ms = props->get_pref<int32_t>(
-                    	{"FsBroker.Timeout", "Hypertable.Request.Timeout"});
+  m_timeout_ms = props->get_pref<int32_t>(
+			{"FsBroker.Timeout", "Hypertable.Request.Timeout"});
 
 	InetAddr::initialize(&m_addr, host.c_str(), port);
 
