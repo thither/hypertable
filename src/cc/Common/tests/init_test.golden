@@ -1,5 +1,5 @@
 boo=true
-enum_ext=1:two
+enum_ext=two  # (1)
 i16=1000
 i32=64000
 i64=1000000000

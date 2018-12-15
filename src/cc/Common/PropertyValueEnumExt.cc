@@ -53,7 +53,7 @@ int ValueEnumExtBase::from_string(String opt) {
 }
 
 String ValueEnumExtBase::to_str() {
-  return format("%d:%s", get(), get_call_repr()(get()).c_str());
+  return format("%s  # (%d)", get_call_repr()(get()).c_str(), get());
 }
 
 void ValueEnumExtBase::set_default_calls() {
