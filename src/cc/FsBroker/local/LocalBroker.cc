@@ -79,7 +79,7 @@ LocalBroker::LocalBroker(PropertiesPtr &props) {
   /**
    * Determine root directory
    */
-  Path root = Path(props->get_str("FsBroker.Local.Root", ""));
+  Path root = Path(props->get_str("root", ""));
 
   if (!root.is_complete()) {
     Path data_dir = props->get_str("Hypertable.DataDirectory");
