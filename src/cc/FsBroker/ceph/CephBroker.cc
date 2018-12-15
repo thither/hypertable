@@ -67,10 +67,10 @@ CephBroker::CephBroker(PropertiesPtr& props)
 	: cmount(NULL)
 {
 	int ret;
-	String id(props->get_str("CephBroker.Id"));
+	String id(props->get_str("FsBroker.Ceph.Id"));
   m_verbose = props->get_ptr<gBool>("verbose");
-	m_root_dir = props->get_str("CephBroker.RootDir");
-	String mon_addr(props->get_str("CephBroker.MonAddr"));
+	m_root_dir = props->get_str("FsBroker.Ceph.RootDir");
+	String mon_addr(props->get_str("FsBroker.Ceph.MonAddr"));
 
 	HT_INFO("Calling ceph_create");
 	ret = ceph_create(&cmount, id.empty() ? NULL : id.c_str());

@@ -85,15 +85,15 @@ public class HadoopBroker implements Broker {
         else
             mVerbose = false;
 
-        str = props.getProperty("HdfsBroker.Hadoop.ConfDir");
+        str = props.getProperty("FsBroker.Hdfs.Hadoop.ConfDir");
         if (str != null) {
             if (mVerbose)
-                System.out.println("HdfsBroker.Hadoop.ConfDir=" + str);
+                System.out.println("FsBroker.Hdfs.Hadoop.ConfDir=" + str);
             try {
                 readHadoopConfig(str);
             }
             catch (Exception e) {
-               log.severe("Failed to parse HdfsBroker.HdfsSite.xml(" 
+               log.severe("Failed to parse FsBroker.Hdfs.HdfsSite.xml(" 
                                    + str + ")");
                e.printStackTrace();
                System.exit(1);
@@ -110,11 +110,11 @@ public class HadoopBroker implements Broker {
 
         // settings from the hadoop configuration are overwritten by values
         // from the configuration file
-        str = props.getProperty("HdfsBroker.dfs.replication");
+        str = props.getProperty("FsBroker.Hdfs.dfs.replication");
         if (str != null)
             mConf.setInt("dfs.replication", Integer.parseInt(str));
 
-        str = props.getProperty("HdfsBroker.dfs.client.read.shortcircuit");
+        str = props.getProperty("FsBroker.Hdfs.dfs.client.read.shortcircuit");
         if (str != null) {
             if (str.equalsIgnoreCase("true"))
                 mConf.setBoolean("dfs.client.read.shortcircuit", true);
@@ -122,7 +122,7 @@ public class HadoopBroker implements Broker {
                 mConf.setBoolean("dfs.client.read.shortcircuit", false);
         }
 
-        str = props.getProperty("HdfsBroker.fs.default.name");
+        str = props.getProperty("FsBroker.Hdfs.fs.default.name");
         if (str != null) {
             mConf.set("fs.default.name", str);
         }
@@ -130,19 +130,19 @@ public class HadoopBroker implements Broker {
             // make sure that we have the fs.default.name property
             if (mConf.get("fs.default.name") == null
                     || mConf.get("fs.default.name").equals("file:///")) {
-                log.severe("Neither HdfsBroker.fs.default.name nor " +
-                        "HdfsBroker.Hadoop.ConfDir was specified.");
+                log.severe("Neither FsBroker.Hdfs.fs.default.name nor " +
+                        "FsBroker.Hdfs.Hadoop.ConfDir was specified.");
                 System.exit(1);
             }
         }
 
         if (mVerbose) {
-            System.out.println("HdfsBroker.dfs.client.read.shortcircuit="
+            System.out.println("FsBroker.Hdfs.dfs.client.read.shortcircuit="
                             + mConf.getBoolean("dfs.client.read.shortcircuit", 
                                             false));
-            System.out.println("HdfsBroker.dfs.replication="
+            System.out.println("FsBroker.Hdfs.dfs.replication="
                             + mConf.getInt("dfs.replication", -1));
-            System.out.println("HdfsBroker.Server.fs.default.name="
+            System.out.println("FsBroker.Hdfs.Server.fs.default.name="
                             + mConf.get("fs.default.name"));
         }
 
@@ -169,7 +169,7 @@ public class HadoopBroker implements Broker {
         File f = new File(path);
         if (!f.exists()) {
             log.severe("ERROR: File " + path + " does not exist; check "
-                    + "HdfsBroker.Hadoop.ConfDir");
+                    + "FsBroker.Hdfs.Hadoop.ConfDir");
             System.exit(1);
         }
 

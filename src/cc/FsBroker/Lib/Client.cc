@@ -79,21 +79,16 @@ Client::Client(ConnectionManagerPtr &conn_mgr, const sockaddr_in &addr,
 }
 
 
-Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &cfg)
+Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &props)
 	: m_conn_mgr(conn_mgr) {
 	m_comm = conn_mgr->get_comm();
-	uint16_t port = cfg->get_i16("FsBroker.Port");
-	String host = cfg->get_str("FsBroker.Host");
-	if (cfg->has("FsBroker.Timeout"))
-		m_timeout_ms = cfg->get_i32("FsBroker.Timeout");
-	else
-		m_timeout_ms = cfg->get_i32("Hypertable.Request.Timeout");
 
-	// Backward compatibility
-	if (cfg->has("DfsBroker.Host"))
-		host = cfg->get_str("DfsBroker.Host");
-	if (cfg->has("DfsBroker.Port"))
-		port = cfg->get_i16("DfsBroker.Port");
+	String host = props->get_str("FsBroker.Host");
+	uint16_t port = props->get_i16("FsBroker.Port");
+
+	
+  int m_timeout_ms = props->get_pref<int32_t>(
+                    	{"FsBroker.Timeout", "Hypertable.Request.Timeout"});
 
 	InetAddr::initialize(&m_addr, host.c_str(), port);
 

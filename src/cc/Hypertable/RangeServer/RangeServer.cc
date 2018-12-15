@@ -261,11 +261,8 @@ Apps::RangeServer::RangeServer(PropertiesPtr &props, ConnectionManagerPtr &conn_
 
   FsBroker::Lib::ClientPtr dfsclient = std::make_shared<FsBroker::Lib::Client>(conn_mgr, props);
 
-  int dfs_timeout;
-  if (props->has("FsBroker.Timeout"))
-    dfs_timeout = props->get_i32("FsBroker.Timeout");
-  else
-    dfs_timeout = props->get_i32("Hypertable.Request.Timeout");
+  int dfs_timeout = properties->get_pref<int32_t>(
+                    {"FsBroker.Timeout", "Hypertable.Request.Timeout"});
 
   if (!dfsclient->wait_for_connection(dfs_timeout))
     HT_THROW(Error::REQUEST_TIMEOUT, "connecting to FS Broker");
@@ -277,9 +274,9 @@ Apps::RangeServer::RangeServer(PropertiesPtr &props, ConnectionManagerPtr &conn_
   /**
    * Check for and connect to commit log FS broker
    */
-  if (cfg.has("CommitLog.DfsBroker.Host")) {
-    String loghost = cfg.get_str("CommitLog.DfsBroker.Host");
-    uint16_t logport = cfg.get_i16("CommitLog.DfsBroker.Port");
+  if (cfg.has("CommitLog.FsBroker.Host")) {
+    String loghost = cfg.get_str("CommitLog.FsBroker.Host");
+    uint16_t logport = cfg.get_i16("CommitLog.FsBroker.Port");
     InetAddr addr(loghost, logport);
 
     dfsclient = std::make_shared<FsBroker::Lib::Client>(conn_mgr, addr, dfs_timeout);

@@ -308,73 +308,41 @@ void DefaultPolicy::init_options() {
         "Minimum write interval for Metalog in milliseconds")
     ("Hypertable.Network.Interface", str(),
      "Use this interface for network communication")
-    ("CephBroker.Port", i16(),
-     "Port number on which to listen (read by CephBroker only)")
-    ("CephBroker.Workers", i32(20),
-     "Number of Ceph broker worker threads created, maybe")
-    ("CephBroker.MonAddr", str(),
-     "Ceph monitor address to connect to")
-    ("HdfsBroker.SyncBlock", boo(true),
-        "Pass SYNC_BLOCK flag to Filesystem.create() when creating files")
-    ("HdfsBroker.Port", i16(),
-        "Port number on which to listen (read by HdfsBroker only)")
-    ("HdfsBroker.Hadoop.ConfDir", str(), "Hadoop configuration directory "
-        "(e.g. /etc/hadoop/conf or /usr/lib/hadoop/conf)")
-    ("HdfsBroker.fs.default.name", str(), "Hadoop Filesystem "
-        "default name, same as fs.default.name property in Hadoop config "
-        "(e.g. hdfs://localhost:9000)")
-    ("DfsBroker.Hdfs.NameNode.Host", str("default"),
-        "Name of host on which HDFS NameNode is running")
-    ("DfsBroker.Hdfs.NameNode.Port", i16(0),
-        "Port number on which HDFS NameNode is running")
-    ("HdfsBroker.Workers", i32(),
-        "Number of HDFS broker worker threads created")
-    ("HdfsBroker.Reactors", i32(),
-        "Number of HDFS broker communication reactor threads created")
-    ("Kfs.Broker.Workers", i32(20), "Number of worker "
-        "threads for Kfs broker")
-    ("Kfs.Broker.Reactors", i32(), "Number of Kfs broker reactor threads")
-    ("Kfs.MetaServer.Name", str(), "Hostname of Kosmos meta server")
-    ("Kfs.MetaServer.Port", i16(), "Port number for Kosmos meta server")
-    ("Qfs.Broker.Workers", i32(20), "Number of worker "
-        "threads for Qfs broker")
-    ("Qfs.Broker.Reactors", i32(), "Number of Qfs broker reactor threads")
-    ("Qfs.MetaServer.Name", str("localhost"), "Hostname of "
-        "QFS meta server")
-    ("Qfs.MetaServer.Port", i16(20000), "Port number for QFS "
-        "meta server")
-    ("DfsBroker.Local.DirectIO", boo(),
-        "DEPRECATED: renamed to FsBroker.Local.DirectIO")
-    ("DfsBroker.Local.Port", i16(),
-        "DEPRECATED: renamed to FsBroker.Local.Port")
-    ("DfsBroker.Local.Root", str(), "DEPRECATED: renamed to FsBroker.Local.Root")
-    ("DfsBroker.Local.Workers", i32(),
-        "DEPRECATED: renamed to FsBroker.Local.Workers")
-    ("DfsBroker.Local.Reactors", i32(),
-        "DEPRECATED: renamed to FsBroker.Local.Reactors")
-    ("DfsBroker.Host", str(), "DEPRECATED: renamed to FsBroker.Host")
-    ("DfsBroker.Port", i16(), "DEPRECATED: renamed to FsBroker.Port")
-    ("DfsBroker.Timeout", i32(), "DEPRECATED: renamed to FsBroker.Timeout")
+    ("FsBroker.Listen.Port", i16(15863),
+        "Port number on which to listen (read by Broker only)")
+    ("FsBroker.Listen.Workers", i32(20),
+        "Number of broker worker threads created")
+    ("FsBroker.Listen.Reactors", i32(),
+        "Number of broker communication reactor threads created")
+    ("FsBroker.Timeout", i32(), "Length of time, "
+        "in milliseconds, to wait before timing out FS Broker requests. This "
+        "takes precedence over Hypertable.Request.Timeout")
     ("FsBroker.DisableFileRemoval", boo(false),
         "Rename files with .deleted extension instead of removing (for testing)")
-    ("FsBroker.Local.DirectIO", boo(false),
-        "Read and write files using direct i/o")
-    ("FsBroker.Local.Port", i16(15863),
-        "Port number on which to listen (read by LocalBroker only)")
+    /*("FsBroker.Hdfs.NameNode.Host", str("default"),
+        "Name of host on which HDFS NameNode is running")
+    ("FsBroker.Hdfs.NameNode.Port", i16(0),
+        "Port number on which HDFS NameNode is running")*/
+    ("FsBroker.Hdfs.fs.default.name", str(), "Hadoop Filesystem "
+        "default name, same as fs.default.name property in Hadoop config "
+        "(e.g. hdfs://localhost:9000)")
+    ("FsBroker.Hdfs.Hadoop.ConfDir", str(), "Hadoop configuration directory "
+        "(e.g. /etc/hadoop/conf or /usr/lib/hadoop/conf)")
+    ("FsBroker.Hdfs.SyncBlock", boo(true),
+        "Pass SYNC_BLOCK flag to Filesystem.create() when creating files")
+    ("FsBroker.Ceph.MonAddr", str(), "Ceph monitor address to connect to")
+    ("FsBroker.Kfs.MetaServer.Name", str(), "Hostname of Kosmos meta server")
+    ("FsBroker.Kfs.MetaServer.Port", i16(), "Port number for Kosmos meta server")
+    ("FsBroker.Qfs.MetaServer.Name", str("localhost"), "Hostname of QFS meta server")
+    ("FsBroker.Qfs.MetaServer.Port", i16(20000), "Port number for QFS meta server")
+    ("FsBroker.Local.DirectIO", boo(false), "Read and write files using direct i/o")
     ("FsBroker.Local.Root", str(), "Root of file and directory "
         "hierarchy for local broker (if relative path, then is relative to "
         "the Hypertable data directory root)")
-    ("FsBroker.Local.Workers", i32(20),
-        "Number of local broker worker threads created")
-    ("FsBroker.Local.Reactors", i32(),
-        "Number of local broker communication reactor threads created")
     ("FsBroker.Host", str("localhost"),
         "Host on which the FS broker is running (read by clients only)")
     ("FsBroker.Port", i16(15863),
         "Port number on which FS broker is listening (read by clients only)")
-    ("FsBroker.Timeout", i32(), "Length of time, "
-        "in milliseconds, to wait before timing out FS Broker requests. This "
-        "takes precedence over Hypertable.Request.Timeout")
     ("Hyperspace.Timeout", i32(30000), "Timeout (millisec) "
         "for hyperspace requests (preferred to Hypertable.Request.Timeout")
     ("Hyperspace.Maintenance.Interval", g_i32(60000), "Hyperspace "
@@ -560,9 +528,9 @@ void DefaultPolicy::init_options() {
         "Portion of range to split off (high or low)")
     ("Hypertable.RangeServer.ClockSkew.Max", i32(3*M),
         "Maximum amount of clock skew (microseconds) the system will tolerate")
-    ("Hypertable.RangeServer.CommitLog.DfsBroker.Host", str(),
+    ("Hypertable.RangeServer.CommitLog.FsBroker.Host", str(),
         "Host of DFS Broker to use for Commit Log")
-    ("Hypertable.RangeServer.CommitLog.DfsBroker.Port", i16(),
+    ("Hypertable.RangeServer.CommitLog.FsBroker.Port", i16(),
         "Port of DFS Broker to use for Commit Log")
     ("Hypertable.RangeServer.CommitLog.FragmentRemoval.RangeReferenceRequired", boo(true),
         "Only remove linked log fragments if they're part of a transfer log referenced by a range")

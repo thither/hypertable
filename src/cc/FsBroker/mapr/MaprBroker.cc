@@ -73,18 +73,18 @@ atomic<int> MaprBroker::ms_next_fd {0};
 
 MaprBroker::MaprBroker(PropertiesPtr &props) {
   m_verbose = props->get_ptr<gBool>("verbose");
-  m_aggregate_writes = props->get_bool("DfsBroker.Mapr.aggregate.writes", true);
-  m_readbuffering = props->get_bool("DfsBroker.Mapr.readbuffering", true);
+  m_aggregate_writes = props->get_bool("FsBroker.Mapr.aggregate.writes", true);
+  m_readbuffering = props->get_bool("FsBroker.Mapr.readbuffering", true);
 
   m_metrics_handler = std::make_shared<MetricsHandler>(props, "mapr");
   m_metrics_handler->start_collecting();
 
   m_builder = hdfsNewBuilder();
   //hdfsBuilderConfSetStr(m_builder, const char *key, const char *val);
-  //m_namenode_host = props->get_str("DfsBroker.Hdfs.NameNode.Host");
-  //m_namenode_port = props->get_i16("DfsBroker.Hdfs.NameNode.Port");
+  //m_namenode_host = props->get_str("FsBroker.Hdfs.NameNode.Host");
+  //m_namenode_port = props->get_i16("FsBroker.Hdfs.NameNode.Port");
   hdfsBuilderSetNameNode(m_builder, "default");  //"default" > read from hadoop XML config from LIBHDFS3_CONF=path
-  hdfsBuilderSetNameNodePort(m_builder, m_namenode_port);
+  //hdfsBuilderSetNameNodePort(m_builder, m_namenode_port);
   m_filesystem = hdfsBuilderConnect(m_builder);
 
   // m_filesystem = hdfsConnectNewInstance(m_namenode_host.c_str(), m_namenode_port);

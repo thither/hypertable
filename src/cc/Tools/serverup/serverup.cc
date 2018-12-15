@@ -130,16 +130,6 @@ namespace {
       properties->set("fs-host", properties->get_str("host"));
     }
 
-    // Backward compatibility
-    if (properties->has("DfsBroker.Host")) {
-      properties->set("FsBroker.Host", properties->get_str("DfsBroker.Host"));
-      properties->set("fs-host", properties->get_str("DfsBroker.Host"));
-    }
-    if (properties->has("DfsBroker.Port")) {
-      properties->set("FsBroker.Port", properties->get_i16("DfsBroker.Port"));
-      properties->set("fs-port", properties->get_i16("DfsBroker.Port"));
-    }
-
     if (get_bool("display-address")) {
       std::cout << get_str("fs-host") << ":" << get_i16("fs-port")
           << std::endl;

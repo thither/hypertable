@@ -62,10 +62,7 @@ atomic<int> LocalBroker::ms_next_fd {0};
 LocalBroker::LocalBroker(PropertiesPtr &props) {
   m_verbose = props->get_ptr<gBool>("verbose");
   m_no_removal = props->get_bool("FsBroker.DisableFileRemoval");
-  if (props->has("DfsBroker.Local.DirectIO"))
-    m_directio = props->get_bool("DfsBroker.Local.DirectIO");
-  else
-    m_directio = props->get_bool("FsBroker.Local.DirectIO");
+  m_directio = props->get_bool("FsBroker.Local.DirectIO");
 
   m_metrics_handler = std::make_shared<MetricsHandler>(props, "local");
   m_metrics_handler->start_collecting();
@@ -82,11 +79,7 @@ LocalBroker::LocalBroker(PropertiesPtr &props) {
   /**
    * Determine root directory
    */
-  Path root;
-  if (props->has("DfsBroker.Local.Root"))
-    root = Path(props->get_str("DfsBroker.Local.Root"));
-  else
-    root = Path(props->get_str("root", ""));
+  Path root = Path(props->get_str("FsBroker.Local.Root", ""));
 
   if (!root.is_complete()) {
     Path data_dir = props->get_str("Hypertable.DataDirectory");

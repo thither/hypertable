@@ -134,37 +134,26 @@ public class main {
 
         // Determine listen port
         port = DEFAULT_PORT;
-        if (props.containsKey("HdfsBroker.Port")) {
-          str  = props.getProperty("HdfsBroker.Port");
+        if (props.containsKey("FsBroker.Listen.Port")) {
+          str  = props.getProperty("FsBroker.Listen.Port");
           port = Integer.parseInt(str);
-        }
-        else {
-          if (props.containsKey("FsBroker.Port")) {
-            str  = props.getProperty("FsBroker.Port");
-            port = Integer.parseInt(str);
-          }
-          // Backward compatibility
-          if (props.containsKey("DfsBroker.Port")) {
-            str  = props.getProperty("DfsBroker.Port");
-            port = Integer.parseInt(str);
-          }
         }
 
         // Determine reactor count
-        str = props.getProperty("HdfsBroker.Reactors");
+        str = props.getProperty("FsBroker.Listen.Reactors");
         reactorCount = (str == null) ? (short)System.processorCount
                                      : Short.parseShort(str);
 
         // Determine worker count
-        str = props.getProperty("HdfsBroker.Workers");
+        str = props.getProperty("FsBroker.Listen.Workers");
         workerCount = (str == null) ? DEFAULT_WORKERS
                                     : Integer.parseInt(str);
 
         if (verbose) {
             java.lang.System.out.println("Num CPUs=" + System.processorCount);
-            java.lang.System.out.println("HdfsBroker.Port=" + port);
-            java.lang.System.out.println("HdfsBroker.Reactors=" + reactorCount);
-            java.lang.System.out.println("HdfsBroker.Workers=" + workerCount);
+            java.lang.System.out.println("FsBroker.Listen.Port=" + port);
+            java.lang.System.out.println("FsBroker.Listen.Reactors=" + reactorCount);
+            java.lang.System.out.println("FsBroker.Listen.Workers=" + workerCount);
         }
 
         ReactorFactory.Initialize(reactorCount);

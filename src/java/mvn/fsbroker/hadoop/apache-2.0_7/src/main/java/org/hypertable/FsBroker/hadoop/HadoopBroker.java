@@ -112,15 +112,15 @@ public class HadoopBroker implements Broker {
         else
             mVerbose = false;
 
-        str = props.getProperty("HdfsBroker.Hadoop.ConfDir");
+        str = props.getProperty("FsBroker.Hdfs.Hadoop.ConfDir");
         if (str != null) {
           if (mVerbose)
-            System.out.println("HdfsBroker.Hadoop.ConfDir=" + str);
+            System.out.println("FsBroker.Hdfs.Hadoop.ConfDir=" + str);
           try {
             readHadoopConfig(str);
           }
           catch (Exception e) {
-            log.severe("Failed to parse HdfsBroker.HdfsSite.xml(" 
+            log.severe("Failed to parse FsBroker.Hdfs.HdfsSite.xml(" 
                        + str + ")");
             e.printStackTrace();
             System.exit(1);
@@ -144,11 +144,11 @@ public class HadoopBroker implements Broker {
 
         // settings from the hadoop configuration are overwritten by values
         // from the configuration file
-        str = props.getProperty("HdfsBroker.dfs.replication");
+        str = props.getProperty("FsBroker.Hdfs.dfs.replication");
         if (str != null)
             mConf.setInt("dfs.replication", Integer.parseInt(str));
 
-        str = props.getProperty("HdfsBroker.fs.default.name");
+        str = props.getProperty("FsBroker.Hdfs.fs.default.name");
         if (str != null) {
           mConf.set("fs.defaultFS", str);
           mConf.set("fs.default.name", str);
@@ -158,23 +158,23 @@ public class HadoopBroker implements Broker {
           if (mConf.get("fs.defaultFS") == null ||
               mConf.get("fs.default.name") == null
               || mConf.get("fs.default.name").equals("file:///")) {
-            log.severe("Neither HdfsBroker.fs.default.name nor " +
-                       "HdfsBroker.Hadoop.ConfDir was specified.");
+            log.severe("Neither FsBroker.Hdfs.fs.default.name nor " +
+                       "FsBroker.Hdfs.Hadoop.ConfDir was specified.");
             System.exit(1);
           }
         }
 
         if (mVerbose) {
-            System.out.println("HdfsBroker.dfs.replication="
+            System.out.println("FsBroker.Hdfs.dfs.replication="
                             + mConf.getInt("dfs.replication", -1));
-            System.out.println("HdfsBroker.Server.fs.default.name="
+            System.out.println("FsBroker.Hdfs.Server.fs.default.name="
                             + mConf.get("fs.default.name"));
         }
 
-        str = props.getProperty("HdfsBroker.SyncBlock");
+        str = props.getProperty("FsBroker.Hdfs.SyncBlock");
         if (str != null && str.equalsIgnoreCase("false")) {
           mSyncBlock = false;
-          System.out.println("HdfsBroker.SyncBlock=false");
+          System.out.println("FsBroker.Hdfs.SyncBlock=false");
         }
 
         mConf.set("dfs.client.buffer.dir", "/tmp");
@@ -207,7 +207,7 @@ public class HadoopBroker implements Broker {
         File f = new File(path);
         if (!f.exists()) {
             log.severe("ERROR: File " + path + " does not exist; check "
-                    + "HdfsBroker.Hadoop.ConfDir");
+                    + "FsBroker.Hdfs.Hadoop.ConfDir");
             System.exit(1);
         }
 
@@ -240,7 +240,7 @@ public class HadoopBroker implements Broker {
 	    URI uri = FileSystem.getDefaultUri(mConf);
         Class<?> clazz = FileSystem.getFileSystemClass(uri.getScheme(), mConf);
         if (clazz == null)
-	        throw new IOException("HdfsBroker: No FileSystem for scheme: "
+	        throw new IOException("FsBroker.Hdfs: No FileSystem for scheme: "
                     + uri.getScheme());
 	    FileSystem fs = (FileSystem)ReflectionUtils.newInstance(clazz, mConf);
 	    fs.initialize(uri, mConf);
