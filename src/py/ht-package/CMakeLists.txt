@@ -45,18 +45,19 @@ if (THRIFT_FOUND)
 	add_custom_command(
 		TARGET 	ThriftClientPy
 		COMMAND   cp 
-		ARGS      -r ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/gen-py/hypertable/thrift_client/hyperthrift ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/
+		ARGS      -r ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/gen-py/hypertable/thrift_client/hyperthrift ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/hypertable/thrift_client/
 	)
 	#### minimize attr access
 	add_custom_command(
 		TARGET 	 ThriftClientPy
+
 		COMMAND  sed 
-		ARGS     -i 's/import hypertable.thrift_client.hyperthrift.gen.ttypes/from hypertable.thrift_client.hyperthrift.gen import ttypes as gen_ttypes/g' ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/hyperthrift/gen2/ttypes.py
+		ARGS     -i 's/import hypertable.thrift_client.hyperthrift.gen.ttypes/from hypertable.thrift_client.hyperthrift.gen import ttypes as gen_ttypes/g' ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/hypertable/thrift_client/hyperthrift/gen2/ttypes.py
 	)
 	add_custom_command(
 		TARGET 	 ThriftClientPy
 		COMMAND  sed 
-		ARGS     -i 's/hypertable.thrift_client.hyperthrift.gen.ttypes./gen_ttypes./g' ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/src/thrift_client/hyperthrift/gen2/ttypes.py
+		ARGS     -i 's/hypertable.thrift_client.hyperthrift.gen.ttypes./gen_ttypes./g' ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/hypertable/thrift_client/hyperthrift/gen2/ttypes.py
 	)
 	
 endif ()
@@ -66,24 +67,36 @@ endif ()
 #  env PYTHONPATH=${CMAKE_INSTALL_PREFIX}/lib/py
 
 if (PYTHON2_FOUND)
-	add_test(ThriftClient-python2 env python ${CMAKE_CURRENT_SOURCE_DIR}/client_test.py)
-	add_test(ThriftClient-python2-scw env python ${CMAKE_CURRENT_SOURCE_DIR}/client_test_scw.py)
-	add_test(ThriftClient-python2-scr env python ${CMAKE_CURRENT_SOURCE_DIR}/client_test_scr.py)
+	add_test(ThriftClient-python2 env python ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test.py)
+	add_test(ThriftClient-python2-scw env python ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scw.py)
+	add_test(ThriftClient-python2-scr env python ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scr.py)
+	add_test(HypertableClient-python2 
+					env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/lib 
+					python ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
 endif ()
 if (PYTHON3_FOUND)
-	add_test(ThriftClient-python3 env python3 ${CMAKE_CURRENT_SOURCE_DIR}/client_test.py)
-	add_test(ThriftClient-python3-scw env python3 ${CMAKE_CURRENT_SOURCE_DIR}/client_test_scw.py)
-	add_test(ThriftClient-python3-scr env python3 ${CMAKE_CURRENT_SOURCE_DIR}/client_test_scr.py)
+	add_test(ThriftClient-python3 env python3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test.py)
+	add_test(ThriftClient-python3-scw env python3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scw.py)
+	add_test(ThriftClient-python3-scr env python3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scr.py)
+	add_test(HypertableClient-python3 
+					env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/lib 
+					python3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
 endif ()
 if (PYPY2_FOUND)
-	add_test(ThriftClient-pypy2 env pypy ${CMAKE_CURRENT_SOURCE_DIR}/client_test.py)
-	add_test(ThriftClient-pypy2-scw env pypy ${CMAKE_CURRENT_SOURCE_DIR}/client_test_scw.py)
-	add_test(ThriftClient-pypy2-scr env pypy ${CMAKE_CURRENT_SOURCE_DIR}/client_test_scr.py)
+	add_test(ThriftClient-pypy2 env pypy ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test.py)
+	add_test(ThriftClient-pypy2-scw env pypy ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scw.py)
+	add_test(ThriftClient-pypy2-scr env pypy ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scr.py)
+	add_test(HypertableClient-pypy2 
+					env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/lib 
+					pypy2 ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
 endif ()
 if (PYPY3_FOUND)
-	add_test(ThriftClient-pypy3 env pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/client_test.py)
-	add_test(ThriftClient-pypy3-scw env pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/client_test_scw.py)
-	add_test(ThriftClient-pypy3-scr env pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/client_test_scr.py)
+	add_test(ThriftClient-pypy3 env pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test.py)
+	add_test(ThriftClient-pypy3-scw env pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scw.py)
+	add_test(ThriftClient-pypy3-scr env pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scr.py)
+	add_test(HypertableClient-pypy3 
+					env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/lib 
+					pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
 endif ()
 	  
 

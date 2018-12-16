@@ -16,22 +16,44 @@ if 'PyPy' in sys.version:
     if sys.version_info.major == 3:
         include_dirs.append('@PYPY3_INCLUDE_DIR@')
 
-extra_objects = []
+
+extra_objects_serialized_cells = []
 for l in [
     'libHyperCommon.a',
     'libHyperThrift.a',
 ]:
-    extra_objects.append(ht_home+'/lib/'+l)
+    extra_objects_serialized_cells.append(ht_home+'/lib/'+l)
 
-srs = Extension('hypertable.thrift_client.serialized_cells',
-                sources=['src/thrift_client/serialized_cells.cc'],
+extra_compile_args = [a for a in set(
+    [a for a in "@CMAKE_CXX_FLAGS@ @CMAKE_C_FLAGS@".split(' ') if a])]
+
+extenstions = [
+    Extension('hypertable.thrift_client.serialized_cells',
+                sources=['hypertable/thrift_client/serialized_cells.cc'],
                 include_dirs=include_dirs,
                 libraries=[],
-                extra_objects=extra_objects,
+                extra_objects=extra_objects_serialized_cells,
                 library_dirs=[ht_home+'/lib'],
-                extra_compile_args=["-std=c++17", "-O3", "-flto", "-fuse-linker-plugin", "-ffat-lto-objects"],
+                extra_compile_args=extra_compile_args,
                 # language='c++17',
-                )
+                ),
+
+    Extension('hypertable.hypertable_client',
+                sources=['hypertable/hypertable_client.cc'],
+                include_dirs=include_dirs,
+                libraries=[
+                    'HyperCommon', 'HyperComm',
+                    'Hypertable', 'Hyperspace', 'HyperMaster', 'HyperRanger',
+                    'HyperTools', 'HyperAppHelper', 'HyperThirdParty', 'HyperThrift', 'HyperThriftConfig', 'HyperFsBroker',
+                    'boost_iostreams','boost_filesystem', 'boost_thread', 'boost_system', 'boost_chrono',
+                    're2', 'z'],
+                extra_objects=[],
+                library_dirs=[ht_home+'/lib'],
+                extra_compile_args=extra_compile_args,
+                # language='c++17',
+                ),
+]
+
 setup(
     name='hypertable',
     version='@VERSION@',
@@ -42,7 +64,7 @@ setup(
 
     url='http://hypertable.com/documentation/developer_guide/python/',
     license='GPLv3',
-    package_dir={'hypertable': 'src'},
+    package_dir={'hypertable': 'hypertable'},
     packages=['hypertable',
               'hypertable.thrift_client',
               'hypertable.thrift_client.hyperthrift',
@@ -51,27 +73,32 @@ setup(
               ],
     maintainer='Kashirin Alex',
     maintainer_email='kashirin.alex@gmail.com',
-    ext_modules=[srs]
+    ext_modules=extenstions
 )
 
 
 # /
 # setup.py
-# src/
+# hypertable/
 #    __init__.py
 #    thrift_client/
 #         thriftclient.py
 #         __init__.py
-#         serialized_cells.so
+#         serialized_cells.so/
+#                          Writer
+#                          Reader
+#                          Cell
 #         hyperthrift/
 #              __init__.py
 #              gen/
 #              gen2/
-#
+#    hypertable_client.so/
+#                   HypertableClient
 
 
-# 'expat', 'sigar-amd64-linux', 'dl', 'boost_iostreams', 'boost_program_options',
-# 'boost_filesystem', 'boost_thread', 'boost_system', 'boost_chrono', 'edit', 'ncursesw',
+# 'expat', 'sigar-amd64-linux', 'dl', 
+# 'boost_iostreams','boost_filesystem', 'boost_thread', 'boost_system', 'boost_chrono',
+# , 'edit', 'ncursesw',
 # 'snappy', 'pthread', 're2', 'tcmalloc_minimal', 'unwind', 'ssl', 'crypto'
 # [
 #    'libHypertable.a',
