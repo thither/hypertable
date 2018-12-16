@@ -197,6 +197,8 @@ HqlInterpreter *Client::create_hql_interpreter(bool immutable_namespace) {
 void Client::initialize() {
   uint32_t wait_time, remaining;
   uint32_t interval=5000;
+  
+  m_props->load_files_by("Hypertable.Config.OnFileChange.file", file_desc());
 
   m_toplevel_dir = m_props->get_str("Hypertable.Directory");
   boost::trim_if(m_toplevel_dir, boost::is_any_of("/"));
