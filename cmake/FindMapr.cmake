@@ -19,38 +19,33 @@
 # - Find Mapr
 # Find the native Mapr includes and library
 #
-#  Mapr_INCLUDE_DIR - where to find Mapr.h, etc.
-#  Mapr_LIBRARIES   - List of libraries when using Mapr.
-#  Mapr_FOUND       - True if Mapr found.
+#  MAPR_INCLUDE_DIR - where to find Mapr.h, etc.
+#  MAPR_LIBRARIES   - List of libraries when using Mapr.
+#  MAPR_FOUND       - True if Mapr found.
 
 HT_FASTLIB_SET(
 	NAME "MAPR" 
 	LIB_PATHS /opt/mapr/lib  
-			  $ENV{HADOOP_HOME}/lib/native
+						$ENV{HADOOP_HOME}/lib/native
+						${HADOOP_LIB_PATH}/lib/native
 	INC_PATHS /$ENV{HADOOP_HOME}/include 
-			  /opt/mapr/hadoop/hadoop-0.20.2/src/c++/libhdfs
+			  		/opt/mapr/hadoop/hadoop-0.20.2/src/c++/libhdfs
+						${HADOOP_INCLUDE_PATH}/include 
 	STATIC libhdfs.a 
 	SHARED hdfs 
 	INCLUDE hdfs.h
 )
 
-if (MAMPR_INCLUDE_DIR AND MAPR_LIBRARIES)
-  set(Mapr_FOUND TRUE)
-  
-  if (jvm_LIB)
+if (MAPR_INCLUDE_DIR AND MAPR_LIBRARIES AND jvm_LIB)
 	set(MAPR_LIBRARIES ${MAPR_LIBRARIES} ${jvm_LIB})
-  else ()
-	if (FSBROKER_MAPR)
-		message(FATAL_ERROR "Could NOT find jvm_LIB for MAPR libraries")
-	endif ()
-	set(Mapr_FOUND FALSE)
-	set(MAPR_LIBRARIES)
-  endif ()
 
 else ()
    if (FSBROKER_MAPR)
+	 		if (NOT jvm_LIB)
+		 		message(FATAL_ERROR "Could NOT find jvm_LIB for MAPR libraries")
+	 		endif ()
       message(FATAL_ERROR "Could NOT find MAPR libraries")
    endif ()
-   set(Mapr_FOUND FALSE)
+   set(MAPR_FOUND FALSE)
    set(MAPR_LIBRARIES)
 endif ()

@@ -41,7 +41,7 @@ if (CEPH_FOUND)
    add_subdirectory(cc/FsBroker/ceph)
 endif ()
 
-if (Mapr_FOUND)
+if (MAPR_FOUND)
    add_subdirectory(cc/FsBroker/mapr)
 endif ()
 
