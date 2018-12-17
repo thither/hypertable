@@ -104,7 +104,7 @@ endif ()
 
 if(PYTHON2_FOUND OR PYTHON3_FOUND OR PYPY2_FOUND OR PYPY3_FOUND)
 	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python setup.py sdist;)")
-	if (HT_COMPONENT_INSTALL)
+	if (NOT HT_COMPONENT_INSTALL)
 	   install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/dist/ DESTINATION lib/py/)
 	endif ()
 endif ()
