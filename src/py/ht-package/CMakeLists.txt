@@ -88,7 +88,7 @@ if (PYPY2_FOUND)
 	add_test(ThriftClient-pypy2-scr env pypy ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scr.py)
 	add_test(HypertableClient-pypy2 
 					env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/lib 
-					pypy2 ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
+					pypy ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
 endif ()
 if (PYPY3_FOUND)
 	add_test(ThriftClient-pypy3 env pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test.py)
