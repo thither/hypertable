@@ -9,7 +9,7 @@ save_failure_state() {
   \rm -f $HT_HOME/run/op.output
   touch $HT_HOME/run/debug-op
   ps auxww | fgrep -i hyper | fgrep -v java > $ARCHIVE_DIR/ps-output.txt
-  cp $HT_HOME/log/* $ARCHIVE_DIR
+  cp $HT_HOME/log/*.log $ARCHIVE_DIR
   pstack `cat $HT_HOME/run/Master.pid` > $ARCHIVE_DIR/master-stack.txt
   sleep 60
   cp $HT_HOME/run/op.output $ARCHIVE_DIR
