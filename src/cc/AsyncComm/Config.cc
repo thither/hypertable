@@ -48,12 +48,7 @@ void init_comm() {
     std::cout <<"CPU cores count="<< num_cores << std::endl;
 
   int32_t reactors = get("reactors", num_cores);
-
-  if (!has("reactors"))
-    // condition can be removed
-    // if get with default remain with set default value
-    properties->add("reactors", reactors);
-
+  
   ReactorFactory::initialize(reactors);
 }
 
