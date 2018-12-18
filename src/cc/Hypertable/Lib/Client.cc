@@ -64,7 +64,11 @@ Client::Client(const string &install_dir, const string &config_file,
   if (!properties)
     init_with_policy<DefaultCommPolicy>(0, 0);
 
-  m_props = make_shared<Properties>(config_file, file_desc());
+  //m_props = make_shared<Properties>(config_file, file_desc());
+  properties->load(config_file, file_desc());
+  properties->load_files_by("Hypertable.Config.OnFileChange.file", file_desc());
+  
+  m_props = properties;
   initialize();
 }
 
@@ -198,14 +202,14 @@ void Client::initialize() {
   uint32_t wait_time, remaining;
   uint32_t interval=5000;
   
-  m_props->load_files_by("Hypertable.Config.OnFileChange.file", file_desc());
 
   m_toplevel_dir = m_props->get_str("Hypertable.Directory");
   boost::trim_if(m_toplevel_dir, boost::is_any_of("/"));
   m_toplevel_dir = String("/") + m_toplevel_dir;
 
-  m_comm = Comm::instance();
+  m_comm = Comm::instance(); 
   m_conn_manager = make_shared<ConnectionManager>(m_comm);
+  //m_conn_manager->set_quiet_mode(silent);
 
   if (m_timeout_ms == 0)
     m_timeout_ms = m_props->get_i32("Hypertable.Request.Timeout");
