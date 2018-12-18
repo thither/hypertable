@@ -87,6 +87,12 @@ MaprBroker::MaprBroker(PropertiesPtr &props) {
   //hdfsBuilderSetNameNodePort(m_builder, m_namenode_port);
   m_filesystem = hdfsBuilderConnect(m_builder);
 
+  // status check
+  int64_t sz_used = hdfsGetUsed(m_filesystem); 
+  HT_INFOF("Non DFS Used bytes: %ld", sz_used);
+  sz_used = hdfsGetCapacity(m_filesystem); 
+  HT_INFOF("Configured Capacity bytes: %ld", sz_used);
+  
   // m_filesystem = hdfsConnectNewInstance(m_namenode_host.c_str(), m_namenode_port);
 }
 
