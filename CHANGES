@@ -2,7 +2,7 @@
 Version Master:
 (in-progress)
 
-   Updated for libssh 0.8.5 (changes to deprecated)
+   Updated for libssh 0.8.5 (changes to deprecated and uses read_nonblocking)
    added support of ZSTD(zstandard) compressor for BlockCompressionCodec
    added macro USE_READDIR_R, false with glibc-2.23+
    changed readdir_r deprecated infavour of readdir depends on USE_READDIR_R(GLIBC version)
@@ -54,6 +54,9 @@ Version Master:
            specific apply on namespaces: Local, Hdfs, Mapr, Ceph, Qfs
            common options are on "FsBroker." configuration namespace
    removed completely prior DEPRECATED configuration options
+   added a python module to Hypertable::Client with methods to namespace 
+         from hypertable.hypertable_client import HypertableClient
+   added supporting test HypertableClient-test (ht_client_test.py) for py2, py3, pypy2 and pypy3
    added cfg_reload a command and interpreter statement to Hyperspace(client-side) (experimental)
    TODO: test Hyperspace related (bdb) changes in big(3+ replicas) cluster environment
          apply possible/reasonable configurations to be dynamic property at run time
