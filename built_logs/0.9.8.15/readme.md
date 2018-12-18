@@ -2,7 +2,7 @@ Summary supporting the release candidate version 0.9.8.15
 -
 Built environment on Ubuntu 18.04(bionic) with static linking:
 
-   -- Build was made with dev-env tree 10a9ef6: https://github.com/kashirin-alex/environments-builder/tree/ecc1b16  
+   -- Build was made with dev-env tree: https://github.com/kashirin-alex/environments-builder/tree/512a3b480a84dc08eff6d78716cb08baef3f47d7  
    issued with 
    	
     nohup bash ~/builder/build-env.sh --target all --sources all &> '/root/builder/built.log' &
