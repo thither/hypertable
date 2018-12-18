@@ -393,19 +393,36 @@ bool SshSocketHandler::handle(int sd, int events) {
       m_state = STATE_CHANNEL_REQUEST_READ;
       
     case (STATE_CHANNEL_REQUEST_READ):
+      /*
+      switch(ssh_get_status(m_ssh_session)){
+        case SSH_READ_PENDING:
+          std::cout << "SSH_READ_PENDING";
+          break;
+        case SSH_WRITE_PENDING:
+          std::cout << "SSH_WRITE_PENDING";
+	        m_state = STATE_CONNECTED;
+          return true;
+        case SSH_CLOSED:
+          std::cout << "SSH_CLOSED";
+          return false;
+        case SSH_CLOSED_ERROR:
+          std::cout << "SSH_CLOSED_ERROR";
+          return false;
+      }
+      */
 		for (int is_stderr = 0; is_stderr <= 1;) {
 			while (true) {
 
 				if (m_stdout_buffer.base == 0)
 					m_stdout_buffer = m_stdout_collector.allocate_buffer();
 
-				int nbytes = ssh_channel_read(m_channel,
+				int nbytes = ssh_channel_read_nonblocking(m_channel,
 					m_stdout_buffer.ptr,
 					m_stdout_buffer.remain(),
 					is_stderr);
 
 				if (nbytes == SSH_ERROR) {
-					m_error = string("ssh_channel_read() failed - ") + ssh_get_error(m_ssh_session);
+					m_error = string("ssh_channel_read_nonblocking() failed - ") + ssh_get_error(m_ssh_session);
 					ssh_channel_close(m_channel);
 					ssh_channel_free(m_channel);
 					m_channel = 0;
