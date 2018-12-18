@@ -27,8 +27,6 @@
 
 #include <Tools/Lib/CommandShell.h>
 
-#include <AsyncComm/Config.h>
-
 #include <Common/Error.h>
 #include <Common/Init.h>
 #include <Common/Properties.h>
@@ -52,8 +50,9 @@ namespace {
         ("nowait", "Don't wait for certain commands to complete (e.g. shutdown)")
         ("output-only", "Display status output and exit with status 0")
         ;
-      cmdline_hidden_desc().add_options()("address", str(), "");
-      cmdline_positional_desc().add("address", -1);
+      cmdline_hidden_desc().add_options()
+      ("address", str(), "")
+      ("address", -1);
     }
     static void init() {
       if (has("address")) {

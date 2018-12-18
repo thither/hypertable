@@ -23,7 +23,7 @@ project(HYPERTABLE)
 set(VERSION_MAJOR "0")
 set(VERSION_MINOR "9")
 set(VERSION_MICRO "8")
-set(VERSION_PATCH "13")
+set(VERSION_PATCH "15")
 #set(VERSION_MISC_SUFFIX  "pre12")
 
 # cmake behavior compatibility
@@ -96,11 +96,11 @@ elseif(HT_O_LEVEL STREQUAL "2")
 	message("       Optimals for Integrations and Storage space")
 	# all executable linked with shared-libs, 
 	set(BUILD_SHARED_LIBS ON)
+	set(HT_ENABLE_SHARED ON)
 	set(BUILD_WITH_STATIC OFF)
 elseif(HT_O_LEVEL STREQUAL "3")
 	message("       Optimals for Integrations and Storage space")
 	# enviroment with no-fat-static-lib and shared-libs, executable(projet's libs bult-in)
-	set(HT_ENABLE_SHARED ON)
 	set(BUILD_WITH_STATIC OFF)
 	set(HT_TEST_WITH "SHARED")
 elseif(HT_O_LEVEL STREQUAL "4")
@@ -146,14 +146,20 @@ endif ()
 if (HT_ENABLE_SHARED AND NOT BUILD_SHARED_LIBS AND HT_TEST_WITH STREQUAL "BOTH")
 	message(STATUS "Tests are dual for shared and static libraries linking ")
 	enable_testing() # Enable testing
+	set(HT_TEST_WITH_STATIC ON)
+	set(HT_TEST_WITH_SHARED ON)
 elseif ((HT_ENABLE_SHARED OR BUILD_SHARED_LIBS) AND (NOT HT_TEST_WITH OR HT_TEST_WITH STREQUAL "SHARED"))
 	message(STATUS "Tests are linked with shared libraries")
 	enable_testing() # Enable testing
+	set(HT_TEST_WITH_SHARED ON)
 elseif (HT_TEST_WITH STREQUAL "STATIC")
 	message(STATUS "Tests are linked with static libraries")
 	enable_testing() # Enable testing
+	set(HT_TEST_WITH_STATIC ON)
 else ()
 	message(STATUS "Tests are not performed")
+	set(HT_TEST_WITH_STATIC OFF)
+	set(HT_TEST_WITH_SHARED OFF)
 endif ()
 	
 # Build support for all possible or only requested languages 
@@ -295,6 +301,7 @@ HT_FASTLIB_SET(NAME "EXPAT" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libex
 HT_FASTLIB_SET(NAME "ZLIB"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libz.a SHARED z INCLUDE zlib.h)
 HT_FASTLIB_SET(NAME "BZIP2" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libbz2.a SHARED bz2 INCLUDE bzlib.h)
 HT_FASTLIB_SET(NAME "LZMA"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC liblzma.a SHARED lzma INCLUDE lzma.h)
+HT_FASTLIB_SET(NAME "ZSTD"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libzstd.a SHARED zstd INCLUDE zstd.h)
 
 find_package(Snappy REQUIRED)
 find_package(RE2 REQUIRED)
@@ -416,6 +423,10 @@ configure_file(bin/prerm.in prerm @ONLY)
 file(GLOB CONFS conf/[^.]*)
 install(FILES ${CONFS} DESTINATION conf)
 install(PROGRAMS ${HYPERTABLE_BINARY_DIR}/ht DESTINATION bin)
+
+configure_file(conf/hypertable.cfg.in conf/hypertable.cfg @ONLY)
+install(FILES ${HYPERTABLE_BINARY_DIR}/conf/hypertable.cfg DESTINATION conf)
+
 
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB SCRIPTS bin/*.sh)

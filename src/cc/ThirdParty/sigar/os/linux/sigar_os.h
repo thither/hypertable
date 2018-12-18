@@ -75,6 +75,11 @@ struct sigar_t {
 #define HAVE_STRERROR_R_GLIBC
 #endif
 #define HAVE_READDIR_R
+#if defined (__GLIBC__) && (__GLIBC__ >= 2) && (__GLIBC_MINOR__ >= 23)
+#define USE_READDIR_R 0
+#else
+#define USE_READDIR_R 1
+#endif
 #define HAVE_GETPWNAM_R
 #define HAVE_GETPWUID_R
 #define HAVE_GETGRGID_R

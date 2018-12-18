@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <sys/times.h>
 #include <sys/utsname.h>
+#include <sys/sysmacros.h>
 
 #include "sigar.h"
 #include "sigar_private.h"
@@ -1229,13 +1230,13 @@ static int get_iostat_proc_dstat(sigar_t *sigar,
     }
 
     while ((ptr = fgets(buffer, sizeof(buffer), fp))) {
-        unsigned long major, minor;
+        unsigned long s_major, s_minor;
 
-        major = sigar_strtoul(ptr);
-        minor = sigar_strtoul(ptr);
+        s_major = sigar_strtoul(ptr);
+        s_minor = sigar_strtoul(ptr);
 
-        if ((major == ST_MAJOR(sb)) &&
-            ((minor == ST_MINOR(sb)) || (minor == 0)))
+        if ((s_major == ST_MAJOR(sb)) &&
+            ((s_minor == ST_MINOR(sb)) || (s_minor == 0)))
         {
             int num;
             unsigned long
@@ -1286,11 +1287,11 @@ static int get_iostat_proc_dstat(sigar_t *sigar,
             disk->read_bytes  *= 512;
             disk->write_bytes *= 512;
 
-            if (minor == ST_MINOR(sb)) {
+            if (s_minor == ST_MINOR(sb)) {
                 status = SIGAR_OK;
                 break;
             }
-            else if (minor == 0) {
+            else if (s_minor == 0) {
                 memcpy(device_usage, disk, sizeof(*device_usage));
             }
         }
@@ -1332,12 +1333,12 @@ static int get_iostat_procp(sigar_t *sigar,
 
     (void)fgets(buffer, sizeof(buffer), fp); /* skip header */
     while ((ptr = fgets(buffer, sizeof(buffer), fp))) {
-        unsigned long major, minor;
+        unsigned long s_major, s_minor;
 
-        major = sigar_strtoul(ptr);
-        minor = sigar_strtoul(ptr);
+        s_major = sigar_strtoul(ptr);
+        s_minor = sigar_strtoul(ptr);
 
-        if ((major == ST_MAJOR(sb)) && (minor == ST_MINOR(sb))) {
+        if ((s_major == ST_MAJOR(sb)) && (s_minor == ST_MINOR(sb))) {
             ptr = sigar_skip_token(ptr); /* blocks */
             ptr = sigar_skip_token(ptr); /* name */
             disk->reads = sigar_strtoull(ptr); /* rio */
@@ -1662,7 +1663,8 @@ static unsigned int hex2int(const char *x, int len)
 #define HEX_ENT_LEN 8
 
 #ifdef SIGAR_64BIT
-#define ROUTE_FMT "%16s %128s %128s %X %ld %ld %ld %128s %ld %ld %ld\n"
+//#define ROUTE_FMT "%16s %128s %128s %X %ld %ld %ld %128s %ld %ld %ld\n"
+#define ROUTE_FMT "%16s %128s %128s %i %lu %lu %lu %128s %lu %lu %lu\n"
 #else
 #define ROUTE_FMT "%16s %128s %128s %X %lld %lld %lld %128s %lld %lld %lld\n"
 #endif
@@ -2544,7 +2546,7 @@ static int get_linux_vendor_info(sigar_sys_info_t *info)
     else {
         generic_vendor_parse(data, info);
     }
-
+ 
     if (info->description[0] == '\0') {
         snprintf(info->description,
                  sizeof(info->description),

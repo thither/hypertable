@@ -1,8 +1,72 @@
 
-Version master:
-(in-progress)
+Version 0.9.8.15:
+(2018-12-19)
 
+   Updated for libssh 0.8.5 (changes to deprecated and use of read_nonblocking)
+   added support of ZSTD(zstandard) compressor for BlockCompressionCodec
+   added macro USE_READDIR_R, false with glibc-2.23+
+   changed readdir_r deprecated infavour of readdir depends on USE_READDIR_R(GLIBC version)
+   changed ClientKeepaliveHandler, select next hyperspace replica client by index count 
+   changed Hyperspace ClientKeepaliveHandler, Config/Properties assigned via Session
+   added method get_next_replica to Hyperspace Session 
+   added stricness to Berkeley DB events REP_DUPMASTER and DB_EVENT_REP_LOCAL_SITE_REMOVED, exit with HT_FATAL
+   added dbenv->rep_sync(0) to on DB_EVENT_REP_CLIENT and DB_EVENT_REP_NEWMASTER(for client)
+   changed finish_election in both cases of newly elected or was a master at DB_EVENT_REP_MASTER event
+   removed unused cases of include Config and using namespace Config
+   depcicated boost::program_options(libboost_program_options) 
+   added files Common/Property.[h,cc] include namespace hypretable::Property
+   changed definitions of MiB, KiB, etc. at Common/Property.h in Hypertable namespace 
+   added class Property::Value with dependencies classes TypeDef and ValueDef<T>
+   added files Common/PropertyValueEnumExt.h,c define EnumExt and gEnumExt types
+   added callback set_cb_on_chg, an on change setter, to gEnumExt
+   added file Common/PropertyValueGuarded.h define gBool, gInt32t and gStrings types 
+   added callback set_cb_on_chg, an on change setter, to Property::ValueGuardedAtomic<T>
+   added files Common/PropertiesParser.[h,cc] with classes ParserConfig, Parser
+   added cfg methods g_boo(Bool), g_i32(int32_t), g_strs(Strings), g_enum_ext(gEnumExt) to PropertiesParser
+   changed parsed cfg option validation and convertion is done by Property::ValueDef<T>
+   added test Common/properties_parser_test
+   removed test Common/config_test 
+   changed Properties MapPair to <String, Property::ValuePtr>
+   organized Common/Properties.[cc,h] and Config namespace and align to the new Config::Parser/ParserConfig
+   changed cfg descriptions(cmdline,file desc) to new PropertiesParser configurations
+   added config option Hypertable.Config.OnFileChange.Reload=True change to False will halt from reloading
+   added config option Hypertable.Config.OnFileChange.Reload.Interval=600000 
+   added config option Hypertable.Config.OnFileChange.file=path/hypertable-dyn.cfg (a strings type property) 
+   added method Properties::load_files_by, loads cfg files from property name
+   added to Config init, if main cfg file set with OnFileChange.file configured files loaded as well
+   added file conf/hypertable-dyn.cfg the default configs of dynamic properties 
+   changed cmake install hypertable.cfg.ini (hypertable.cfg remain for tests)
+   added files and class AsyncComm/ConfigHandler 
+         work with files from OnFileChange.file or use Hypertable.Config / --config file
+         checks on files change and update properties for Guarded Value Types only
+   added use of ConfigHandler by Hypertable.Config.OnFileChange.Reload for
+         Master, Range, Thrift, FsBroker(C++) and Hyperspace
+   changed property Hypertable.Logging.Level defined with gEnumExt, level is changeable at runtime
+   changed property Hypertable.Verbose / --verbose to type gBool a g_boo() cfg
+   added changeable at runtime configs for ThriftBroker SlowQueryLog.Enable and SlowQueryLog.LatencyThreshold
+   added set_slow_query_logging call-back on ThriftBroker.SlowQueryLog.Enable change stop/start logging
+   changed Hyperspace Configurations with Guarded types (g_i32) for
+           Maintenance.Interval, Checkpoint.Size, LogGc.Interval, LogGc.MaxUnusedLogs, 
+           KeepAlive.Interval, Lease.Interval, GracePeriod
+   changed cfg Port, Workers and Reactors for cfg(Local, Qfs, Kfs, Mapr, Ceph) for the server-side
+           to "FsBroker.Listen.Port",  "FsBroker.Listen.Workers",  "FsBroker.Listen.Reactors"
+   changed all FsBroker configuration options to start with "FsBroker."
+           specific apply on namespaces: Local, Hdfs, Mapr, Ceph, Qfs
+           common options are on "FsBroker." configuration namespace
+   removed completely prior DEPRECATED configuration options
+   added a python module to Hypertable::Client with methods to namespace 
+         module: from hypertable.hypertable_client import HypertableClient
+   added supporting test HypertableClient-test (ht_client_test.py) for py2, py3, pypy2 and pypy3
+   added cfg_reload a command and interpreter statement to Hyperspace(client-side) (experimental)
+   TODO: test Hyperspace related (bdb) changes in big(3+ replicas) cluster environment
+         apply possible/reasonable configurations to be dynamic property at run time
+
+Version 0.9.8.14:
+(2018-08-23)
+
+   Updated for GCC 8.2, boost 1.68.0, maven 3.5.4
    Updated for Thrift 0.11.0 (no backward capabilitites)
+   Updated for Ceph 13.2.0 FsBroker
    fixed ThriftBroker any shared_ptr switched to thrift::stdcxx::shared_ptr
    add new cmake option -DBOOST_NO_CXX11_SMART_PTR=1 for thrift to use Boost
    changed ThriftBroker does not need to inlcude boost
@@ -12,7 +76,6 @@ Version master:
    changed ThriftClient protocol and transport ptrs renamed with prefixed m_ as apache::thrift namespaces on-course 
    added options to link staticly with libboost, libstdc++ and libgcc 
    added new cmake option -DHT_NOT_STATIC_CORE=1
-   Updated for Ceph 13.2.0 FsBroker
    changed Hyperspace client keep-alive handler selects a hyperspace-replica by round-robin
    added accessed with scope_guard for replica_map in ReplicationInfo
    added ReplicationInfo new methods rep_update_sites, rep_remove, rep_add, get_site 
@@ -23,7 +86,7 @@ Version master:
    changed BerkeleyDbFilesystem master, lost of ownership condition to is_master && master_eid != eid
    changed BerkeleyDbFilesystem condition for event DB_EVENT_REP_NEWMASTER new Master can be elected
    added on event DB_EVENT_REP_MASTER, in-case host is a new master, go_master() doing master init
-   added a call to dbenv->rep_sync(0) to DB_EVENT_REP_PERM_FAILED, DB_EVENT_REP_ELECTED, DB_EVENT_REP_SITE_ADDED events
+   added a call to dbenv->rep_sync(0) to DB_EVENT_REP_PERM_FAILED, DB_EVENT_REP_SITE_ADDED events
    added a call of update_rep_sites for events DB_EVENT_REP_SITE_ADDED and DB_EVENT_REP_SITE_REMOVED
    added method BerkeleyDbFilesystem::update_rep_sites makes functionality of hot-adding replicas without Hyperspace.Replica.Host
    TODO: check Hyperspace related changes in cluster environment

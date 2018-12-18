@@ -35,13 +35,13 @@ namespace Hypertable {
       init((uint8_t *)buf, len);
     }
 
-	SerializedCellsReader(const char *buf, uint32_t len) {
-		init((uint8_t *)buf, len);
-	}
+    SerializedCellsReader(const char *buf, uint32_t len) {
+      init((uint8_t *)buf, len);
+    }
 
-	SerializedCellsReader(std::string buf, uint32_t len) {
-		init((uint8_t *)buf.c_str(), len);
-	}
+    SerializedCellsReader(std::string buf, uint32_t len) {
+      init((uint8_t *)buf.c_str(), len);
+    }
 	
     bool next();
 

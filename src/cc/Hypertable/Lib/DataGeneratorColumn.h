@@ -27,7 +27,6 @@
 #include "DataGeneratorRowComponent.h"
 #include "DataGeneratorQualifier.h"
 
-#include <Common/Config.h>
 #include <Common/FileUtils.h>
 #include <Common/String.h>
 #include <Common/WordStream.h>
@@ -43,7 +42,6 @@ extern "C" {
 }
 
 using namespace Hypertable;
-using namespace Hypertable::Config;
 using namespace std;
 
 namespace Hypertable {

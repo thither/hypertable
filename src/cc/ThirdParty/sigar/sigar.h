@@ -869,10 +869,10 @@ typedef struct {
     char version[SIGAR_SYS_INFO_LEN]; /* utsname.release */
     char arch[SIGAR_SYS_INFO_LEN];
     char machine[SIGAR_SYS_INFO_LEN];
-    char description[SIGAR_SYS_INFO_LEN];
+    char description[SIGAR_SYS_INFO_LEN];  /* segment if higher */
     char patch_level[SIGAR_SYS_INFO_LEN];
-    char vendor[SIGAR_SYS_INFO_LEN];
-    char vendor_version[SIGAR_SYS_INFO_LEN];
+    char vendor[SIGAR_SYS_INFO_LEN/2];
+    char vendor_version[SIGAR_SYS_INFO_LEN/2]; /* desc need space for 2x */
     char vendor_name[SIGAR_SYS_INFO_LEN];  /* utsname.sysname */
     char vendor_code_name[SIGAR_SYS_INFO_LEN];
 } sigar_sys_info_t;

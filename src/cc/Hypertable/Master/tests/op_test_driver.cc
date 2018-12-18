@@ -83,7 +83,7 @@ namespace {
   String g_mml_dir;
   uint16_t g_rs_port = 0;
 
-  struct AppPolicy : Config::Policy {
+  struct AppPolicy : Policy {
     static void init_options() {
       cmdline_desc("Usage: %s <test>\n\n"
                    "  This program tests failures and state transitions\n"
@@ -103,8 +103,9 @@ namespace {
                    "  toggle_table_maintenance\n"
                    "  recreate_index_tables\n"
                    "\nOptions");
-      cmdline_hidden_desc().add_options()("test", str(), "test to run");
-      cmdline_positional_desc().add("test", -1);
+      cmdline_hidden_desc().add_options()
+      ("test", str(), "test to run")
+      ("test", -1);
     }
     static void init() {
       if (!has("test")) {
@@ -383,7 +384,7 @@ int main(int argc, char **argv) {
     // Default Hyperspace replicat host
     std::vector<String> replicas;
     replicas.push_back("localhost");
-    properties->set("Hyperspace.Replica.Host", replicas);
+    properties->set("Hyperspace.Replica.Host", (gStrings)replicas);
 
     Hyperspace::SessionPtr hyperspace = make_shared<Hyperspace::Session>(Comm::instance(), properties);
 

@@ -19,40 +19,17 @@
 # - Find Ceph
 # Find the native Ceph includes and library
 #
-#  Ceph_INCLUDE_DIR - where to find libceph.h, etc.
-#  Ceph_LIBRARIES   - List of libraries when using Ceph.
-#  Ceph_FOUND       - True if Ceph found.
+#  CEPH_INCLUDE_DIR - where to find libceph.h, etc.
+#  CEPH_LIBRARIES   - List of libraries when using Ceph.
+#  CEPH_FOUND       - True if Ceph found.
 
-
-if (Ceph_INCLUDE)
-  # Already in cache, be silent
-  set(Ceph_FIND_QUIETLY TRUE)
-endif ()
-
-find_path(Ceph_INCLUDE ceph/libceph.h
-  /usr/local/include
-  $ENV{HOME}/ceph/src/client
+HT_FASTLIB_SET(
+	NAME "CEPH" 
+	SHARED cephfs 
+	INCLUDE cephfs/libcephfs.h
 )
 
-find_library(Ceph_LIB
-	NAMES ceph
-	PATHS /usr/local/lib
-	      $ENV{HOME}/ceph/src/.libs)
-
-if (Ceph_INCLUDE AND Ceph_LIB AND SSL_LIBRARIES)
-  mark_as_advanced(Ceph_INCLUDE)
-  mark_as_advanced(Ceph_LIB)
-  set(Ceph_FOUND TRUE)
-  set(Ceph_LIBRARIES ${Ceph_LIB} ${SSL_LIBRARIES} ${CRYPTO_LIBRARIES})
-  message(STATUS "Found ceph: ${Ceph_LIBRARIES}")
-  
-  HT_INSTALL_LIBS(lib ${Ceph_LIBRARIES})
-else ()
-   if (FSBROKER_CEPH)
-      message(FATAL_ERROR "Could NOT find ceph libraries")
-   endif ()
-   set(Ceph_FOUND FALSE)
-   set(Ceph_LIBRARIES)
+if (NOT CEPH_FOUND AND FSBROKER_CEPH)
+	message(FATAL_ERROR "Could NOT find ceph libraries")
 endif ()
-
 

@@ -525,6 +525,11 @@ int HsCommandInterpreter::execute_line(const String &line) {
       return static_cast<int>(code);
     }
 
+    else if (state.command == COMMAND_CFG_RELOAD) {
+      String result = m_session->cfg_reload(state.file_name);
+      cout << result << endl;
+    }
+
     else if (state.command == COMMAND_HELP) {
       const char **text = HsHelpText::get(state.help_str);
 

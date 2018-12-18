@@ -56,6 +56,9 @@ Logger.cc
 MetricsCollectorGanglia.cc
 MetricsProcess.cc
 MurmurHash.cc
+Property.cc
+PropertyValueEnumExt.cc
+PropertiesParser.cc
 Properties.cc
 Random.cc
 Regex.cc
@@ -187,11 +190,11 @@ HT_ADD_TEST(
 	TARGETS Hypertable 
 )
 # config tests
-HT_ADD_TEST(
-	NAME Common-Config
-	SRCS tests/config_test.cc
-	TARGETS Hypertable 
-)
+#HT_ADD_TEST(
+#	NAME Common-Config
+#	SRCS tests/config_test.cc
+#	TARGETS Hypertable 
+#)
 
 # crontab tests
 add_executable(crontab_test tests/crontab_test.cc)
@@ -210,7 +213,7 @@ add_executable(init_test tests/init_test.cc)
 target_link_libraries(init_test HyperCommon)
 add_test(Common-init ${TEST_DIFF}
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/init_test.golden
-  ./init_test --i16 1k --i32 64K --i64 1G --boo)
+  ./init_test --i16 1k --i32 64K --i64 1G --boo --enum_ext two)
   
 # md5 base 64 test
 HT_ADD_TEST(
@@ -273,6 +276,17 @@ HT_ADD_TEST(
 	SRCS tests/filesystem_test.cc
 	TARGETS Hypertable 
 )
+
+# config properties parser tests
+configure_file(${SRC_DIR}/tests/properties_parser_test.cfg ${DST_DIR}/properties_parser_test.cfg)
+
+add_executable(properties_parser_test tests/properties_parser_test.cc)
+target_link_libraries(properties_parser_test HyperCommon)
+add_test(Common-Properties-Parser ${TEST_DIFF}
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/properties_parser_test.golden
+  ./properties_parser_test argOne --i16 1k --i32 64K --i64 1G --boo true --strs=1 -strs 2 -strs 3 --strs 4 -strs=5 --strs=6 --b=1 --is_true
+)
+  
 # container tests
 #HT_ADD_TEST(
 #	NAME Common-Container

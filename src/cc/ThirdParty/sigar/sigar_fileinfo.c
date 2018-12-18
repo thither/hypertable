@@ -713,7 +713,7 @@ static int dir_stat_get(sigar_t *sigar,
     DIR *dirp = opendir(dir);
     struct dirent *ent;
     struct stat info;
-#ifdef HAVE_READDIR_R
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
     struct dirent dbuf;
 #endif
 
@@ -729,7 +729,7 @@ static int dir_stat_get(sigar_t *sigar,
         max--;
     }
 
-#ifdef HAVE_READDIR_R
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
     while (readdir_r(dirp, &dbuf, &ent) == 0) {
         if (ent == NULL) {
             break;
