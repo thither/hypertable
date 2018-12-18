@@ -78,8 +78,9 @@ gen_test_data() {
 }
 
 dump_keys() {
-    $HT_HOME/bin/ht shell -l error --batch < $SCRIPT_DIR/dump-test-table.hql \
-        | grep -v "Waiting for connection to Hyperspace" > $1.txt
+    $HT_HOME/bin/ht shell -l crit --batch < $SCRIPT_DIR/dump-test-table.hql > $1.txt
+    # | grep -v -E "^[0-9]{10} " | cut -c 1-20 
+    # | grep -v "Waiting for connection to Hyperspace"
     if [ $? != 0 ] ; then
         echo "Problem dumping table 'LoadTest', exiting ..."
         save_failure_state
