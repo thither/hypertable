@@ -139,6 +139,10 @@ void parse_args(int argc, char *argv[]) {
     std::quick_exit(EXIT_SUCCESS);
   }
 
+  if (!has("config")) 
+    // continue with Policies do not set/require config
+    return;
+
   filename = properties->get_str("config");
 
   // Only try to parse config file if it exists or not default
@@ -150,6 +154,7 @@ void parse_args(int argc, char *argv[]) {
                         allow_unregistered_options()).get_options());
   } else if (!defaulted("config"))
     HT_THROW(Error::FILE_NOT_FOUND, filename);
+
 }
 
 void parse_file(const String &fname, Desc &desc) {
