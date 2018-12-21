@@ -121,6 +121,12 @@ namespace Property {
 template <class T>
 class ValueGuardedVector {
 
+  private:
+
+    std::mutex mutex;	
+    T v;
+    using T_of = typename std::decay<decltype(*v.begin())>::type;
+
   public:
 
     ValueGuardedVector () noexcept {}
@@ -147,18 +153,13 @@ class ValueGuardedVector {
     ValueGuardedVector* operator =(ValueGuardedVector &other){
       set(other.get());
       return *this;
-    }
+    } 
     
     void set(T nv)  {
       std::lock_guard<std::mutex> lock(mutex);	
       v.swap(nv);
     }
     
-    size_t size()  {
-      std::lock_guard<std::mutex> lock(mutex);	
-      return v.size();
-    }
-
     operator T(){
       return get(); 
     }
@@ -168,10 +169,15 @@ class ValueGuardedVector {
       return v;      
     }
 
-  private:
+    size_t size()  {
+      std::lock_guard<std::mutex> lock(mutex);	
+      return v.size();
+    }
 
-    std::mutex mutex;	
-    T v;
+    T_of get_item(size_t n){
+      std::lock_guard<std::mutex> lock(mutex);	
+      return v[n];
+    }
 
 };
 

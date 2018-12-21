@@ -53,6 +53,8 @@ using namespace Serialization;
 Session::Session(Comm *comm, PropertiesPtr &props)
   : m_comm(comm), m_props(props), m_state(STATE_JEOPARDY), m_last_callback_id(0) {
 
+  m_hyperspace_replicas = m_props->get_ptr<gStrings>("Hyperspace.Replica.Host");
+
   m_datagram_send_port = props->get_i16("Hyperspace.Client.Datagram.SendPort");
   m_hyperspace_port = props->get_i16("Hyperspace.Replica.Port");
 
@@ -89,26 +91,12 @@ Session::~Session() {
 
 String Session::get_next_replica() 
 {
-	lock_guard<mutex> lock(m_mutex);
-	std::vector<String> new_replicas = m_props->get<gStrings>("Hyperspace.Replica.Host");
-
-	for (const auto &replica : m_hyperspace_replicas) {
-		auto itr = std::find(new_replicas.begin(), new_replicas.end(), replica);
-		if (itr != new_replicas.end())
-			m_hyperspace_replicas.erase(itr);
-	}
-	for (const auto &replica : new_replicas) {
-		if (std::find(m_hyperspace_replicas.begin(), m_hyperspace_replicas.end(), replica)
-			== m_hyperspace_replicas.end())
-			m_hyperspace_replicas.push_back(replica);
-	}
 	// opts, rnd or rack aware
 	// if round-rubin
-	if (m_hyperspace_replica_nxt >= m_hyperspace_replicas.size())
-		m_hyperspace_replica_nxt = 0;
-	String replica = m_hyperspace_replicas[m_hyperspace_replica_nxt];
 	m_hyperspace_replica_nxt++;
-	return replica;
+	if (m_hyperspace_replica_nxt >= m_hyperspace_replicas->size())
+		m_hyperspace_replica_nxt = 0;
+	return m_hyperspace_replicas->get_item(m_hyperspace_replica_nxt);
 }
 
 
@@ -1170,15 +1158,14 @@ String Session::locate(int type) {
   String location;
 
   switch(type) {
-  case LOCATE_MASTER:
-    location = m_hyperspace_master +  "\n";
-    break;
-  case LOCATE_REPLICAS:
-	// 1st set m_hyperspace_replicas and get next replica
-    location += "this next:" + get_next_replica() +"\n";
-    for (const auto &replica : m_hyperspace_replicas)
-      location += replica + "\n";
-    break;
+    case LOCATE_MASTER:
+      location = m_hyperspace_master +  "\n";
+      break;
+  
+    case LOCATE_REPLICAS:
+      for(size_t idx=0; idx<m_hyperspace_replicas->size(); idx++)
+        location.append(get_next_replica() + "\n");
+      break;
   }
   return location;
 }

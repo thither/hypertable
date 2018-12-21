@@ -740,8 +740,8 @@ namespace Hyperspace {
     CallbackMap               m_callbacks;
     uint64_t                  m_last_callback_id;
     std::mutex                m_callback_mutex;
-    vector<String>            m_hyperspace_replicas;
-    uint16_t                  m_hyperspace_replica_nxt = 0;
+    gStringsPtr               m_hyperspace_replicas;
+    size_t                    m_hyperspace_replica_nxt = 0;
     String                    m_hyperspace_master;
 
     bool                      m_silent;
