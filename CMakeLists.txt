@@ -346,6 +346,7 @@ find_package(Thrift REQUIRED)
 find_package(Cronolog REQUIRED)
 find_package(RRDtool REQUIRED)
 find_package(Doxygen)
+find_package(Pam)
 
 # Use llvm instead of gcc
 if (LLVM)

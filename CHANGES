@@ -1,3 +1,9 @@
+Version 0.9.8.16:
+(in-progress)
+
+   added pam_ht_maxretries - Pluggable Authentication Module (Hypertable Max Retries)
+   added FindPam.cmake, contrib/pam_ht_maxretries is built on available
+
 
 Version 0.9.8.15:
 (2018-12-19)
