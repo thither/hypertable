@@ -222,14 +222,21 @@ bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, Stri
 		client->hql_query(result, ns, hql);
 		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", hql.c_str());
 
+		String adj_i64 = String();
 		if(result.cells.size()>0) {
 			char *last;
-			if(strtoll(result.cells[0].value.c_str(), &last, 0) >= (int64_t) max_tries)  
+			int64_t c = strtoll(result.cells[0].value.c_str(), &last, 0);
+			if(c < 0 || c >= (int64_t) max_tries)  
 				allowed = false;
+			if (c < 0)
+				adj_i64 = format("('%s', '%s', '=%d'),", 
+												format(row_format.c_str(), ip_str.c_str()).c_str(),
+												cf.c_str(),
+												max_tries);
 		}
-		
-		hql = format("insert into %s values ('%s', '%s', '+1')", 
+		hql = format("insert into %s values %s('%s', '%s', '+1')", 
 								table.c_str(), 
+								adj_i64.c_str(),
 								format(row_format.c_str(), ip_str.c_str()).c_str(),
 								cf.c_str());
 		client->hql_query(result, ns, hql);
