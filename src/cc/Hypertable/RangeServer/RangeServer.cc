@@ -236,8 +236,8 @@ Apps::RangeServer::RangeServer(PropertiesPtr &props, ConnectionManagerPtr &conn_
   int64_t block_cache_min = cfg.get_i64("BlockCache.MinMemory");
   int64_t block_cache_max = cfg.get_i64("BlockCache.MaxMemory");
   if (block_cache_max == -1) {
-    double physical_ram = mem_stat.ram * MiB;
-    block_cache_max = (int64_t)physical_ram;
+    //double physical_ram = mem_stat.ram * MiB;
+    block_cache_max = (int64_t)((double)Global::memory_limit * 0.9);
   }
   if (block_cache_min > block_cache_max)
     block_cache_min = block_cache_max;
