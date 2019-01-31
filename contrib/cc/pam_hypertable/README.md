@@ -27,6 +27,7 @@ session required /opt/hypertable/current/lib/libpam_ht_maxretries.so ns=NAMESPAC
 
 ######  Configuration Options:
 
+    * ttp       - Thrift Transport (framed/zlib) - framed default
     * ns        - NameSpace
     * table     - Table
     * cf        - Column Family
@@ -43,7 +44,7 @@ session required /opt/hypertable/current/lib/libpam_ht_maxretries.so ns=NAMESPAC
 
   #### Requires
   Column Family to be a COUNTER type and if desired with TTL.
-  
+
 
   ##### At PAM authenticate, 
     On no remote host or NULL, return is PAM_PERM_DENIED
@@ -58,6 +59,10 @@ session required /opt/hypertable/current/lib/libpam_ht_maxretries.so ns=NAMESPAC
     On bad configurations, missing NS/TABLE/CF, return is PAM_SUCCESS
     Try count is set to Zero and return is PAM_SUCCESS
      
+     
+  ##### At Exceptions,
+    on ThriftClient error (connection/hql),  return is PAM_SUCCESS
+
 
 ### Logging (syslog/authlog):
 
