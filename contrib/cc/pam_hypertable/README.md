@@ -30,7 +30,7 @@ session required /opt/hypertable/current/lib/libpam_ht_maxretries.so ns=NAMESPAC
     * ns        - NameSpace
     * table     - Table
     * cf        - Column Family
-    * row       - A printf Format compatible, available %s for a Remote IP address  
+    * row       - A printf Format compatible, available %s for a Remote IP address  (eg. to be "ssh|%s")
     * max_tries - Maximum Allowed Tries Count before Auth return PAM_MAXTRIES
 
     ** more options can be 
