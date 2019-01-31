@@ -249,6 +249,10 @@ bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, Stri
     std::ostringstream out;
     out << e;
 		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", out.str().c_str());
+		allowed = true;
+	} catch (...) {
+		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", "Connection Error");
+		allowed = true;
 	}
 
 	return allowed;
@@ -281,6 +285,8 @@ void ht_reduce_attempt(String ttp_n, String ns_str, String table, String cf, Str
     std::ostringstream out;
     out << e;
 		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", out.str().c_str());
+	} catch (...) {
+		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", "Connection Error");
 	}
 }
 
