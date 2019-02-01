@@ -30,8 +30,10 @@ extern "C" {
 
 
 /* Declarations for C++ */
-void ht_reduce_attempt(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format);
-bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format, int max_tries);
+void ht_reduce_attempt(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format, 
+											int timeout);
+bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format, 
+											int max_tries, int timeout);
 
 
 /* PAM AUTH */
@@ -64,14 +66,15 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc, con
 	int got_ttp = 0 ;
 	int got_cf = 0 ;
 	int got_row = 0 ;
-	int got_max_tries = 0 ;
 
 	char ttp[256];
 	char ns[256];
 	char table[256];
 	char cf[256];
 	char row[256];
-	int max_tries;
+	int max_tries = 10;
+	int timeout = 30000;
+	char temp[256] ;
 
 	for(int i=0 ; i<argc ; i++ ) {
 		if( strncmp(argv[i], "ttp=", 4)==0 ) {
@@ -90,10 +93,11 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc, con
 			strncpy( row, argv[i]+4, 255 ) ;
 			got_row = 1 ;
 		} else if( strncmp(argv[i], "max_tries=", 10)==0 ) {
-			char temp[256] ;
 			strncpy( temp, argv[i]+10, 255 ) ;
 			max_tries = atoi(temp) ;
-			got_max_tries = 1 ;
+		} else if( strncmp(argv[i], "timeout=", 8)==0 ) {
+			strncpy( temp, argv[i]+8, 255 ) ;
+			timeout = atoi(temp) ;
 		}
 	}
 
@@ -101,10 +105,9 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc, con
 		return PAM_SUCCESS ;
 	}
 	if( got_ttp==0 ) 				strcpy(ttp, "framed");
-	if( got_max_tries==0 ) 	max_tries = 10;
 	if( got_row==0 ) 				strcpy(row, "%s");
 
-	if(ht_confirm_state(ttp, ns, table, cf, pam_rhost, row, max_tries))
+	if(ht_confirm_state(ttp, ns, table, cf, pam_rhost, row, max_tries, timeout))
 		return PAM_SUCCESS;
 
 	return PAM_MAXTRIES;  // PAM_PERM_DENIED;
@@ -152,6 +155,7 @@ PAM_EXTERN int pam_sm_open_session(pam_handle_t *pamh, int flags, int argc, cons
 	char table[256];
 	char cf[256];
 	char row[256];
+	int timeout = 30000;
 
 	for(int i=0 ; i<argc ; i++ ) {
 		if( strncmp(argv[i], "ttp=", 4)==0 ) {
@@ -169,6 +173,10 @@ PAM_EXTERN int pam_sm_open_session(pam_handle_t *pamh, int flags, int argc, cons
 		} else if( strncmp(argv[i], "row=", 4)==0 ) {
 			strncpy( row, argv[i]+4, 255 ) ;
 			got_row = 1 ;
+		} else if( strncmp(argv[i], "timeout=", 8)==0 ) {
+			char temp[256] ;
+			strncpy( temp, argv[i]+8, 255 ) ;
+			timeout = atoi(temp) ;
 		}
 	}
 
@@ -178,7 +186,7 @@ PAM_EXTERN int pam_sm_open_session(pam_handle_t *pamh, int flags, int argc, cons
 	if( got_ttp==0 ) 				strcpy(ttp, "framed");
 	if( got_row==0 ) 				strcpy(row, "%s");
 
-	ht_reduce_attempt(ttp, ns, table, cf, pam_rhost, row);
+	ht_reduce_attempt(ttp, ns, table, cf, pam_rhost, row, timeout);
 	return PAM_SUCCESS;
 }
 
@@ -204,7 +212,7 @@ PAM_EXTERN int pam_sm_acct_mgmt( pam_handle_t *pamh, int flags, int argc, const 
 
 
 
-bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format, int max_tries){
+bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format, int max_tries, int timeout){
 
 	bool allowed = true;
 	try{
@@ -213,7 +221,7 @@ bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, Stri
 		if (ttp_n.compare("zlib") == 0)	ttp = Thrift::Transport::ZLIB;
 		else 														ttp = Thrift::Transport::FRAMED;
   
-  	Thrift::Client *client = new Thrift::Client(ttp, "localhost", 15867);
+  	Thrift::Client *client = new Thrift::Client(ttp, "localhost", 15867, timeout);
 		ThriftGen::Namespace ns = client->namespace_open(ns_str);
 		ThriftGen::HqlResult result;
 		
@@ -259,15 +267,15 @@ bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, Stri
 }
 
 
-void ht_reduce_attempt(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format){
+void ht_reduce_attempt(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format, int timeout){
 
 	try{
 
 		Thrift::Transport ttp;
 		if (ttp_n.compare("zlib") == 0)	ttp = Thrift::Transport::ZLIB;
 		else 														ttp = Thrift::Transport::FRAMED;
-  
-  	Thrift::Client *client = new Thrift::Client(ttp, "localhost", 15867);
+
+  	Thrift::Client *client = new Thrift::Client(ttp, "localhost", 15867, timeout);
 		ThriftGen::Namespace ns = client->namespace_open(ns_str);
 		ThriftGen::HqlResult result;
 

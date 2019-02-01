@@ -17,12 +17,12 @@ The module can be and should be the first in the service groups (as long as not 
 
 #####  AUTH:
 ```bash
-auth required /opt/hypertable/current/lib/libpam_ht_maxretries.so ns=NAMESPACE table=TABLE cf=COLUMN_FAMILY row=ROW_FORMAT(%s) max_tries=10
+auth required /opt/hypertable/current/lib/libpam_ht_maxretries.so ns=NAMESPACE table=TABLE cf=COLUMN_FAMILY row=ROW_FORMAT(%s) max_tries=10 timeout=30000
 ```
 
 #####  SESSION:
 ```bash
-session required /opt/hypertable/current/lib/libpam_ht_maxretries.so ns=NAMESPACE table=TABLE cf=COLUMN_FAMILY row=ROW_FORMAT(%s) 
+session required /opt/hypertable/current/lib/libpam_ht_maxretries.so ns=NAMESPACE table=TABLE cf=COLUMN_FAMILY row=ROW_FORMAT(%s) timeout=30000
 ```
 
 ######  Configuration Options:
@@ -33,6 +33,7 @@ session required /opt/hypertable/current/lib/libpam_ht_maxretries.so ns=NAMESPAC
     * cf        - Column Family
     * row       - A printf Format compatible, available %s for a Remote IP address  (eg. to be "ssh|%s")
     * max_tries - Maximum Allowed Tries Count before Auth return PAM_MAXTRIES
+    * timeout   - Thrift Client timeout in ms (default 30,000)
 
     ** more options can be 
         ThriftBroker Host+Port
