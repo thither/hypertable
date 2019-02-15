@@ -5,7 +5,7 @@
 
 #### The libpam_ht_maxretries Moudle Objectives are:
   * Authentications limits by the Remote Address
-  * Max Tries Limit applied inclusivly between sessions
+  * Max Tries Limit applied inclusivly between sessions (to passwords and keys )
   * Automatic TTL based release. 
   * Cluster-wide bounding state.
 
