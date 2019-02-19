@@ -1,1 +1,1 @@
-__all__ = ['thriftclient', 'ThriftClient', 'serialized_cells', 'thrift_write_dispatcher']
+__all__ = ['thriftclient', 'ThriftClient', 'serialized_cells', 'write_dispatcher']
