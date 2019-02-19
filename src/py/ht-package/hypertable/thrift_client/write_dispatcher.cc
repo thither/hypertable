@@ -19,11 +19,8 @@
  
 #include <Common/Compat.h>
 #include <Common/String.h>
-#include <Common/Logger.h>
-#include <Common/System.h>
 
 #include <ThriftBroker/Client.h>
-#include <ThriftBroker/gen-cpp/HqlService.h>
 #include <Hypertable/Lib/KeySpec.h>
 
 #include <iostream>
@@ -341,7 +338,7 @@ class WriteDispatcher {
 PYBIND11_MODULE(write_dispatcher, m) {
   m.doc() = "Python Write Dipatcher Module for Hypertable ThriftClient";
 
-  py::class_<PyHelpers::WriteDispatcher, std::unique_ptr<PyHelpers::WriteDispatcher, py::nodelete>>(m, "WriteDispatcher")
+  py::class_<PyHelpers::WriteDispatcher, std::shared_ptr<PyHelpers::WriteDispatcher>>(m, "WriteDispatcher")
     .def(py::init<char *, uint16_t, char *, int32_t, int32_t, uint32_t, char *, bool, bool>(), 
           py::arg("host"),
           py::arg("port"),

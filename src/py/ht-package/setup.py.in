@@ -32,8 +32,9 @@ extensions = [
     Extension('hypertable.thrift_client.write_dispatcher',
               sources=['hypertable/thrift_client/write_dispatcher.cc'],
               include_dirs=include_dirs,
-              libraries=['HyperCommon', 'HyperThrift', 'expat'],
-              extra_objects=[],
+              libraries=[],  # ['HyperCommon', 'HyperThrift', 'expat'],
+              extra_objects=[ht_home+'/lib/'+l for l in ['libHyperCommon.a', 'libHyperThrift.a']]
+                            + '@THRIFT_LIBRARIES@'.split(';'),
               library_dirs=[ht_home+'/lib'],
               runtime_library_dirs=[ht_home+'/lib'],
               extra_compile_args=extra_compile_args,
