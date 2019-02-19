@@ -3,7 +3,7 @@ Version 0.9.8.16:
 
    added pam_ht_maxretries - Pluggable Authentication Module (Hypertable Max Retries)
    added FindPam.cmake, contrib/pam_ht_maxretries is built on available
-
+   added Python Write Dipatcher Module (PyHelper based on HyperThrift C++)
 
 Version 0.9.8.15:
 (2018-12-19)
