@@ -2,6 +2,7 @@
 import os
 import sys
 from distutils.core import setup, Extension
+from distutils import sysconfig
 
 README_RST = os.path.join(os.path.dirname(__file__), 'README.txt')
 with open(README_RST) as readme:
@@ -9,49 +10,54 @@ with open(README_RST) as readme:
 
 
 ht_home = '/opt/hypertable/@VERSION@'
-include_dirs = ['/usr/local/include', ht_home+'/include', '/usr/include']
-if 'PyPy' in sys.version:
-    if sys.version_info.major == 2:
-        include_dirs.append('@PYPY2_INCLUDE_DIR@')
-    if sys.version_info.major == 3:
-        include_dirs.append('@PYPY3_INCLUDE_DIR@')
+include_dirs = [ht_home+'/include',
+                '@THRIFT_INCLUDE_DIR@',
+                sysconfig.get_python_inc(plat_specific=True),
+                '/usr/local/include', '/usr/include']
 
+extra_compile_args = [a for a in set([a.strip() for a in "@CMAKE_CXX_FLAGS@ @CMAKE_C_FLAGS@".split(' ')]) if a]
 
-extra_objects_serialized_cells = []
-for l in [
-    'libHyperCommon.a',
-    'libHyperThrift.a',
-]:
-    extra_objects_serialized_cells.append(ht_home+'/lib/'+l)
-
-extra_compile_args = [a for a in set(
-    [a for a in "@CMAKE_CXX_FLAGS@ @CMAKE_C_FLAGS@".split(' ') if a])]
-
-extenstions = [
+extensions = [
     Extension('hypertable.thrift_client.serialized_cells',
-                sources=['hypertable/thrift_client/serialized_cells.cc'],
-                include_dirs=include_dirs,
-                libraries=[],
-                extra_objects=extra_objects_serialized_cells,
-                library_dirs=[ht_home+'/lib'],
-                extra_compile_args=extra_compile_args,
-                # language='c++17',
-                ),
+              sources=['hypertable/thrift_client/serialized_cells.cc'],
+              include_dirs=include_dirs,
+              libraries=[],
+              extra_objects=[ht_home+'/lib/'+l for l in ['libHyperCommon.a', 'libHyperThrift.a']],
+              library_dirs=[ht_home+'/lib'],
+              extra_compile_args=extra_compile_args,
+              # language='c++17',
+              ),
+    # from hypertable.thrift_client.serialized_cells import Writer, Reader, Cell
+
+    Extension('hypertable.thrift_client.write_dispatcher',
+              sources=['hypertable/thrift_client/write_dispatcher.cc'],
+              include_dirs=include_dirs,
+              libraries=['HyperCommon', 'HyperThrift', 'expat'],
+              extra_objects=[],
+              library_dirs=[ht_home+'/lib'],
+              runtime_library_dirs=[ht_home+'/lib'],
+              extra_compile_args=extra_compile_args,
+              language='c++',
+              ),
+    # from hypertable.thrift_client.write_dispatcher import WriteDispatcher
 
     Extension('hypertable.hypertable_client',
-                sources=['hypertable/hypertable_client.cc'],
-                include_dirs=include_dirs,
-                libraries=[
-                    'HyperCommon', 'HyperComm',
-                    'Hypertable', 'Hyperspace', 'HyperMaster', 'HyperRanger',
-                    'HyperTools', 'HyperAppHelper', 'HyperThirdParty', 'HyperThrift', 'HyperThriftConfig', 'HyperFsBroker',
-                    'boost_iostreams','boost_filesystem', 'boost_thread', 'boost_system', 'boost_chrono',
-                    're2', 'z'],
-                extra_objects=[],
-                library_dirs=[ht_home+'/lib'],
-                extra_compile_args=extra_compile_args,
-                # language='c++17',
-                ),
+              sources=['hypertable/hypertable_client.cc'],
+              include_dirs=include_dirs,
+              libraries=[
+                  'HyperCommon', 'HyperComm',
+                  'Hypertable', 'HyperTools', 'HyperAppHelper', 'HyperThirdParty',
+                  'Hyperspace', 'HyperMaster', 'HyperRanger',
+                  'HyperThrift', 'HyperThriftConfig', 'HyperFsBroker',
+                  'boost_iostreams', 'boost_filesystem', 'boost_thread', 'boost_system', 'boost_chrono',
+                  're2', 'z'],
+              extra_objects=[],
+              library_dirs=[ht_home+'/lib'],
+              runtime_library_dirs=[ht_home+'/lib'],
+              extra_compile_args=extra_compile_args,
+              language='c++',
+              ),
+    # from hypertable.hypertable_client import HypertableClient
 ]
 
 setup(
@@ -73,7 +79,7 @@ setup(
               ],
     maintainer='Kashirin Alex',
     maintainer_email='kashirin.alex@gmail.com',
-    ext_modules=extenstions
+    ext_modules=extensions
 )
 
 
@@ -92,6 +98,8 @@ setup(
 #              __init__.py
 #              gen/
 #              gen2/
+#         write_dispatcher.so/
+#               WriteDispatcher
 #    hypertable_client.so/
 #                   HypertableClient
 
@@ -101,14 +109,19 @@ setup(
 # , 'edit', 'ncursesw',
 # 'snappy', 'pthread', 're2', 'tcmalloc_minimal', 'unwind', 'ssl', 'crypto'
 # [
-#    'libHypertable.a',
-#    'libHyperThirdParty.a',
 #    'libHyperThrift.a',
 #    'libHyperThriftConfig.a',
-#    'libHyperTools.a',
-#    'libHyperAppHelper.a',
+
+#    'libHypertable.a',
+#    'libHyperThirdParty.a',
+
 #    'libHyperComm.a',
 #    'libHyperCommon.a',
+#    'libHyperAppHelper.a',
+
+
+#    'libHyperTools.a',
+
 #    'libHyperFsBroker.a',
 #    'libHyperMaster.a',
 #    'libHyperRanger.a',
