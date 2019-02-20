@@ -122,9 +122,9 @@ class WriteDispatcher {
      
       TableData* table = !has_table(t_name)?add_table(t_name):m_tables.at(t_name);
       table->buf_sz += cell.key.row.length()
-                      +cell.key.column_family.length()
-                      +cell.key.column_qualifier.length()
-                      +cell.value.length();
+                     + cell.key.column_family.length()
+                     + cell.key.column_qualifier.length()
+                     + cell.value.length();
       table->cells.push_back(cell);
       table->ts= (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
        
@@ -183,30 +183,42 @@ class WriteDispatcher {
     }
 
     std::vector<Hypertable::ThriftGen::Cell> get_next_table(int32_t &time_to_wait, bool run, Hypertable::String &table){
-      uint32_t ts= (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-
+      uint32_t ts= (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+                              std::chrono::high_resolution_clock::now().time_since_epoch()).count();
       int32_t remain;
+      time_to_wait = m_interval;
 
       std::vector<Hypertable::ThriftGen::Cell> cells;
       std::lock_guard<std::mutex> lock(m_mutex);
 
       for (const auto &kv : m_tables) {
+        if(kv.second->buf_sz == 0)
+          continue;
         
-        if((!run&&kv.second->cells.size()>0) || kv.second->buf_sz >= m_size || 
-          kv.second->cells.size() >= m_count || 
-          (int32_t)(ts-kv.second->ts) >= m_interval
-        )
+        if(!run || kv.second->buf_sz >= m_size  
+                || kv.second->cells.size()  >= m_count  
+                || (int32_t)(ts-kv.second->ts) >= m_interval)
           {
+            if(m_debug)
+              std::cout <<  "WriteDispatcher get_next_table: " << kv.first 
+                              << " buf_sz:"   << kv.second->buf_sz 
+                              << " cells:"    << kv.second->cells.size() 
+                              << " elapsed:"  << ts-kv.second->ts
+                              << std::endl;
+                              
             cells.swap(kv.second->cells);
+            kv.second->buf_sz = 0;
+            kv.second->ts = ts;
+
             time_to_wait = 0;
             table = kv.first;
-            kv.second->ts=ts;
             return cells;
           }
 
         remain = m_interval-(ts-kv.second->ts);
-        time_to_wait = remain < m_interval ? remain : m_interval;
-      }            
+        if(remain < time_to_wait)
+          time_to_wait = remain;
+      }         
       return cells;
     }
 
