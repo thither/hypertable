@@ -121,6 +121,7 @@ namespace Hypertable {
             &RangeServerConnectionEntry::local_addr>, InetAddrHash>
         >
       > ConnectionList;
+    // public_addr > hashed_non_unique ( conn uniqueness by location)
 
     typedef ConnectionList::nth_index<0>::type Sequence;
     typedef ConnectionList::nth_index<1>::type LocationIndex;
