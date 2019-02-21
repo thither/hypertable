@@ -195,8 +195,8 @@ class WriteDispatcher {
         if(kv.second->buf_sz == 0)
           continue;
         
-        if(!run || kv.second->buf_sz >= m_size  
-                || kv.second->cells.size()  >= m_count  
+        if(!run || kv.second->buf_sz >= m_size
+                || kv.second->cells.size()  >= m_count
                 || (int32_t)(ts-kv.second->ts) >= m_interval)
           {
             if(m_debug)
