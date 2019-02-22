@@ -187,14 +187,14 @@ class WriteDispatcher {
                               std::chrono::high_resolution_clock::now().time_since_epoch()).count();
       int32_t remain;
       time_to_wait = m_interval;
+      TableData* chk;
 
       std::vector<Hypertable::ThriftGen::Cell> cells;
       std::lock_guard<std::mutex> lock(m_mutex);
       
-      if(m_table_it == m_tables.end())
+      if(m_table_it == m_tables.end() || !run)
         m_table_it = m_tables.begin();
       
-      TableData* chk;
       for (;m_table_it != m_tables.end(); ++m_table_it) {
         if(m_table_it->second->buf_sz == 0)
           continue;
