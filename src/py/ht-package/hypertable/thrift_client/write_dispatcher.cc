@@ -190,32 +190,37 @@ class WriteDispatcher {
 
       std::vector<Hypertable::ThriftGen::Cell> cells;
       std::lock_guard<std::mutex> lock(m_mutex);
-
-      for (const auto &kv : m_tables) {
-        if(kv.second->buf_sz == 0)
+      
+      if(m_table_it == m_tables.end())
+        m_table_it = m_tables.begin();
+      
+      TableData* chk;
+      for (;m_table_it != m_tables.end(); ++m_table_it) {
+        if(m_table_it->second->buf_sz == 0)
           continue;
-        
-        if(!run || kv.second->buf_sz >= m_size
-                || kv.second->cells.size()  >= m_count
-                || (int32_t)(ts-kv.second->ts) >= m_interval)
+          
+        chk = m_table_it->second;
+        if(!run || chk->buf_sz >= m_size
+                || chk->cells.size()  >= m_count
+                || (int32_t)(ts-chk->ts) >= m_interval)
           {
             if(m_debug)
-              std::cout <<  "WriteDispatcher get_next_table: " << kv.first 
-                              << " buf_sz:"   << kv.second->buf_sz 
-                              << " cells:"    << kv.second->cells.size() 
-                              << " elapsed:"  << ts-kv.second->ts
+              std::cout <<  "WriteDispatcher get_next_table: " << m_table_it->first 
+                              << " buf_sz:"   << chk->buf_sz 
+                              << " cells:"    << chk->cells.size() 
+                              << " elapsed:"  << ts-chk->ts
                               << std::endl;
                               
-            cells.swap(kv.second->cells);
-            kv.second->buf_sz = 0;
-            kv.second->ts = ts;
+            cells.swap(chk->cells);
+            chk->buf_sz = 0;
+            chk->ts = ts;
 
             time_to_wait = 0;
-            table = kv.first;
+            table = m_table_it->first;
             return cells;
           }
 
-        remain = m_interval-(ts-kv.second->ts);
+        remain = m_interval-(ts-chk->ts);
         if(remain < time_to_wait)
           time_to_wait = remain;
       }         
@@ -323,6 +328,7 @@ class WriteDispatcher {
     typedef std::map<Hypertable::String,  TableData*> Tables;
     typedef std::pair<Hypertable::String, TableData*> TablePair;
     Tables m_tables;
+    Tables::const_iterator m_table_it = m_tables.end();
 
     typedef std::map<Hypertable::String,  Hypertable::ThriftGen::Mutator> Mutators;
     typedef std::pair<Hypertable::String, Hypertable::ThriftGen::Mutator> MutatorPair;
