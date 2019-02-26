@@ -1,24 +1,47 @@
 from hypertable.thrift_client.write_dispatcher import WriteDispatcher
 import psutil
 import time
+
 p = psutil.Process()
 p.num_threads()
 
-w=WriteDispatcher('127.0.0.1', 15867,'test', debug=True, use_mutator=True)
+debug = False
+namespace = "test"
+table_name = "thrift_test"
+
+w = WriteDispatcher('127.0.0.1', 15867, namespace, debug=debug, use_mutator=True)
 p.num_threads()
 
-w.push('thrift_test','2TesSt-1','test_cf','q1','2TesSt', 255)
-w.push('thrift_test','2TesSt-2','test_cf','q2','2TesSt', 255)
-w.push('thrift_test','2TesSt-3','test_cf','q3','2TesSt', 255)
-w.push('thrift_test','2TesSt-4','test_cf','q4','2TesSt', 255)
-w.push('thrift_test','2TesSt-1','test_cf','','', 255)
-w.push('thrift_test','2TesSt-2','test_cf','','', 255)
-w.push('thrift_test','2TesSt-3','test_cf','','', 255)
-w.push('thrift_test','2TesSt-4','test_cf','','', 255)
-w.push('thrift_test','2TesSt-1-1','test_cf','','', 255)
-w.push('thrift_test','2TesSt-2-1','test_cf','','', 255)
-w.push('thrift_test','2TesSt-3-1','test_cf','','', 255)
-w.push('thrift_test','2TesSt-4-1','test_cf','','', 255)
+
+def write_and_delete(handler, name, num):
+    start = time.time()
+    print ('start', 'write_and_delete', name, num)
+    for r in range(num):
+        row = 'test-'+name+'-'+str(r)
+        for cq in range(100):
+            handler.push(table_name, row, 's1d', 'q'+str(cq), "VALUE"+row, 255)
+
+    time.sleep(11)
+    for r in range(num):
+        row = 'test-'+name+'-'+str(r)
+        for cq in range(100):
+            handler.push(table_name, row, 's1d', 'q'+str(cq), "VALUE"+row, 2)
+
+    cells = []
+    for r in range(num):
+        row = 'test-'+name+'-'+str(r)
+        for cq in range(100):
+            cells.append([table_name, row, 's1d', 'q'+str(cq), "VALUE"+row, int(time.time()*1000000000), 255])
+            handler.push(*cells[-1])
+
+    time.sleep(11)
+    for cell in cells:
+        handler.push(*cell[:-1]+[2])
+
+    print ('end', 'write_and_delete', 'took', time.time()-start)
+    #
+
+write_and_delete(w, 'mutator', 1000)
 
 w.shutdown()
 w.verify_runs()
@@ -39,37 +62,17 @@ p.num_threads()
 w.shutdown()
 time.sleep(10)
 
-w=WriteDispatcher('127.0.0.1', 15867,'test', 1000, debug=True, use_mutator=False)
+w = WriteDispatcher('127.0.0.1', 15867, namespace, 1000, debug=debug, use_mutator=False)
 p.num_threads()
 
-w.push('thrift_test','2TesSt-1-5', 'test_cf', 'q1','2TesSt', 1550534400000000000, 255)
-w.push('thrift_test','2TesSt-1-6', 'test_cf', 'q2','2TesSt', 1550534400000000001, 255)
-w.push('thrift_test','2TesSt-1-7', 'test_cf', 'q3','2TesSt', 1550534400000000002, 255)
-w.push('thrift_test','2TesSt-1-8', 'test_cf', 'q4','2TesSt', 1550534400000000003, 255)
-w.push('thrift_test','2TesSt-1-9.1', 'test_cf', 'q4','2TesSt', 1550534400000000004, 255)
-w.push('thrift_test','2TesSt-1-9.2', 'test_cf', 'q4','2TesSt', 1550534400000000004, 255)
-w.push('thrift_test','2TesSt-1-9.3', 'test_cf', 'q4','2TesSt', 1550534400000000005, 255)
-w.push('thrift_test','2TesSt-1-9.3', 'test_cf', 'q4','2TesSt', 1550534400000000004, 255)
+write_and_delete(w, 'interval_no_mutator', 1000)
 
 w.shutdown()
 time.sleep(5)
 p.num_threads()
 
 
-w.push('thrift_test','2TesSt2-1','test_cf','q1','2TesSt', 255)
-w.push('thrift_test','2TesSt2-2','test_cf','q2','2TesSt', 255)
-w.push('thrift_test','2TesSt2-3','test_cf','q3','2TesSt', 255)
-w.push('thrift_test','2TesSt2-4','test_cf','q4','2TesSt', 255)
-
-w.push('thrift_test','2TesSt2-5','test_cf','q1','2TesSt', 255)
-w.push('thrift_test','2TesSt2-6','test_cf','q2','2TesSt', 255)
-w.push('thrift_test','2TesSt2-7','test_cf','q3','2TesSt', 255)
-w.push('thrift_test','2TesSt2-8','test_cf','q4','2TesSt', 255)
-
-w.push('thrift_test','2TesSt2-1','test_cf','q1','2TesSt', 2)
-w.push('thrift_test','2TesSt2-2','test_cf','q2','2TesSt', 2)
-w.push('thrift_test','2TesSt2-3','test_cf','q3','2TesSt', 2)
-w.push('thrift_test','2TesSt2-4','test_cf','q4','2TesSt', 2)
+write_and_delete(w, 'write_at_shutdown', 1000)
 
 p.num_threads()
 w.verify_runs()
@@ -78,22 +81,18 @@ time.sleep(10)
 p.num_threads()
 
 
+#
+
+w1 = WriteDispatcher('127.0.0.1', 15867, namespace, 1000, debug=debug)
+w2 = WriteDispatcher('127.0.0.1', 15867, namespace, 1000, debug=debug)
+w3 = WriteDispatcher('127.0.0.1', 15867, namespace, 1000, debug=debug)
+w4 = WriteDispatcher('127.0.0.1', 15867, namespace, 1000, debug=debug)
 
 
-w1=WriteDispatcher('127.0.0.1', 15867,'test', 1000, debug=True)
-w2=WriteDispatcher('127.0.0.1', 15867,'test', 1000, debug=True)
-w3=WriteDispatcher('127.0.0.1', 15867,'test', 1000, debug=True)
-w4=WriteDispatcher('127.0.0.1', 15867,'test', 1000, debug=True)
-
-
-w1.push('thrift_test','2TesSt3-1-w1','test_cf','q1','2TesSt', 255)
-w2.push('thrift_test','2TesSt3-2-w2','test_cf','q2','2TesSt', 255)
-w3.push('thrift_test','2TesSt3-3-w3','test_cf','q3','2TesSt', 255)
-w4.push('thrift_test','2TesSt3-4-w4','test_cf','q4','2TesSt', 255)
-w1.push('thrift_test','2TesSt3-5-w1','test_cf','q1','2TesSt', 255)
-w2.push('thrift_test','2TesSt3-6-w2','test_cf','q2','2TesSt', 255)
-w3.push('thrift_test','2TesSt3-7-w3','test_cf','q3','2TesSt', 255)
-w4.push('thrift_test','2TesSt3-8-w4','test_cf','q4','2TesSt', 255)
+write_and_delete(w1, 'several_instances', 1000)
+write_and_delete(w2, 'several_instances', 1000)
+write_and_delete(w3, 'several_instances', 1000)
+write_and_delete(w4, 'several_instances', 1000)
 
 p.num_threads()
 

@@ -41,119 +41,39 @@ namespace py = pybind11;
 namespace PyHelpers {
 
 
+typedef std::shared_ptr<std::vector<Hypertable::ThriftGen::Cell>> CellsPtr;
+
 struct TableData {
-  std::vector<Hypertable::ThriftGen::Cell> cells;
+  CellsPtr cells = std::make_shared<std::vector<Hypertable::ThriftGen::Cell>>();
   uint32_t ts;
   int32_t buf_sz=0;
 };
+typedef std::shared_ptr<TableData> TableDataPtr;
 
 
-class WriteDispatcher {
+uint32_t ts_ms_now(){
+  return std::chrono::duration_cast<std::chrono::milliseconds>(
+     std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+}
+
+
+class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
+
   public:
-    WriteDispatcher(Hypertable::String host, uint16_t port, Hypertable::String ns,
-                    int32_t interval, int32_t size, uint32_t count, Hypertable::String ttp_n, 
-                    bool debug, bool use_mutator)
-                    :m_interval(interval), m_size(size), m_count(count), m_debug(debug),
-                     m_use_mutator(use_mutator) {
+
+    DispatchHandler(Hypertable::Thrift::Transport ttp, 
+                    Hypertable::String host, uint16_t port, Hypertable::String ns,
+                    int32_t interval, int32_t size, uint32_t count,
+                    bool debug, bool use_mutator) :
+                    m_interval(interval), m_size(size), m_count(count), m_debug(debug),
+                    m_use_mutator(use_mutator) {
+      m_ttp = ttp;
       m_host = host;
       m_port = port;
       m_ns = ns;
-		  m_ttp = ttp_n.compare("zlib")==0 ? Hypertable::Thrift::Transport::ZLIB : Hypertable::Thrift::Transport::FRAMED;
-
-      run();
     }
-  
-    void verify_runs(){
-      if(!m_stopped.load()) 
-        return;
 
-      m_run.store(true);
-      m_stopped.store(false);
-
-      run();
-    }
-    
     void run(){
-      try {
-          std::thread ([this] { this->dispatch(); }).detach();
-      } catch (std::exception& e) {
-          std::cerr << e.what();
-      } catch (...) {
-          std::cerr << "Error Uknown Initializing WriteDispatcher - void run()";
-      }
-    }
-
-    void push_auto_ts(const char * t_name, 
-              const char * row, const char * cf, const char * cq, 
-              const Hypertable::String value, int flag){
-
-      Hypertable::ThriftGen::Cell cell;
-      cell.key.__set_flag((Hypertable::ThriftGen::KeyFlag::type)flag);
-
-      cell.key.__set_row(row);
-      cell.key.__set_column_family(cf);
-      if(cq != NULL)      cell.key.__set_column_qualifier(cq);
-        
-      if(!value.empty())  cell.__set_value(value);
-        
-      table_add_cell(t_name, cell);
-    }
-
-    void push(const char * t_name, 
-              const char * row, const char * cf, const char * cq, 
-              const Hypertable::String value, int64_t ts, int flag){
-
-      Hypertable::ThriftGen::Cell cell;
-      cell.key.__set_timestamp(ts);
-      //cell.key.__set_revision(ts);
-      cell.key.__set_flag((Hypertable::ThriftGen::KeyFlag::type)flag);
-
-      cell.key.__set_row(row);
-      cell.key.__set_column_family(cf);
-      if(cq != NULL)      cell.key.__set_column_qualifier(cq);
-        
-      if(!value.empty())  cell.__set_value(value);
-        
-      table_add_cell(t_name, cell);
-    }
-      
-    void table_add_cell(const char * t_name, Hypertable::ThriftGen::Cell cell){
-      std::lock_guard<std::mutex> lock(m_mutex);
-     
-      TableData* table = !has_table(t_name)?add_table(t_name):m_tables.at(t_name);
-      table->buf_sz += cell.key.row.length()
-                     + cell.key.column_family.length()
-                     + cell.key.column_qualifier.length()
-                     + cell.value.length();
-      table->cells.push_back(cell);
-      table->ts= (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-       
-      if(m_debug)
-        std::cout <<  t_name << ": " << (table->cells.back())  << std::endl;
-    }
-
-    void shutdown(){
-      m_run.store(false);
-    }
-    
-    operator WriteDispatcher*() { 
-      return this;
-    }
-
-    virtual ~WriteDispatcher(){
-      shutdown();
-    }
-
-  private:
-
-    bool has_table(const char * name) {
-      return m_tables.count(name);
-    }
-    TableData* add_table(const char * name){
-      return m_tables.insert(TablePair(name, new TableData())).first->second;
-    }
-
-    void dispatch(){
       int32_t time_to_wait = m_interval;
       std::vector<Hypertable::ThriftGen::Cell> cells;
       Hypertable::String table;
@@ -182,32 +102,79 @@ class WriteDispatcher {
       m_stopped.store(true);
     }
 
+    bool verify_runs(){
+      if(!m_stopped.load()) 
+        return true;
+
+      m_run.store(true);
+      m_stopped.store(false);
+
+      return false;
+    }
+    
+    void table_add_cell(const char * t_name, Hypertable::ThriftGen::Cell cell){
+      std::lock_guard<std::mutex> lock(m_mutex);
+
+      TableDataPtr table = !has_table(t_name)?add_table(t_name):m_tables->at(t_name);
+      table->buf_sz += cell.key.row.length()
+                     + cell.key.column_family.length()
+                     + cell.key.column_qualifier.length()
+                     + cell.value.length();
+      table->cells->push_back(cell);
+      table->ts = ts_ms_now();
+       
+      if(m_debug)
+        std::cout <<  t_name << ": " << (table->cells->back())  << std::endl;
+    }
+
+    void shutdown(){
+      m_run.store(false);
+    }
+    
+    operator DispatchHandler*() { 
+      return this;
+    }
+
+    virtual ~DispatchHandler(){
+      shutdown();
+    }
+
+  private:
+
+    bool has_table(const char * name) {
+      return m_tables->count(name);
+    }
+    
+    TableDataPtr add_table(const char * name){
+      return m_tables->insert(TablePair(name, std::make_shared<TableData>())).first->second;
+    }
+
     std::vector<Hypertable::ThriftGen::Cell> get_next_table(int32_t &time_to_wait, bool run, Hypertable::String &table){
-      uint32_t ts= (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(
-                              std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+      uint32_t ts= ts_ms_now();
       int32_t remain;
       time_to_wait = m_interval;
-      TableData* chk;
+      TableDataPtr chk;
 
-      std::vector<Hypertable::ThriftGen::Cell> cells;
+      CellsPtr cells = std::make_shared<std::vector<Hypertable::ThriftGen::Cell>>();
+
       std::lock_guard<std::mutex> lock(m_mutex);
       
-      if(m_table_it == m_tables.end() || !run)
-        m_table_it = m_tables.begin();
+      if(m_table_it == m_tables->end() || !run)
+        m_table_it = m_tables->begin();
       
-      for (;m_table_it != m_tables.end(); ++m_table_it) {
+      for (;m_table_it != m_tables->end(); ++m_table_it) {
         if(m_table_it->second->buf_sz == 0)
           continue;
           
         chk = m_table_it->second;
         if(!run || chk->buf_sz >= m_size
-                || chk->cells.size()  >= m_count
+                || chk->cells->size()  >= m_count
                 || (int32_t)(ts-chk->ts) >= m_interval)
           {
             if(m_debug)
               std::cout <<  "WriteDispatcher get_next_table: " << m_table_it->first 
                               << " buf_sz:"   << chk->buf_sz 
-                              << " cells:"    << chk->cells.size() 
+                              << " cells:"    << chk->cells->size() 
                               << " elapsed:"  << ts-chk->ts
                               << std::endl;
                               
@@ -217,14 +184,14 @@ class WriteDispatcher {
 
             time_to_wait = 0;
             table = m_table_it->first;
-            return cells;
+            return *(cells.get());
           }
 
         remain = m_interval-(ts-chk->ts);
         if(remain < time_to_wait)
           time_to_wait = remain;
       }         
-      return cells;
+      return *(cells.get());
     }
 
     void commit(Hypertable::String table, std::vector<Hypertable::ThriftGen::Cell> cells){
@@ -321,14 +288,16 @@ class WriteDispatcher {
         conn_client = nullptr;
     }
 
+
     std::atomic<bool> m_run=true;
     std::atomic<bool> m_stopped=false;
     std::mutex        m_mutex;
 
-    typedef std::map<Hypertable::String,  TableData*> Tables;
-    typedef std::pair<Hypertable::String, TableData*> TablePair;
-    Tables m_tables;
-    Tables::const_iterator m_table_it = m_tables.end();
+    typedef std::map<Hypertable::String,  TableDataPtr> Tables;
+    typedef std::pair<Hypertable::String, TableDataPtr> TablePair;
+
+    std::shared_ptr<Tables> m_tables = std::make_shared<Tables>();
+    Tables::const_iterator m_table_it = m_tables->end();
 
     typedef std::map<Hypertable::String,  Hypertable::ThriftGen::Mutator> Mutators;
     typedef std::pair<Hypertable::String, Hypertable::ThriftGen::Mutator> MutatorPair;
@@ -348,6 +317,92 @@ class WriteDispatcher {
     Hypertable::Thrift::Client      *conn_client = nullptr;
     Hypertable::ThriftGen::Namespace conn_ns;
 };
+
+
+    
+class WriteDispatcher {
+  
+  public:
+
+    WriteDispatcher(Hypertable::String host, uint16_t port, Hypertable::String ns,
+                    int32_t interval, int32_t size, uint32_t count, 
+                    Hypertable::String ttp_n, 
+                    bool debug, bool use_mutator) {
+
+      m_handler = std::make_shared<DispatchHandler>(
+        ttp_n.compare("zlib")==0 ? Hypertable::Thrift::Transport::ZLIB : Hypertable::Thrift::Transport::FRAMED, 
+        host, port, ns, 
+        interval, size, count, debug, 
+        use_mutator
+      );
+
+      run();
+    }
+  
+    bool verify_runs(){
+      if(m_handler->verify_runs())
+        return true;
+      
+      run();
+      return false;
+    }
+
+    void push_auto_ts(const char * t_name, 
+              const char * row, const char * cf, const char * cq, 
+              const Hypertable::String value, int flag){
+
+      Hypertable::ThriftGen::Cell cell;
+      cell.key.__set_flag((Hypertable::ThriftGen::KeyFlag::type)flag);
+
+      cell.key.__set_row(row);
+      cell.key.__set_column_family(cf);
+      if(cq != NULL)      cell.key.__set_column_qualifier(cq);
+        
+      if(!value.empty())  cell.__set_value(value);
+        
+      m_handler->table_add_cell(t_name, cell);
+    }
+
+    void push(const char * t_name, 
+              const char * row, const char * cf, const char * cq, 
+              const Hypertable::String value, int64_t ts, int flag){
+
+      Hypertable::ThriftGen::Cell cell;
+      cell.key.__set_timestamp(ts);
+      //cell.key.__set_revision(ts);
+      cell.key.__set_flag((Hypertable::ThriftGen::KeyFlag::type)flag);
+
+      cell.key.__set_row(row);
+      cell.key.__set_column_family(cf);
+      if(cq != NULL)      cell.key.__set_column_qualifier(cq);
+        
+      if(!value.empty())  cell.__set_value(value);
+        
+      m_handler->table_add_cell(t_name, cell);
+    }
+
+    operator WriteDispatcher*() { 
+      return this;
+    }
+
+    void shutdown(){
+      m_handler->shutdown();
+    }
+
+    virtual ~WriteDispatcher(){
+      shutdown();
+    }
+
+  private:
+
+    void run(){
+      std::thread ( [d=m_handler]{ d->run(); } ).detach();
+    }
+
+    std::shared_ptr<DispatchHandler> m_handler;
+
+};
+
 
 } // PyHelpers namespace
 
