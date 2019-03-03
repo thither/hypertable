@@ -275,6 +275,7 @@ HT_ADD_TEST(
 	NAME Common-FileSystem
 	SRCS tests/filesystem_test.cc
 	TARGETS Hypertable 
+	EXT_DEPS ${ZSTD_LIBRARIES}
 )
 
 # config properties parser tests
