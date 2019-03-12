@@ -3,15 +3,9 @@
 #ifndef Hyperspace_ContribPamHtMaxretries_h
 #define Hyperspace_ContribPamHtMaxretries_h
 
-#include <Common/Compat.h>
 
 #include <ThriftBroker/Client.h>
 #include <ThriftBroker/gen-cpp/HqlService.h>
-#include <ThriftBroker/ThriftHelper.h>
-#include <ThriftBroker/SerializedCellsReader.h>
-
-#include <Common/Logger.h>
-#include <Common/System.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,9 +24,13 @@ extern "C" {
 
 
 /* Declarations for C++ */
-void ht_reduce_attempt(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format, 
+void ht_reduce_attempt(std::string ttp_n, std::string ns_str, 
+											 std::string table, std::string cf, 
+											 std::string ip_str, std::string row_format, 
 											int timeout);
-bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format, 
+bool ht_confirm_state(std::string ttp_n, std::string ns_str,
+											std::string table, std::string cf, 
+											std::string ip_str, std::string row_format, 
 											int max_tries, int timeout);
 
 
@@ -210,10 +208,19 @@ PAM_EXTERN int pam_sm_acct_mgmt( pam_handle_t *pamh, int flags, int argc, const 
 } // END extern C
 
 
+template <typename ... Args>
+std::string format(const char * fmt, Args ... as){
+	int sz = std::snprintf(nullptr, 0, fmt, as...);
+	std::vector<char> buf(sz + 1); // note +1 for null terminator
+	std::snprintf(&buf[0], buf.size(), fmt, as...);
+	return std::string(buf.begin(), buf.end());
+}
 
 
-bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format, int max_tries, int timeout){
-
+bool ht_confirm_state(std::string ttp_n, std::string ns_str, 
+											std::string table, std::string cf, 
+											std::string ip_str, std::string row_format, 
+											int max_tries, int timeout){
 	bool allowed = true;
 	try{
 
@@ -225,12 +232,12 @@ bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, Stri
 		ThriftGen::Namespace ns = client->namespace_open(ns_str);
 		ThriftGen::HqlResult result;
 		
-		String hql = format("select %s from %s where row='%s' cell_limit 1", 
+		std::string hql = format("select %s from %s where row='%s' cell_limit 1", 
 												cf.c_str(), table.c_str(), format(row_format.c_str(), ip_str.c_str()).c_str());
 		client->hql_query(result, ns, hql);
 		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", hql.c_str());
 
-		String adj_i64 = String();
+		std::string adj_i64 = std::string();
 		if(result.cells.size()>0) {
 			char *last;
 			int64_t c = strtoll(result.cells[0].value.c_str(), &last, 0);
@@ -267,8 +274,9 @@ bool ht_confirm_state(String ttp_n, String ns_str, String table, String cf, Stri
 }
 
 
-void ht_reduce_attempt(String ttp_n, String ns_str, String table, String cf, String ip_str, String row_format, int timeout){
-
+void ht_reduce_attempt(std::string ttp_n, std::string ns_str, 
+											 std::string table, std::string cf, 
+											 std::string ip_str, std::string row_format, int timeout){
 	try{
 
 		Thrift::Transport ttp;
@@ -279,7 +287,7 @@ void ht_reduce_attempt(String ttp_n, String ns_str, String table, String cf, Str
 		ThriftGen::Namespace ns = client->namespace_open(ns_str);
 		ThriftGen::HqlResult result;
 
-		String hql = format("insert into %s values ('%s', '%s', '=0')", 
+		std::string hql = format("insert into %s values ('%s', '%s', '=0')", 
 												table.c_str(), 
 												format(row_format.c_str(), ip_str.c_str()).c_str(),
 												cf.c_str());
@@ -297,7 +305,6 @@ void ht_reduce_attempt(String ttp_n, String ns_str, String table, String cf, Str
 		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", "Connection Error");
 	}
 }
-
 
 
 #endif // Hyperspace_ContribPamHtMaxretries_h
