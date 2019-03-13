@@ -177,12 +177,13 @@ bmz/bmz.c
 )
 
 # lib Hypertable
-HT_ADD_LIBS(
-	TARGET Hypertable 
+ADD_LIB_TARGET(
+	NAME Hypertable 
 	SRCS ${Hypertable_SRCS}
 	TARGETS Hyperspace HyperFsBroker
-	DEPENDENCIES ${SNAPPY_LIBRARIES} ${ZSTD_LIBRARIES} ${EXPAT_LIBRARIES})
-add_dependencies(Hypertable HyperComm Hyperspace HyperCommon)
+	SHARED ${SNAPPY_LIBRARIES_SHARED} ${ZSTD_LIBRARIES_SHARED}
+	STATIC ${SNAPPY_LIBRARIES_STATIC} ${ZSTD_LIBRARIES_STATIC}
+	)
 
 # test files
 set(SRC_DIR "${HYPERTABLE_SOURCE_DIR}/src/cc/Hypertable/Lib/tests")
@@ -197,7 +198,7 @@ add_test(Hypertable-Lib-TestSetup env INSTALL_DIR=${INSTALL_DIR}
          ${SRC_DIR}/test_setup.sh)
 		 
 # ColumnFamilySpec_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME ColumnFamilySpec
 	SRCS tests/ColumnFamilySpec_test.cc
 	TARGETS Hypertable
@@ -205,7 +206,7 @@ HT_ADD_TEST(
 configure_file(${SRC_DIR}/ColumnFamilySpec_test.golden ${DST_DIR}/ColumnFamilySpec_test.golden)
 
 # AccessGroupSpec_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME AccessGroupSpec
 	SRCS tests/AccessGroupSpec_test.cc
 	TARGETS Hypertable
@@ -213,7 +214,7 @@ HT_ADD_TEST(
 configure_file(${SRC_DIR}/AccessGroupSpec_test.golden ${DST_DIR}/AccessGroupSpec_test.golden)
 
 # Schema_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Schema
 	SRCS tests/Schema_test.cc
 	TARGETS Hypertable
@@ -222,7 +223,7 @@ configure_file(${SRC_DIR}/test-schemas.xml ${DST_DIR}/test-schemas.xml COPYONLY)
 configure_file(${SRC_DIR}/Schema_test.golden ${DST_DIR}/Schema_test.golden)
 
 # locationCacheTest
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME LocationCache
 	SRCS tests/locationCacheTest.cc
 	TARGETS Hypertable
@@ -230,7 +231,7 @@ HT_ADD_TEST(
 configure_file(${SRC_DIR}/locationCacheTest.golden ${DST_DIR}/locationCacheTest.golden)
 
 # loadDataSourceTest
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME LoadDataSource
 	SRCS tests/loadDataSourceTest.cc
 	TARGETS Hypertable
@@ -248,20 +249,22 @@ configure_file(${SRC_DIR}/loadDataSourceTest-qualified-header.golden
 configure_file(${SRC_DIR}/loadDataSourceTest-qualified-header.dat
                ${DST_DIR}/loadDataSourceTest-qualified-header.dat)
 
+
 # compressor_test
 
-set(EXT_DEPS "")
-if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-   set(EXT_DEPS "m")
-endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 # bmz binaries
-add_executable(bmz-test bmz/bmz-test.c)
-target_link_libraries(bmz-test Hypertable ${EXT_DEPS})
-add_executable(bmzip bmz/bmzip.c)
-target_link_libraries(bmzip Hypertable ${EXT_DEPS})
-set(EXT_DEPS '')
+ADD_TEST_EXEC(
+	NAME bmz-test
+	SRCS bmz/bmz-test.c
+	TARGETS Hypertable
+)
+ADD_TEST_EXEC(
+	NAME bmzip
+	SRCS bmz/bmzip.c
+	TARGETS Hypertable
+)
 
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME BlockCompressor
 	SRCS tests/compressor_test.cc
 	TARGETS Hypertable
@@ -269,35 +272,35 @@ HT_ADD_TEST(
 )
 
 # block_header_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME BlockHeader
 	SRCS tests/block_header_test.cc
 	TARGETS Hypertable
 )
 
 # commit_log_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME CommitLog
 	SRCS tests/commit_log_test.cc
 	TARGETS Hypertable
 )
 
 # escape_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME LoadDataEscape
 	SRCS tests/escape_test.cc
 	TARGETS Hypertable
 )
 
 # large_insert_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Client-large-block
 	SRCS tests/large_insert_test.cc
 	TARGETS Hypertable
 )
 
 # async_api_test 
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Client-async-api
 	SRCS tests/async_api_test.cc
 	TARGETS Hypertable
@@ -305,33 +308,43 @@ HT_ADD_TEST(
 configure_file(${SRC_DIR}/asyncApiTest.golden ${DST_DIR}/asyncApiTest.golden)
 
 # scanner_abrupt_end_test
-add_executable(scanner_abrupt_end_test tests/scanner_abrupt_end_test.cc)
-target_link_libraries(scanner_abrupt_end_test Hypertable)#HT_ADD_TEST(
+ADD_TEST_EXEC(
+	NAME scanner_abrupt_end_test
+	SRCS tests/scanner_abrupt_end_test.cc
+	TARGETS Hypertable
+)
+#ADD_TEST_TARGET(
 #	NAME Client-scanner_abrupt_end
 #	SRCS tests/scanner_abrupt_end_test.cc
 #	TARGETS Hypertable
 #)
 
 # future_abrupt_end_test
-add_executable(future_abrupt_end_test tests/future_abrupt_end_test.cc)
-target_link_libraries(future_abrupt_end_test Hypertable)
-#HT_ADD_TEST(
+ADD_TEST_EXEC(
+	NAME future_abrupt_end_test
+	SRCS tests/future_abrupt_end_test.cc
+	TARGETS Hypertable
+)
+#ADD_TEST_TARGET(
 #	NAME Client-future_abrupt_end
 #	SRCS tests/future_abrupt_end_test.cc
 #	TARGETS Hypertable
 #)
 
 # future_mutator_cancel_test
-add_executable(future_mutator_cancel_test tests/future_mutator_cancel_test.cc)
-target_link_libraries(future_mutator_cancel_test Hypertable)
-#HT_ADD_TEST(
+ADD_TEST_EXEC(
+	NAME future_mutator_cancel_test
+	SRCS tests/future_mutator_cancel_test.cc
+	TARGETS Hypertable
+)
+#ADD_TEST_TARGET(
 #	NAME Client-future_mutator_cancel
 #	SRCS tests/future_mutator_cancel_test.cc
 #	TARGETS Hypertable
 #)
 
 # future_test 
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Client-future
 	SRCS tests/future_test.cc
 	TARGETS Hypertable
@@ -339,7 +352,7 @@ HT_ADD_TEST(
 configure_file(${SRC_DIR}/future_test.cfg ${DST_DIR}/future_test.cfg)
 
 # key_spec_test 
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME KeySpec
 	SRCS tests/key_spec_test.cc
 	TARGETS Hypertable
@@ -347,14 +360,14 @@ HT_ADD_TEST(
 )
 
 # scan_spec_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME ScanSpec-basic-tests
 	SRCS tests/scan_spec_test.cc
 	TARGETS Hypertable
 )
 
 # indices_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Secondary-Indices-tests
 	SRCS tests/indices_test.cc
 	TARGETS Hypertable
@@ -362,16 +375,19 @@ HT_ADD_TEST(
 configure_file(${SRC_DIR}/indices_test.golden ${DST_DIR}/indices_test.golden)
 
 # row_delete_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Client-row-delete
 	SRCS tests/row_delete_test.cc
 	TARGETS Hypertable
 )
 
-# MutatorNoLogSyncTest
-add_executable(MutatorNoLogSyncTest tests/MutatorNoLogSyncTest.cc)
-target_link_libraries(MutatorNoLogSyncTest Hypertable)
-#HT_ADD_TEST(
+# future_abrupt_end_test
+ADD_TEST_EXEC(
+	NAME MutatorNoLogSyncTest
+	SRCS tests/MutatorNoLogSyncTest.cc
+	TARGETS Hypertable
+)
+#ADD_TEST_TARGET(
 #	NAME MutatorNoLogSyncTest
 #	SRCS tests/MutatorNoLogSyncTest.cc
 #	TARGETS Hypertable
@@ -379,14 +395,14 @@ target_link_libraries(MutatorNoLogSyncTest Hypertable)
 configure_file (${SRC_DIR}/MutatorNoLogSyncTest.cfg ${DST_DIR}/MutatorNoLogSyncTest.cfg)
 
 # periodic_flush_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Client-periodic-flush
 	SRCS tests/periodic_flush_test.cc
 	TARGETS Hypertable
 )
 
 # name_id_mapper_test 
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME NameIdMapper
 	SRCS tests/name_id_mapper_test.cc
 	TARGETS Hypertable Hyperspace
@@ -395,17 +411,17 @@ HT_ADD_TEST(
 configure_file(${SRC_DIR}/name_id_mapper_test.cfg ${DST_DIR}/name_id_mapper_test.cfg)
 
 # rangeserver_serialize_test 
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME StatsRangeServer-serialize
 	SRCS tests/rangeserver_serialize_test.cc
 	TARGETS Hypertable Hyperspace
 )
 
 # MetaLog test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME MetaLog
 	SRCS tests/metalog_test.cc
-	TARGETS Hypertable Hyperspace
+	TARGETS Hypertable
 )
 configure_file(${SRC_DIR}/metalog_test.golden ${DST_DIR}/metalog_test.golden)
 configure_file(${SRC_DIR}/metalog_test2.golden ${DST_DIR}/metalog_test2.golden)
@@ -441,7 +457,5 @@ if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS Master/Response/Parameters/*.h)
   install(FILES ${HEADERS}
           DESTINATION include/Hypertable/Lib/Master/Response/Parameters)
-  install(TARGETS Hypertable
-      LIBRARY DESTINATION lib
-      ARCHIVE DESTINATION lib)
+
 endif ()

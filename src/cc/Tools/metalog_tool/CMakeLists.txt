@@ -18,9 +18,8 @@
 #
 
 # metalog_tool - program to print a textual representation of the metalog
-add_executable(ht_metalog_tool ht_metalog_tool.cc)
-target_link_libraries(ht_metalog_tool Hypertable HyperRanger HyperMaster)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_metalog_tool RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_metalog_tool
+	SRCS ht_metalog_tool.cc
+  TARGETS  HyperMaster HyperRanger Hypertable 
+)

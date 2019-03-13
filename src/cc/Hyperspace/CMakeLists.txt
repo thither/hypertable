@@ -34,12 +34,15 @@ HsClientState.cc
 )
 
 # lib Hyperspace
-HT_ADD_LIBS(
-	TARGET Hyperspace 
+ADD_LIB_TARGET(
+	NAME Hyperspace 
 	SRCS ${Hyperspace_SRCS}
 	TARGETS HyperTools
+	SHARED ${BDB_LIBRARIES_SHARED}
+	STATIC ${BDB_LIBRARIES_STATIC}
 )
 
+# htHyperspace
 set(Master_SRCS
 StateDbKeys.cc
 BerkeleyDbFilesystem.cc
@@ -85,17 +88,18 @@ ServerKeepaliveHandler.cc
 main.cc
 )
 
+ADD_EXEC_TARGET(
+	NAME htHyperspace
+	SRCS ${Master_SRCS}
+	TARGETS Hyperspace
+)
 
-# htHyperspace
-add_executable(htHyperspace ${Master_SRCS})
-target_link_libraries(htHyperspace Hyperspace ${BDB_LIBRARIES})
 
 # BerkeleyDbFilesystem test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME BerkeleyDbFilesystem
 	SRCS tests/bdb_fs_test.cc BerkeleyDbFilesystem.cc StateDbKeys.cc
-	TARGETS Hypertable Hyperspace
-	EXT_DEPS ${BDB_LIBRARIES}
+	TARGETS Hyperspace
 )
 #
 # Copy test files
@@ -110,8 +114,4 @@ if (NOT HT_COMPONENT_INSTALL)
 
   install(FILES ${HEADERS} DESTINATION include/Hyperspace)
 
-  install(TARGETS Hyperspace htHyperspace
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
 endif ()

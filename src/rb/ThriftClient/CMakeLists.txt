@@ -25,30 +25,40 @@ add_custom_command(
 )
 
 #### GENERATE HYPERTHRIFT module
-if (THRIFT_FOUND)
-	add_custom_command(
-		TARGET 		ThriftGenRb
-		COMMAND   	thrift
-		ARGS      	-r --gen rb -o ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable/
-					${ThriftBroker_IDL_DIR}/Hql.thrift
-		DEPENDS   	${ThriftBroker_IDL_DIR}/Client.thrift
-					${ThriftBroker_IDL_DIR}/Hql.thrift
-		COMMENT   	"thrift2rb"
-	)
+add_custom_command(
+	TARGET 		ThriftGenRb
+	COMMAND   thrift
+	ARGS      -r --gen rb -o ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable/
+						${ThriftBroker_IDL_DIR}/Hql.thrift
+	DEPENDS   ${ThriftBroker_IDL_DIR}/Client.thrift
+						${ThriftBroker_IDL_DIR}/Hql.thrift
+	COMMENT   "thrift2rb"
+)
 		
-	#### minimize attr access
-	add_custom_command(
-		TARGET 	 ThriftGenRb
-		COMMAND  sed 
-		ARGS     -i 's/hypertable\\/thrift_gen\\/client_types/client_types/g'  ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable/gen-rb/hql_types.rb
-	)
-endif ()
+#### minimize attr access
+add_custom_command(
+	TARGET 	 ThriftGenRb
+	COMMAND  sed 
+	ARGS     -i 's/hypertable\\/thrift_gen\\/client_types/client_types/g'  ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable/gen-rb/hql_types.rb
+)
 
 
 
-add_test(ThriftClient-ruby ruby -I ${INSTALL_DIR}/lib/rb ${INSTALL_DIR}/lib/rb/client_test.rb)
+
 
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
+
   install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/rb/ThriftClient/hypertable DESTINATION lib/rb)
-  install(FILES client_test.rb DESTINATION lib/rb)
+	install(FILES client_test.rb DESTINATION lib/rb)
+	
+  install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/rb/lib/
+					DESTINATION lib/rb/thrift USE_SOURCE_PERMISSIONS)
+					
+  # a fix for: Unable to load thrift_native extension. Defaulting to pure Ruby libraries.
+	install( CODE "execute_process(COMMAND gem install thrift)")
+	
+	add_test(ThriftClient-ruby bash -c "(ruby -I${INSTALL_DIR}/lib/rb:${INSTALL_DIR}/lib/rb/thrift ${INSTALL_DIR}/lib/rb/client_test.rb)")
+
 endif ()
+
+

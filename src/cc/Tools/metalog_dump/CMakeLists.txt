@@ -18,9 +18,8 @@
 #
 
 # ht_metalog_dump - program to print a textual representation of the metalog
-add_executable(ht_metalog_dump metalog_dump.cc)
-target_link_libraries(ht_metalog_dump HyperFsBroker HyperMaster HyperRanger Hypertable)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_metalog_dump RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_metalog_dump
+	SRCS metalog_dump.cc
+  TARGETS HyperFsBroker HyperMaster HyperRanger Hypertable 
+)

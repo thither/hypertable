@@ -24,7 +24,7 @@
 #  Libssh_LIB_DEPENDENCIES - List of libraries when using libssh.
 #  Libssh_FOUND            - True if libssh found.
 
-HT_FASTLIB_SET(
+SET_DEPS(
 	NAME "SSH" 
 	REQUIRED TRUE 
 	LIB_PATHS 
@@ -37,14 +37,14 @@ HT_FASTLIB_SET(
 
 if (SSH_FOUND)
   exec_program(readelf
-               ARGS -s ${SSH_LIBRARIES}
+               ARGS -s ${SSH_LIBRARIES_SHARED}
                OUTPUT_VARIABLE LDD_OUT
                RETURN_VALUE LDD_RETURN)
 			   
   if (LDD_RETURN STREQUAL "0")
     string(REGEX MATCH "libgcrypt" dummy ${LDD_OUT})
 	if(dummy)
-		HT_FASTLIB_SET(
+    SET_DEPS(
 			NAME "GCRYPT" 
 			REQUIRED TRUE 
 			LIB_PATHS 
@@ -53,14 +53,13 @@ if (SSH_FOUND)
 			SHARED gcrypt gpg-error
 			INCLUDE gcrypt.h gpg-error.h
 		)
-		set(SSH_LIBRARIES ${SSH_LIBRARIES} ${GCRYPT_LIBRARIES})
+		set(SSH_LIBRARIES_SHARED ${SSH_LIBRARIES_SHARED} ${GCRYPT_LIBRARIES_SHARED})
+		set(SSH_LIBRARIES_STATIC ${SSH_LIBRARIES_STATIC} ${GCRYPT_LIBRARIES_STATIC})
 	endif ()
-  else()
-	set(SSH_LIBRARIES ${SSH_LIBRARIES} ${SSL_LIBRARIES})
   endif ()
 
   exec_program(${CMAKE_SOURCE_DIR}/bin/src-utils/ldd.sh
-               ARGS ${SSH_LIBRARIES}
+               ARGS ${SSH_LIBRARIES_SHARED}
                OUTPUT_VARIABLE LDD_OUT
                RETURN_VALUE LDD_RETURN)
   if (LDD_RETURN STREQUAL "0")
@@ -82,8 +81,8 @@ if (SSH_FOUND)
           ${HYPERTABLE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp
           ${HYPERTABLE_SOURCE_DIR}/cmake/CheckLibssh.cc
           CMAKE_FLAGS 
-		  INCLUDE_DIRECTORIES ${SSH_INCLUDE_DIRS}
-          LINK_LIBRARIES ${SSH_LIBRARIES}
+		  INCLUDE_DIRECTORIES ${SSH_INCLUDE_PATHS}
+          LINK_LIBRARIES ${SSH_LIBRARIES_SHARED}
           RUN_OUTPUT_VARIABLE TC_TRY_OUT)
   if (TC_CHECK_BUILD AND NOT TC_CHECK STREQUAL "0")
     message(STATUS "${TC_TRY_OUT}")
@@ -92,11 +91,9 @@ if (SSH_FOUND)
   message("       version: ${TC_TRY_OUT}")
   
   if(Libssh_LIB_DEPENDENCIES)
-	# Install dependencies
-	string(REPLACE " " ";" LIB_DEPENDENCIES_LIST ${Libssh_LIB_DEPENDENCIES})
-	foreach(dep ${LIB_DEPENDENCIES_LIST})
-		HT_INSTALL_LIBS(lib ${dep})
-	endforeach ()
+	  # Install dependencies
+	  string(REPLACE " " ";" LIB_DEPENDENCIES_LIST ${Libssh_LIB_DEPENDENCIES})
+		HT_INSTALL_LIBS(lib ${LIB_DEPENDENCIES_LIST})
   endif ()
 endif ()
 

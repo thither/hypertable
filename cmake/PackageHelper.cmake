@@ -16,9 +16,6 @@
 # along with Hypertable. If not, see <http://www.gnu.org/licenses/>
 #
 
-# Dependent libraries
-HT_INSTALL_LIBS(lib ${Kfs_LIBRARIES})
-
 # Apple specific
 if (APPLE)
    install(FILES "/System/Library/Frameworks/CoreFoundation.framework/Versions/Current/CoreFoundation" DESTINATION lib)
@@ -52,6 +49,7 @@ if (LDD_RETURN STREQUAL "0")
   set(cxx_lib ${CMAKE_MATCH_1})
   string(REGEX MATCH "[ \t](/[^ ]+/libc\\+\\+abi\\.[^ \n]+)" dummy ${LDD_OUT})
   set(cxxabi_lib ${CMAKE_MATCH_1})
+  
   HT_INSTALL_LIBS(lib ${gcc_s_lib} ${stdcxx_lib} ${stacktrace_lib} ${cxx_lib} ${cxxabi_lib})
   
 else ()

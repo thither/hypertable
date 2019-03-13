@@ -19,7 +19,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <google/tcmalloc.h>
+#include <gperftools/tcmalloc.h>
 
 int main() {
   int major, minor;

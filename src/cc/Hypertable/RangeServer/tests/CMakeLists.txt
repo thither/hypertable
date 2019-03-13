@@ -27,21 +27,22 @@ if (USE_TCMALLOC)
 endif ()
 
 # FileBlockCache test
-HT_ADD_TEST(
+
+ADD_TEST_TARGET(
 	NAME FileBlockCache
 	SRCS FileBlockCache_test.cc
 	TARGETS HyperRanger
 )
 
 # QueryCache test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME QueryCache
 	SRCS QueryCache_test.cc
 	TARGETS HyperRanger
 )
 
 # CellStoreScanner test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME CellStoreScanner
 	SRCS CellStoreScanner_test.cc
 	TARGETS HyperRanger Hypertable
@@ -51,7 +52,7 @@ configure_file(${SRC_DIR}/CellStoreScanner_test.golden
 # ${TEST_DEPENDENCIES}
 
 # CellStoreScanner_delete test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME CellStoreScanner-delete
 	SRCS CellStoreScanner_delete_test.cc
 	TARGETS HyperRanger Hypertable
@@ -61,7 +62,7 @@ configure_file(${SRC_DIR}/CellStoreScanner_delete_test.golden
 # ${TEST_DEPENDENCIES}
 
 # AccessGroupGarbageTracker test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME AccessGroup-garbage-tracker
 	SRCS AccessGroupGarbageTracker_test.cc
 	TARGETS HyperRanger Hypertable
@@ -71,7 +72,7 @@ HT_ADD_TEST(
 #add_test( AccessGroupGarbageTracker_test)
 
 # AccessGroup-hints-file test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME AccessGroup-hints-file
 	SRCS access_group_hints_file_test.cc
 	TARGETS HyperRanger Hypertable

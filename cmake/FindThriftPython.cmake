@@ -19,28 +19,32 @@
 # - Find PYTHON5
 # This module defines
 #  PYTHONTHRIFT_FOUND, If false, do not try to use ant
+#  THIRFT_PY_PATH
 
+if (THRIFT_SOURCE_DIR)
+  exec_program("find ${THRIFT_SOURCE_DIR}/lib/py/build/ -name Thrift.py"
+                OUTPUT_VARIABLE PYTHONTHRIFT_OUT
+                RETURN_VALUE PYTHONTHRIFT_RETURN)
+  if (PYTHONTHRIFT_RETURN STREQUAL "0")
+    string(REPLACE /Thrift.py "" THIRFT_PY_PATH ${PYTHONTHRIFT_OUT})
+  endif()
+endif()
 
-set(PYTHONTHRIFT_FOUND OFF)
-if (THRIFT_SOURCE_DIR AND EXISTS ${THRIFT_SOURCE_DIR}/lib/py/src/Thrift.py)
-	set(PYTHONTHRIFT_FOUND ON)
-else ()
-	exec_program(env ARGS python -c'import thrift' OUTPUT_VARIABLE PYTHONTHRIFT_OUT
-				RETURN_VALUE PYTHONTHRIFT_RETURN)
-	if (PYTHONTHRIFT_RETURN STREQUAL "0")
-		set(PYTHONTHRIFT_FOUND ON)
-	endif ()
-endif ()
+if (THIRFT_PY_PATH)
+  list(GET PYTHON_EXECUTABLES 0 py)
+  exec_program(env ARGS  PYTONPATH=${THIRFT_PY_PATH} ${py} -c'import thrift'
+               OUTPUT_VARIABLE PYTHONTHRIFT_OUT
+               RETURN_VALUE PYTHONTHRIFT_RETURN)
+               
+  if (PYTHONTHRIFT_RETURN STREQUAL "0")
+    message(STATUS "Found thrift Python")
+    set(PYTHONTHRIFT_FOUND TRUE)
 
-if (PYTHONTHRIFT_FOUND)
-
-  if (NOT PYTHONTHRIFT_FIND_QUIETLY)
-    message(STATUS "Found thrift for python, Copying Python files into installation")
+  elseif(LANG_PY)
+    message(FATAL_ERROR "Thrift Python lib is bad: ${PYTHONTHRIFT_OUT}")
   endif ()
-  install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/py/src/
-          DESTINATION lib/py/thrift USE_SOURCE_PERMISSIONS)
-else ()
-  message(STATUS "Thrift for python not found. "
-                 "ThriftBroker support for python will be disabled")
+
+elseif(LANG_PY)
+  message(FATAL_ERROR "Thrift Python lib files not found, Looked for ${THRIFT_SOURCE_DIR}/lib/py/build/*/Thrift.py ${PERLTHRIFT_OUT}")
 endif ()
 

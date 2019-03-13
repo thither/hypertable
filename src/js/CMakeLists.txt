@@ -17,27 +17,25 @@
 # 02110-1301, USA.
 #
 
-if (NODEJS_FOUND)
+add_custom_target(ThriftGenNODEJS ALL)
+add_custom_command(
+	TARGET 		ThriftGenNODEJS
+	COMMAND   thrift
+	ARGS      -r --gen js:node
+						-o ${HYPERTABLE_BINARY_DIR}/src/js/
+						${ThriftBroker_IDL_DIR}/Hql.thrift
+	DEPENDS   ${ThriftBroker_IDL_DIR}/Client.thrift
+						${ThriftBroker_IDL_DIR}/Hql.thrift
+	COMMENT   "ThriftJsGen"
+)
 
-	add_custom_target(ThriftGenNODEJS ALL)
-	add_custom_command(
-		TARGET 		ThriftGenNODEJS
-		COMMAND   	thrift
-		ARGS      	 -r --gen js:node
-					-o ${HYPERTABLE_BINARY_DIR}/src/js/
-					${ThriftBroker_IDL_DIR}/Hql.thrift
-		DEPENDS   	${ThriftBroker_IDL_DIR}/Client.thrift
-					${ThriftBroker_IDL_DIR}/Hql.thrift
-		COMMENT   	"ThriftPyGen"
-	)
 
-  if (NOT HT_COMONENT_INSTALL OR PACKAGE_THRIFTBROKER)
-    install(DIRECTORY node DESTINATION lib/js)
-    install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/js/gen-nodejs/ DESTINATION lib/js/node/node_modules/hypertable/lib/hypertable/)
-  endif ()
+if (NOT HT_COMONENT_INSTALL OR PACKAGE_THRIFTBROKER)
 
-  add_test(NAME ThriftClient-nodejs
-           WORKING_DIRECTORY ${INSTALL_DIR}/lib/js/node/
-           COMMAND ${NODEJS_EXECUTABLE} ./client_test.js )
+  install(DIRECTORY node DESTINATION lib/js)
+	install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/js/gen-nodejs/ DESTINATION lib/js/node/node_modules/hypertable/lib/hypertable/)
+		
+	add_test(ThriftClient-nodejs ${NODEJS_EXECUTABLE} ./client_test.js )
+	SET_TESTS_PROPERTIES(ThriftClient-nodejs PROPERTIES WORKING_DIRECTORY "${INSTALL_DIR}/lib/js/node/")
 
 endif ()

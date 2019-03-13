@@ -19,11 +19,12 @@
 # - Find Snappy 
 # Find the snappy compression library and includes
 #
-#  SNAPPY_INCLUDE_DIR - where to find snappy.h, etc.
-#  SNAPPY_LIBRARIES   - List of libraries when using snappy.
+#  SNAPPY_INCLUDE_PATHS - where to find snappy.h, etc.
+#  SNAPPY_LIBRARIES_SHARED   - List of libraries when using snappy.
+#  SNAPPY_LIBRARIES_STATIC   - List of libraries when using snappy.
 #  SNAPPY_FOUND       - True if snappy found.
 
-HT_FASTLIB_SET(
+SET_DEPS(
 	NAME "SNAPPY" 
 	REQUIRED TRUE 
 	LIB_PATHS 
@@ -32,13 +33,14 @@ HT_FASTLIB_SET(
 	SHARED snappy
 	INCLUDE snappy.h
 )
+
 if (SNAPPY_FOUND)
   try_run(SNAPPY_CHECK SNAPPY_CHECK_BUILD
           ${HYPERTABLE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp
           ${HYPERTABLE_SOURCE_DIR}/cmake/CheckSnappy.cc
           CMAKE_FLAGS 
-		  INCLUDE_DIRECTORIES ${SNAPPY_INCLUDE_DIR}
-          LINK_LIBRARIES ${SNAPPY_LIBRARIES}
+		  INCLUDE_DIRECTORIES ${SNAPPY_INCLUDE_PATHS}
+          LINK_LIBRARIES ${SNAPPY_LIBRARIES_SHARED}
           OUTPUT_VARIABLE SNAPPY_TRY_OUT)
   if (SNAPPY_CHECK_BUILD AND NOT SNAPPY_CHECK STREQUAL "0")
     string(REGEX REPLACE ".*\n(SNAPPY .*)" "\\1" SNAPPY_TRY_OUT ${SNAPPY_TRY_OUT})
@@ -53,3 +55,7 @@ if (SNAPPY_FOUND)
   message("       version: ${SNAPPY_VERSION}")
 endif ()
 
+
+if(SNAPPY_LIBRARIES_SHARED)
+	HT_INSTALL_LIBS(lib ${SNAPPY_LIBRARIES_SHARED})
+endif()

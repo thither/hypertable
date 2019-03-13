@@ -16,10 +16,6 @@
 # along with Hypertable. If not, see <http://www.gnu.org/licenses/>
 #
 
-# - Find Maven (a java build tool)
-# This module defines
-#  MAVEN_VERSION version string of maven if found
-#  MAVEN_FOUND, If false, do not try to use maven
 
 
 if (NOT JAVA_INCLUDE_PATH OR JAVA_INCLUDE_PATH STREQUAL "")
@@ -52,7 +48,6 @@ exec_program(env ARGS javac -version OUTPUT_VARIABLE JAVAC_OUT
 
 if (JAVAC_RETURN STREQUAL "0")
   message(STATUS "Java Compiler: ${JAVAC_OUT}")
-  message(STATUS "Java headers at: ${JAVA_INCLUDE_PATH}")
   
   string(REGEX MATCH "1[0-9]\\..*" JAVAC_VERSION ${JAVAC_OUT})
   if (NOT JAVAC_VERSION)
@@ -69,34 +64,19 @@ else ()
 endif ()
 
 
-macro(FIND_JAVA_LIB lib)
-  find_library(${lib}_LIB NAMES ${lib} PATHS 
-	$ENV{JAVA_HOME}/jre/lib/amd64
-	$ENV{JAVA_HOME}/jre/lib/amd64/server  
-	$ENV{JAVA_HOME}/lib/server
-	$ENV{JAVA_HOME}/lib
-	)
-  if(${lib}_LIB)
-	mark_as_advanced(${lib}_LIB)
-  endif ()
-endmacro(FIND_JAVA_LIB lib libname)
-
-FIND_JAVA_LIB(jawt) # find_package(JNI)
-FIND_JAVA_LIB(jvm)
-FIND_JAVA_LIB(java)
-FIND_JAVA_LIB(verify)
-
-find_path(Jni_INCLUDE_DIR jni.h
-	$ENV{JAVA_HOME}/include
+SET_DEPS(
+  NAME "JAVA" 
+  
+	LIB_PATHS $ENV{JAVA_HOME}/jre/lib/amd64
+	          $ENV{JAVA_HOME}/jre/lib/amd64/server  
+	          $ENV{JAVA_HOME}/lib/server
+	          $ENV{JAVA_HOME}/lib
+	INC_PATHS $ENV{JAVA_HOME}/include
+	# STATIC libjvm.a libjava.a libverify.a # libjawt.a 
+	SHARED  jvm java verify # jawt(requires Xrender, Xtst, Xi)
+	INCLUDE jni.h
 )
-if (jawt_LIB AND java_LIB AND Jni_INCLUDE_DIR)
-  message(STATUS "Java AWT Native Interface: ${jawt_LIB} ${Jni_INCLUDE_DIR}")
-else ()
-  message(STATUS "Java AWT Native Interface: not found")
-endif ()
-if (jvm_LIB)
-  set(jvm_LIB ${jvm_LIB} ${java_LIB} ${verify_LIB})
-  message(STATUS "Java Virtual Machine: ${jvm_LIB}")
-else ()
-  message(STATUS "Java Virtual Machine: not found")
-endif ()
+
+if(JAVA_LIBRARIES_SHARED)
+  HT_INSTALL_LIBS(lib ${JAVA_LIBRARIES_SHARED})
+endif()

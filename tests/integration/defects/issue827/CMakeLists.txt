@@ -18,8 +18,11 @@
 #
 
 # test binary
-add_executable(issue827_test test.cc)
-target_link_libraries(issue827_test Hypertable)
+ADD_TEST_EXEC(
+	NAME issue827_test 
+	SRCS test.cc
+  TARGETS Hypertable
+)
 
 add_test(Defects-issue827-1 env INSTALL_DIR=${INSTALL_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/run.sh)

@@ -11,9 +11,8 @@ with open(README_RST) as readme:
 
 ht_home = '/opt/hypertable/@VERSION@'
 include_dirs = [ht_home+'/include',
-                '@THRIFT_INCLUDE_DIR@',
                 sysconfig.get_python_inc(plat_specific=True),
-                '/usr/local/include', '/usr/include']
+                '/usr/local/include', '/usr/include'] + '@THRIFT_INCLUDE_PATHS@'.split(';') + '@PYBIND11_INCLUDE_PATHS@'.split(';')
 
 extra_compile_args = [a for a in set([a.strip() for a in "@CMAKE_CXX_FLAGS@ @CMAKE_C_FLAGS@".split(' ')]) if a]
 
@@ -22,7 +21,7 @@ extensions = [
               sources=['hypertable/thrift_client/serialized_cells.cc'],
               include_dirs=include_dirs,
               libraries=[],
-              extra_objects=[ht_home+'/lib/'+l for l in ['libHyperCommon.a', 'libHyperThrift.a']],
+              extra_objects=[ht_home+'/lib/'+l for l in ['libHyperCommon.a', 'libHyperThriftExtentions.a', 'libHyperThrift.a']],
               library_dirs=[ht_home+'/lib'],
               extra_compile_args=extra_compile_args,
               # language='c++17',
@@ -32,9 +31,9 @@ extensions = [
     Extension('hypertable.thrift_client.write_dispatcher',
               sources=['hypertable/thrift_client/write_dispatcher.cc'],
               include_dirs=include_dirs,
-              libraries=[],  # ['HyperCommon', 'HyperThrift', 'expat'],
-              extra_objects=[ht_home+'/lib/'+l for l in ['libHyperCommon.a', 'libHyperThrift.a']]
-                            + '@THRIFT_LIBRARIES@'.split(';'),
+              libraries=['z'],  # ['HyperCommon', 'HyperThriftExtentions', 'HyperThrift', 'expat'],
+              extra_objects=[ht_home+'/lib/'+l for l in ['libHyperCommon.a', 'libHyperThriftExtentions.a', 'libHyperThrift.a']]
+                            + '@THRIFT_LIBRARIES_STATIC@'.split(';'),
               library_dirs=[ht_home+'/lib'],
               runtime_library_dirs=[ht_home+'/lib'],
               extra_compile_args=extra_compile_args,
@@ -49,7 +48,7 @@ extensions = [
                   'HyperCommon', 'HyperComm',
                   'Hypertable', 'HyperTools', 'HyperAppHelper', 'HyperThirdParty',
                   'Hyperspace', 'HyperMaster', 'HyperRanger',
-                  'HyperThrift', 'HyperThriftConfig', 'HyperFsBroker',
+                  'HyperThrift', 'HyperThriftConfig', 'HyperThriftExtentions', 'HyperFsBroker',
                   'boost_iostreams', 'boost_filesystem', 'boost_thread', 'boost_system', 'boost_chrono',
                   're2', 'z'],
               extra_objects=[],

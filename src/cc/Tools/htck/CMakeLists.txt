@@ -20,9 +20,8 @@
 set(htck_SRCS ht_htck.cc MetadataDumpReader.cc RsmlReader.cc TableIdentifierMap.cc)
 
 # htck - Hypertable consistency check and repair tool
-add_executable(ht_htck ${htck_SRCS})
-target_link_libraries(ht_htck Hypertable HyperRanger)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_htck RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_htck
+	SRCS ${htck_SRCS}
+  TARGETS Hypertable HyperRanger
+)

@@ -18,9 +18,8 @@
 #
 
 # ht_prepend_md5
-add_executable(ht_prepend_md5 prepend_md5.cc)
-target_link_libraries(ht_prepend_md5 HyperCommon HyperComm)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_prepend_md5 RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_prepend_md5
+	SRCS prepend_md5.cc
+  TARGETS HyperCommon HyperComm
+)

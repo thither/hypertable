@@ -72,20 +72,27 @@ SystemState.cc
 )
 
 # HyperMaster Lib
-HT_ADD_LIBS(
-	TARGET HyperMaster 
+ADD_LIB_TARGET(
+	NAME HyperMaster 
 	SRCS ${Master_SRCS}
 	TARGETS Hyperspace HyperFsBroker Hypertable
 )
-	
+
 # htMaster
-add_executable(htMaster main.cc)
-target_link_libraries(htMaster HyperMaster HyperRanger)
+ADD_EXEC_TARGET(
+	NAME htMaster
+	SRCS  main.cc
+	TARGETS HyperMaster HyperRanger
+)
 
 # ht_gc
-add_executable(ht_gc gc.cc GcWorker.cc)
-target_link_libraries(ht_gc HyperMaster HyperFsBroker HyperRanger Hypertable ${RRD_LIBRARIES})
-
+ADD_UTIL_TARGET(
+	NAME ht_gc
+	SRCS gc.cc GcWorker.cc
+	TARGETS HyperMaster HyperRanger 
+	SHARED ${RRD_LIBRARIES_SHARED}
+	SHARED ${RRD_LIBRARIES_STATIC}
+)
 
 #
 # Copy test files
@@ -95,7 +102,7 @@ set(DST_DIR "${HYPERTABLE_BINARY_DIR}/src/cc/Hypertable/Master")
 
 		 
 # op_test_driver
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME MasterOperation
 	SRCS tests/op_test_driver.cc
 	TARGETS HyperMaster HyperRanger
@@ -112,6 +119,7 @@ HT_ADD_TEST(
 			  toggle_table_maintenance
 			  recreate_index_tables
 	PRE_CMD_TYPE env INSTALL_DIR=${INSTALL_DIR} bash ${CMAKE_CURRENT_SOURCE_DIR}/tests/op_test_setup.sh
+	POST_CMD env bash ${INSTALL_DIR}/bin/ht-start-test-servers.sh --clear
 )
 # drop_namespace_if_exists
 configure_file(${SRC_DIR}/master_initialize.golden 
@@ -139,20 +147,20 @@ configure_file(${SRC_DIR}/recreate_index_tables.golden
 
 
 # op_dependency_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME MasterOperation-Processor
 	SRCS tests/op_dependency_test.cc tests/OperationTest.cc
-	TARGETS Hypertable HyperMaster HyperRanger
+	TARGETS HyperMaster HyperRanger
 )
 
 # system_state_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME SystemState
 	SRCS tests/system_state_test.cc
-	TARGETS Hypertable HyperMaster HyperRanger
+	TARGETS HyperMaster HyperRanger
 )
 configure_file(${SRC_DIR}/system_state_test.golden
-			   ${DST_DIR}/system_state_test.golden COPYONLY)
+			   			 ${DST_DIR}/system_state_test.golden COPYONLY)
 
 
 
@@ -160,8 +168,4 @@ if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)
   install(FILES ${HEADERS}
       DESTINATION include/Hypertable/Master)
-  install(TARGETS HyperMaster htMaster ht_gc
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
 endif ()

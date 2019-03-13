@@ -52,55 +52,60 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 
 # lib HyperComm
-HT_ADD_LIBS(
-	TARGET HyperComm 
+ADD_LIB_TARGET(
+	NAME HyperComm 
 	SRCS ${AsyncComm_SRCS}
 	TARGETS HyperCommon)
 
 # sampleClient
-add_executable(sampleClient sampleClient.cc)
-target_link_libraries(sampleClient HyperComm)
-
+ADD_TEST_EXEC(
+	NAME sampleClient
+	SRCS sampleClient.cc
+	TARGETS HyperComm 
+)
 # testServer
-add_executable(testServer testServer.cc)
-target_link_libraries(testServer HyperComm)
+ADD_TEST_EXEC(
+	NAME testServer
+	SRCS testServer.cc
+	TARGETS HyperComm 
+)
 
 # commTest
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME HyperComm
 	SRCS tests/commTest.cc tests/CommTestThreadFunction.cc ${TEST_DEPENDENCIES}
-	TARGETS Hypertable 
+	TARGETS HyperComm 
 )
 
 # commTestDatagram
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME HyperComm-datagram
 	SRCS tests/commTestDatagram.cc tests/CommTestDatagramThreadFunction.cc ${TEST_DEPENDENCIES}
-	TARGETS Hypertable
+	TARGETS HyperComm
 )
 
 # commTestTimeout
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME HyperComm-timeout
 	SRCS tests/commTestTimeout.cc
-	TARGETS Hypertable 
+	TARGETS HyperComm 
 )
 configure_file(${SRC_DIR}/commTestTimeout.golden  ${DST_DIR}/commTestTimeout.golden)
 
 
 # commTestTimer
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME HyperComm-timer
 	SRCS tests/commTestTimer.cc
-	TARGETS Hypertable 
+	TARGETS HyperComm 
 )
 configure_file(${SRC_DIR}/commTestTimer.golden ${DST_DIR}/commTestTimer.golden)
 
 # commTestReverseRequest
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME HyperComm-reverse-request
 	SRCS tests/commTestReverseRequest.cc
-	TARGETS Hypertable 
+	TARGETS HyperComm 
 )
 configure_file(${SRC_DIR}/commTestReverseRequest.golden ${DST_DIR}/commTestReverseRequest.golden)
 
@@ -118,10 +123,6 @@ set(ADDITIONAL_MAKE_CLEAN_FILES ${DST_DIR}/words)
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)
 
-  install(FILES ${HEADERS} DESTINATION include/AsyncComm)
-
-  install(TARGETS HyperComm
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-		  ARCHIVE DESTINATION lib)
+	install(FILES ${HEADERS} DESTINATION include/AsyncComm)
+	
 endif ()

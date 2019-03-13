@@ -17,6 +17,9 @@
 # 02110-1301, USA.
 #
 
-# ht_balance_plan_generator - program to generate error code documenation
-add_executable(ht_generate_error_code_doc ht_generate_error_code_doc.cc)
-target_link_libraries(ht_generate_error_code_doc Hypertable)
+# ht_generate_error_code_doc - program to generate error code documenation
+ADD_UTIL_TARGET(
+	NAME ht_generate_error_code_doc
+	SRCS ht_generate_error_code_doc.cc
+  TARGETS Hypertable
+)

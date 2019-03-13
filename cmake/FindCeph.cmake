@@ -23,7 +23,7 @@
 #  CEPH_LIBRARIES   - List of libraries when using Ceph.
 #  CEPH_FOUND       - True if Ceph found.
 
-HT_FASTLIB_SET(
+SET_DEPS(
 	NAME "CEPH" 
 	SHARED cephfs 
 	INCLUDE cephfs/libcephfs.h
@@ -33,3 +33,7 @@ if (NOT CEPH_FOUND AND FSBROKER_CEPH)
 	message(FATAL_ERROR "Could NOT find ceph libraries")
 endif ()
 
+
+if(CEPH_LIBRARIES_SHARED)
+  HT_INSTALL_LIBS(lib ${CEPH_LIBRARIES_SHARED})
+endif()

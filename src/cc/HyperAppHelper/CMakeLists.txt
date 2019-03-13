@@ -26,18 +26,19 @@ Unique.h
 Error.h
 )
 # lib HyperAppHelper
-HT_ADD_LIBS(
-	TARGET HyperAppHelper 
+ADD_LIB_TARGET(
+	NAME HyperAppHelper 
 	SRCS ${Helper_SRCS}
-	TARGETS Hypertable HyperCommon)
+	TARGETS Hypertable HyperCommon
+)
 
 # tests
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME HyperAppHelper-Unique
 	SRCS tests/unique_test.cc
 	TARGETS HyperAppHelper Hypertable HyperComm HyperCommon
 )
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME HyperAppHelper-Error
 	SRCS tests/error_test.cc
 	TARGETS HyperAppHelper HyperAppHelper HyperCommon
@@ -49,10 +50,6 @@ configure_file(${HYPERTABLE_SOURCE_DIR}/conf/hypertable.cfg
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)
 
-  install(FILES ${HEADERS} ${VERSION_H} DESTINATION include/HyperAppHelper)
-
-  install(TARGETS HyperAppHelper
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
+	install(FILES ${HEADERS} ${VERSION_H} DESTINATION include/HyperAppHelper)
+	
 endif ()

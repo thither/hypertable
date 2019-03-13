@@ -17,10 +17,9 @@
 # 02110-1301, USA.
 #
 
-# hypertable - command interpreter
-add_executable(ht_balance_plan_generator ht_balance_plan_generator.cc)
-target_link_libraries(ht_balance_plan_generator HyperMaster HyperRanger Hypertable)
 
-if (NOT HT_COMPONENT_INSTALL)
-  install (TARGETS ht_balance_plan_generator RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_balance_plan_generator
+	SRCS ht_balance_plan_generator.cc
+	TARGETS HyperMaster HyperRanger Hypertable
+)

@@ -17,10 +17,12 @@
 # 02110-1301, USA.
 #
 
-include_directories(${Qfs_INCLUDE_DIR})
 
 # htFsBrokerQfs
-add_executable(htFsBrokerQfs main.cc QfsBroker.cc)
-target_link_libraries(htFsBrokerQfs ${Qfs_LIBRARIES} HyperFsBroker -lkrb5)
-
-install(TARGETS htFsBrokerQfs RUNTIME DESTINATION bin)
+ADD_EXEC_TARGET(
+	NAME htFsBrokerQfs
+	SRCS  main.cc QfsBroker.cc
+  TARGETS HyperFsBroker
+  SHARED ${QFS_LIBRARIES_SHARED} -lkrb5
+  STATIC ${QFS_LIBRARIES_STATIC}
+)

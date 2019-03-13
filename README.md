@@ -13,7 +13,7 @@ HOW TO BUILD FROM SOURCE
 
 A build can be done using the  [https://github.com/kashirin-alex/environments-builder]
  
-Configuration options with cmake:
+### Configuration options with cmake:
   
   Support for libraries in the different languages can be set with the LANGS param by comman delimited languages(ext+version)
     (default is "all", for None, "none" should be used) 
@@ -29,35 +29,53 @@ Configuration options with cmake:
         
         -Dhdfs_vers=apache-2.7.5,apache-1.1.0,apache-1.1.1,apache-1.2.1
         
-  Compilation Optimizations, cmake arguments HT_ENABLE_SHARED, BUILD_WITH_STATIC, HT_TEST_WITH and HT_O_LEVEL(predefined arguments combinations) with HT_O_LEVEL=4 compiler flags -O3 with LTO support are added,  default optimization level is 3:
-        
-        -DHT_O_LEVEL=[1-6]
-        
-   1: Optimals for debugging (fast)                 
-        (HT_ENABLE_SHARED=ON HT_TEST_WITH=SHARED)
-        
-   2: Optimals for Integrations and Storage space   
-        (BUILD_SHARED_LIBS=ON BUILD_WITH_STATIC=OFF)
-        
-   3: Optimals for Integrations and Storage space   
-        (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=OFF HT_TEST_WITH=SHARED)
-        
-   4: Optimals for Integrations and Performance   
-        (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=OFF HT_TEST_WITH=SHARED +Flags -O3 LTO)
-        
-   5: Optimals for Integrations, Performance and Memory with testing   
-        (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=ON HT_TEST_WITH=BOTH +Flags -O3 LTO)
-        
-   6: Optimals for Integrations, Performance and Memory without testing   
-        (HT_ENABLE_SHARED=ON BUILD_WITH_STATIC=ON HT_TEST_WITH=NONE +Flags -O3 LTO)
-       
-   -- result of flags from level=4, -flto -fuse-linker-plugin -ffat-lto-objects -O3, the static libraries file size of libHyperRanger.a for example is	200,920,572 bytes
-
-
-        
-
 To configuration options of "languages" and "fsbrokers", follow apply:
    - default is "all" and "none" should be used for None,
    - if set and the depenencies are not meet it will quit wit fatal error
      
+
+
+
+### Compilation Optimizations:
+        
+     -DHT_O_LEVEL=[1-7], applied over the CMAKE_BUILD_TYPE (release sets -DNDEBUG)
+        
+     1: sets flag -O2
+        
+     2: adds flags -flto -fuse-linker-plugin -ffat-lto-objects -floop-interchange
+        
+     3: sets flag -O3
+        
+     4: adds flags -flto -fuse-linker-plugin -ffat-lto-objects -floop-interchange
+        
+     5: sets BUILD_LINKING=STATIC
+        
+     6: sets BUILD_LINKING_CORE=STATIC
+   
+     7: sets LIBS_SHARED_LINKING=STATIC
+       
+
+  Build options, case-sensitive: 
+
+     - BUILD_LINKING =         STATIC or SHARED, a major executable target (eg. server), default SHARED
+
+     - UTILS_LINKING =         STATIC or SHARED, executable utility target, default SHARED
+
+     - LIBS_STATIC_LINKING =   STATIC, a static option is evaluated to a bundled static-lib, default SHARED
+
+     - LIBS_SHARED_LINKING =   STATIC or SHARED, a static option is evaluated to a bundled shared-lib, default SHARED
+
+     - BUILD_LINKING_CORE =    STATIC or SHARED, whether to use CORE_LIBS_STATIC_FLAGS, useable with cases such -s -static-libgcc -static-libstdc++, default SHARED
+
+     - LIBS_LINKING_CHECKING = STATIC or SHARED or DUAL, considerations for find package variable
+
+     - WITHOUT_TESTS =         ON, skip tests, default OFF
+
+     - TEST_LINKING =          STATIC or SHARED or DUAL, tests are built on linking type, default SHARED
+
+     - INSTALL_TARGETS =       Install only these targets, default All(OFF)
+
+
+
+        
 for more guidence you can follow with the Hypertable repository [https://github.com/hypertable/hypertable]

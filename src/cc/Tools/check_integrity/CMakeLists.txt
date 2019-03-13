@@ -17,8 +17,9 @@
 # 02110-1301, USA.
 #
 
-# hypertable - command interpreter
-add_executable(ht_check_integrity check_integrity.cc)
-target_link_libraries(ht_check_integrity Hypertable)
 
-install (TARGETS ht_check_integrity RUNTIME DESTINATION bin)
+ADD_UTIL_TARGET(
+	NAME ht_check_integrity
+	SRCS check_integrity.cc
+	TARGETS Hypertable
+)

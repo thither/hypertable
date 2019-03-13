@@ -18,9 +18,11 @@
 #
 
 # ht_ssh - Mulit-host ssh automation tool
-add_executable(ht_ssh ht_ssh.cc SshSocketHandler.cc SshThreadsCallbacks.cc SshOutputCollector.cc)
-target_link_libraries(ht_ssh HyperCommon HyperComm ${SSH_LIBRARIES})
 
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_ssh RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_ssh
+	SRCS ht_ssh.cc SshSocketHandler.cc SshThreadsCallbacks.cc SshOutputCollector.cc
+  TARGETS HyperCommon HyperComm
+  SHARED  ${SSH_LIBRARIES_SHARED} ${SSP_LIBRARIES_SHARED}
+  STATIC ${SSH_LIBRARIES_STATIC} ${SSP_LIBRARIES_STATIC}
+)

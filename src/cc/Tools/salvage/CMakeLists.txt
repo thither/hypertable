@@ -22,9 +22,8 @@ ht_salvage.cc
 )
 
 # salvage - Tool for salvaging data from CellStores
-add_executable(ht_salvage ${salvage_SRCS})
-target_link_libraries(ht_salvage Hypertable HyperRanger)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_salvage RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_salvage
+	SRCS ${salvage_SRCS}
+  TARGETS Hypertable HyperRanger
+)

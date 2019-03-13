@@ -18,15 +18,13 @@
 #
 
 # hypertable - command interpreter
-add_executable(ht_load_generator ht_load_generator.cc LoadClient.cc 
-    LoadThread.cc QueryThread.cc)
-
+set(add_targets)
 if (THRIFT_FOUND)
-  target_link_libraries(ht_load_generator Hypertable HyperThriftConfig)
-else ()
-  target_link_libraries(ht_load_generator Hypertable)
-endif ()
+  set(add_targets HyperThriftExtentions HyperThriftConfig)
+endif()
 
-if (NOT HT_COMPONENT_INSTALL)
-  install (TARGETS ht_load_generator RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_load_generator
+	SRCS ht_load_generator.cc LoadClient.cc LoadThread.cc QueryThread.cc
+  TARGETS Hypertable ${add_targets}
+)

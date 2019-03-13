@@ -25,7 +25,7 @@
 #  SSL_FOUND            - True if libssl found.
 
 
-HT_FASTLIB_SET(
+SET_DEPS(
 	NAME "SSL" 
 	REQUIRED TRUE 
 	LIB_PATHS /usr/local/ssl/lib
@@ -34,7 +34,6 @@ HT_FASTLIB_SET(
 	SHARED ssl crypto
 	INCLUDE openssl/ssl.h openssl/crypto.h
 )
-set(SSL_LIBRARIES ${SSL_LIBRARIES} dl)
 
 
 
@@ -54,7 +53,7 @@ if (SSL_FOUND)
 	#endif ()
 			   
   exec_program(${CMAKE_SOURCE_DIR}/bin/src-utils/ldd.sh
-               ARGS ${SSL_LIBRARIES}
+               ARGS ${SSL_LIBRARIES_SHARED}
                OUTPUT_VARIABLE LDD_OUT
                RETURN_VALUE LDD_RETURN)
   if (LDD_RETURN STREQUAL "0")
@@ -77,8 +76,8 @@ if (SSL_FOUND)
           ${HYPERTABLE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp
           ${HYPERTABLE_SOURCE_DIR}/cmake/CheckLibssl.cc
           CMAKE_FLAGS 
-		  INCLUDE_DIRECTORIES ${SSL_INCLUDE_DIRS}
-          LINK_LIBRARIES ${SSL_LIBRARIES}
+		  INCLUDE_DIRECTORIES ${SSL_INCLUDE_PATHS}
+          LINK_LIBRARIES ${SSL_LIBRARIES_SHARED}
           RUN_OUTPUT_VARIABLE TC_TRY_OUT)
   if (TC_CHECK_BUILD AND NOT TC_CHECK STREQUAL "0")
     message(STATUS "${TC_TRY_OUT}")
@@ -87,11 +86,9 @@ if (SSL_FOUND)
   message("       version: ${TC_TRY_OUT}")
   
   if(Libssl_LIB_DEPENDENCIES)
-	# Install dependencies
-	string(REPLACE " " ";" LIB_DEPENDENCIES_LIST ${Libssl_LIB_DEPENDENCIES})
-	foreach(dep ${LIB_DEPENDENCIES_LIST})
-		HT_INSTALL_LIBS(lib ${dep})
-	endforeach ()
+	  # Install dependencies
+	  string(REPLACE " " ";" LIB_DEPENDENCIES_LIST ${Libssl_LIB_DEPENDENCIES})
+	  HT_INSTALL_LIBS(lib ${LIB_DEPENDENCIES_LIST})
   endif ()
 endif ()
 

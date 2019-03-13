@@ -29,7 +29,9 @@ add_custom_command(
 configure_file(setup.py.in ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/setup.py @ONLY)
 configure_file(requirements.txt.in ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/requirements.txt @ONLY)
 
+
 #### GENERATE HYPERTHRIFT module
+
 if (THRIFT_FOUND)
 	add_custom_command(
 		TARGET 		ThriftClientPy
@@ -63,68 +65,29 @@ if (THRIFT_FOUND)
 endif ()
 
 
+if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
+	if(PYTHONTHRIFT_FOUND)
+		install(DIRECTORY ${THIRFT_PY_PATH} DESTINATION lib/py USE_SOURCE_PERMISSIONS)
+	endif()
+	install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/dist/ DESTINATION lib/py/)
 
-#  env PYTHONPATH=${CMAKE_INSTALL_PREFIX}/lib/py
+	
+  list(GET PYTHON_EXECUTABLES 0 py)
+	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg ${py} setup.py sdist;)")
+	install(FILES "${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/dist/hypertable-${VERSION}.tar.gz" DESTINATION lib/py/)
+	
+	foreach(py ${PYTHON_EXECUTABLES})
 
-if (PYTHON2_FOUND)
-	add_test(ThriftClient-python2 env python ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test.py)
-	add_test(ThriftClient-python2-scw env python ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scw.py)
-	add_test(ThriftClient-python2-scr env python ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scr.py)
-	add_test(HypertableClient-python2 
-					env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/lib 
-					python ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
-endif ()
-if (PYTHON3_FOUND)
-	add_test(ThriftClient-python3 env python3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test.py)
-	add_test(ThriftClient-python3-scw env python3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scw.py)
-	add_test(ThriftClient-python3-scr env python3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scr.py)
-	add_test(HypertableClient-python3 
-					env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/lib 
-					python3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
-endif ()
-if (PYPY2_FOUND)
-	add_test(ThriftClient-pypy2 env pypy ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test.py)
-	add_test(ThriftClient-pypy2-scw env pypy ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scw.py)
-	add_test(ThriftClient-pypy2-scr env pypy ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scr.py)
-	add_test(HypertableClient-pypy2 
-					env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/lib 
-					pypy ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
-endif ()
-if (PYPY3_FOUND)
-	add_test(ThriftClient-pypy3 env pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test.py)
-	add_test(ThriftClient-pypy3-scw env pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scw.py)
-	add_test(ThriftClient-pypy3-scr env pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scr.py)
-	add_test(HypertableClient-pypy3 
-					env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/lib 
-					pypy3 ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
-endif ()
-	  
+		add_test(ThriftClient-${py} env ${py} ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test.py)
+		add_test(ThriftClient-${py}-scw env ${py} ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scw.py)
+		add_test(ThriftClient-${py}-scr env ${py} ${CMAKE_CURRENT_SOURCE_DIR}/tests/client_test_scr.py)
+		add_test(HypertableClient-${py} 
+							env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/lib 
+							${py} ${CMAKE_CURRENT_SOURCE_DIR}/tests/ht_client_test.py)
 
+		install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/dist ${py} -m pip install --verbose --upgrade hypertable-${VERSION}.tar.gz;)")
+		install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg ${py} -m pip install --upgrade -r requirements.txt;)")
 
+	endforeach()
 
-if(PYTHON2_FOUND OR PYTHON3_FOUND OR PYPY2_FOUND OR PYPY3_FOUND)
-	install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python setup.py sdist;)")
-	if (NOT HT_COMPONENT_INSTALL)
-	   install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/dist/ DESTINATION lib/py/)
-	endif ()
-endif ()
-	  
-if (NOT HT_COMPONENT_INSTALL)
-	if (PYTHON2_FOUND)
-		install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/dist python -m pip install --verbose --upgrade hypertable-${VERSION}.tar.gz;)")
-		install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python -m pip install --upgrade -r requirements.txt;)")
-	endif ()
-
-	if (PYTHON3_FOUND)
-		install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/dist python3 -m pip install --verbose --upgrade hypertable-${VERSION}.tar.gz;)")
-		install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg python3 -m pip install --upgrade -r requirements.txt;)")
-	endif ()
-	if (PYPY2_FOUND)
-		install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/dist pypy -m pip install --verbose --upgrade hypertable-${VERSION}.tar.gz;)")
-		install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy -m pip install --upgrade -r requirements.txt;)")
-	endif ()
-	if (PYPY3_FOUND)
-		install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg/dist pypy3 -m pip install --verbose --upgrade hypertable-${VERSION}.tar.gz;)")
-		install( CODE "execute_process(COMMAND  cmake -E chdir ${HYPERTABLE_BINARY_DIR}/src/py/ht-package/pkg pypy3 -m pip install --upgrade -r requirements.txt;)")
-	endif ()
 endif ()

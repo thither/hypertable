@@ -23,9 +23,8 @@ ClusterCommandInterpreter.cc
 )
 
 # ht_cluster - command interpreter
-add_executable(ht_cluster ${cluster_SRCS})
-target_link_libraries(ht_cluster HyperCommon Hypertable)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_cluster RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_cluster
+	SRCS ${cluster_SRCS}
+  TARGETS HyperCommon Hypertable
+)

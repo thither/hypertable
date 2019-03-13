@@ -20,9 +20,10 @@
 # The following variables are set if Boost is found.  If Boost is not
 # found, Boost_FOUND is set to false.
 #  Boost_FOUND        - True when the Boost include directory is found.
-#  BOOST_INCLUDE_DIRS - the path to where the boost include files are.
+#  BOOST_INCLUDE_PATHS - the path to where the boost include files are.
 #  Boost_LIB_DIAGNOSTIC_DEFINITIONS - Only set if using Windows.
-#  BOOST_LIBRARIES - Our default boost libs
+#  BOOST_LIBRARIES_SHARED - Our default boost libs
+#  BOOST_LIBRARIES_STATIC - Our default boost libs
 
 # ----------------------------------------------------------------------------
 #
@@ -142,7 +143,7 @@ endforeach()
 
 
 
-HT_FASTLIB_SET(
+SET_DEPS(
 	NAME "BOOST" 
 	REQUIRED TRUE
 	LIB_PATHS ${BOOST_INCDIR_SEARCH}
@@ -153,11 +154,11 @@ HT_FASTLIB_SET(
 )
 
 
-if (BOOST_INCLUDE_DIR)
+if (BOOST_INCLUDE_PATHS AND LIBS_LINKING_CHECKING_SHARED)
   try_run(BOOST_CHECK SHOULD_COMPILE
           ${HYPERTABLE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp
           ${HYPERTABLE_SOURCE_DIR}/cmake/CheckBoost.cc
-          CMAKE_FLAGS -DINCLUDE_DIRECTORIES:STRING=${BOOST_INCLUDE_DIR}
+          CMAKE_FLAGS -DINCLUDE_DIRECTORIES:STRING=${BOOST_INCLUDE_PATHS}
           COMPILE_DEFINITIONS -v
           OUTPUT_VARIABLE BOOST_TRY_OUT)
   string(REGEX REPLACE ".*\n([0-9_]+).*" "\\1" BOOST_VERSION ${BOOST_TRY_OUT})
@@ -170,3 +171,7 @@ if (BOOST_INCLUDE_DIR)
   message("       Boost version: ${BOOST_VERSION}")
 endif ()
 
+
+if(BOOST_LIBRARIES_SHARED)
+  HT_INSTALL_LIBS(lib ${BOOST_LIBRARIES_SHARED})
+endif()

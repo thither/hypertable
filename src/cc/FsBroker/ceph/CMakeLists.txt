@@ -15,9 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Hypertable. If not, see <http://www.gnu.org/licenses/>
 #
-include_directories(${CEPH_INCLUDE_DIR})
 
-add_executable(htFsBrokerCeph main.cc CephBroker.cc)
-target_link_libraries(htFsBrokerCeph HyperFsBroker ${CEPH_LIBRARIES})
 
-install(TARGETS htFsBrokerCeph RUNTIME DESTINATION bin)
+# htFsBrokerCeph
+ADD_EXEC_TARGET(
+	NAME htFsBrokerCeph
+	SRCS  main.cc CephBroker.cc
+  TARGETS HyperFsBroker
+  SHARED ${CEPH_LIBRARIES_SHARED}
+  STATIC ${CEPH_LIBRARIES_STATIC}
+)

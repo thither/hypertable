@@ -19,12 +19,18 @@
 
 
 set(fsbroker_SRCS
+fsbroker.cc
 CommandInterpreter.cc
 )
 
 # ht_fsbroker - command interpreter
-add_executable(ht_fsbroker fsbroker.cc ${fsbroker_SRCS})
-target_link_libraries(ht_fsbroker HyperCommon HyperComm HyperFsBroker Hypertable ${EDITLINE_LIBRARIES})
+ADD_UTIL_TARGET(
+	NAME ht_fsbroker
+	SRCS ${fsbroker_SRCS}
+  TARGETS HyperCommon HyperComm HyperFsBroker Hypertable
+  SHARED ${EDITLINE_LIBRARIES_SHARED}
+  STATIC ${EDITLINE_LIBRARIES_STATIC}
+)
 
 
 
@@ -35,22 +41,14 @@ add_custom_command(SOURCE ${HYPERTABLE_SOURCE_DIR}/tests/data/words.gz
     COMMAND gzip ARGS -d < ${HYPERTABLE_SOURCE_DIR}/tests/data/words.gz
                          > ${DST_DIR}/words
     OUTPUT ${DST_DIR}/words)
-
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${DST_DIR}/words") 
 
 # fsTest
-HT_ADD_TEST(
-	NAME HyperFsBroker
+ADD_TEST_TARGET(
+	NAME HyperFsBroker-shell
 	SRCS fsTest.cc FsTestThreadFunction.cc
 	TARGETS Hypertable HyperCommon HyperComm HyperFsBroker
 	EXEC_DEPS ${DST_DIR}/words
 )
 configure_file(${SRC_DIR}/fsTest.golden ${DST_DIR}/fsTest.golden COPYONLY)
 
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_fsbroker
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
-endif ()

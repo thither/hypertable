@@ -34,17 +34,17 @@ ${Translator_test_SRCS}
 )
 
 # Tokenizer_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Cluster-definition-tokenizer
 	SRCS ${Tokenizer_test_SRCS} tests/Tokenizer_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 	ARGS ${SRC_DIR}/tests/Tokenizer_test.input ${SRC_DIR}/tests/Tokenizer_test.golden
 )
 
 # Translator test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Cluster-definition-translator
 	SRCS ${Translator_test_SRCS} tests/Translator_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 	ARGS ${SRC_DIR}/tests/Translator_test.golden
 )

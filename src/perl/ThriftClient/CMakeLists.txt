@@ -38,14 +38,20 @@ if (THRIFT_FOUND)
 endif ()
 
 
-if (PERLTHRIFT_FOUND)
-  add_test(ThriftClient-perl perl -I ${INSTALL_DIR}/lib/perl/ ${INSTALL_DIR}/lib/perl/client_test.pl)
-endif ()
-
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
   install(DIRECTORY Hypertable DESTINATION lib/perl)
   install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/perl/ThriftClient/gen-perl/Hypertable/ThriftGen 
-					${HYPERTABLE_BINARY_DIR}/src/perl/ThriftClient/gen-perl/Hypertable/ThriftGen2 
-		DESTINATION lib/perl/Hypertable)
-  install(FILES client_test.pl DESTINATION lib/perl)
+										${HYPERTABLE_BINARY_DIR}/src/perl/ThriftClient/gen-perl/Hypertable/ThriftGen2 
+					DESTINATION lib/perl/Hypertable)
+	install(FILES client_test.pl DESTINATION lib/perl)
+	
+	file(GLOB PERLFILES ${THRIFT_SOURCE_DIR}/lib/perl/lib/*.pm)
+  install(FILES ${PERLFILES} DESTINATION lib/perl)
+  install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/perl/lib/Thrift
+					DESTINATION lib/perl USE_SOURCE_PERMISSIONS)
+					
+					
+	add_test(ThriftClient-perl perl -I ${INSTALL_DIR}/lib/perl/ ${INSTALL_DIR}/lib/perl/client_test.pl)
+
 endif ()
+

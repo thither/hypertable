@@ -18,11 +18,13 @@
 #
 
 # hypertable - command interpreter
-add_executable(ht_serverup serverup.cc)
+set(add_targets)
 if (THRIFT_FOUND)
-  target_link_libraries(ht_serverup HyperFsBroker HyperThriftConfig HyperThrift Hyperspace Hypertable)
-else ()
-  target_link_libraries(ht_serverup HyperFsBroker Hyperspace Hypertable)
+  set(add_targets HyperThriftConfig HyperThrift)
 endif ()
 
-install (TARGETS ht_serverup RUNTIME DESTINATION bin)
+ADD_UTIL_TARGET(
+	NAME ht_serverup
+	SRCS serverup.cc
+  TARGETS HyperFsBroker Hyperspace Hypertable ${add_targets}
+)

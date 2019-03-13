@@ -1,19 +1,20 @@
 
 
-set(PamMaxretries_SRCS
-  pam_ht_maxretries.cc
-)
-HT_ADD_LIBS(
-	TARGET pam_ht_maxretries 
-	SRCS ${PamMaxretries_SRCS}
-  DEPENDENCIES HyperThrift HyperCommon Hypertable  ${PAM_LIBRARIES}
+
+
+# lib pam_ht_maxretries
+ADD_LIB_TARGET(
+	NAME pam_ht_maxretries 
+	SRCS pam_ht_maxretries.cc
+  TARGETS HyperThrift
+  SHARED ${PAM_LIBRARIES_SHARED}
+  ONLY_STATIC_SHARED TRUE
 )
 
-add_executable(ht_pam_test pam_ht_test.c)
-target_link_libraries(ht_pam_test ${PAM_LIBRARIES})
 
-install(
-  TARGETS pam_ht_maxretries
-  RUNTIME DESTINATION lib
-  ARCHIVE DESTINATION lib
+ADD_TEST_EXEC(
+	NAME ht_pam_test 
+	SRCS pam_ht_test.c
+  TARGETS HyperThrift pam_ht_maxretries
+  SHARED ${PAM_LIBRARIES_SHARED}
 )

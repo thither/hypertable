@@ -24,16 +24,20 @@ hyperspace.cc
 )
 
 # ht_hyperspace - Hyperspace client program
-add_executable(ht_hyperspace ${hyperspace_SRCS})
-target_link_libraries(ht_hyperspace Hyperspace Hypertable)
+ADD_UTIL_TARGET(
+	NAME ht_hyperspace
+	SRCS ${hyperspace_SRCS}
+  TARGETS Hyperspace Hypertable
+)
+
 
 
 set(SRC_DIR "${HYPERTABLE_SOURCE_DIR}/src/cc/Tools/client/hyperspace")
 set(DST_DIR "${HYPERTABLE_BINARY_DIR}/src/cc/Tools/client/hyperspace")
 
 # hyperspaceTest
-HT_ADD_TEST(
-	NAME Hyperspace
+ADD_TEST_TARGET(
+	NAME Hyperspace-shell
 	SRCS test/hyperspaceTest.cc
 	TARGETS Hypertable HyperComm
 )
@@ -44,8 +48,4 @@ configure_file(${SRC_DIR}/test/client2.golden ${DST_DIR}/client2.golden
                COPYONLY)
 configure_file(${SRC_DIR}/test/client3.golden ${DST_DIR}/client3.golden
                COPYONLY)
-
 			   
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_hyperspace RUNTIME DESTINATION bin)
-endif ()

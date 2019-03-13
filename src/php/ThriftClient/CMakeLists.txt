@@ -17,26 +17,34 @@
 # 02110-1301, USA.
 #
 
-HT_GLOB(GenPHP_SRCS gen-php/Hypertable_ThriftGen/*.php)
 
+
+add_custom_target(ThriftGenPHP ALL)
 add_custom_command(
-  OUTPUT    ${GenPHP_SRCS}
+  TARGET 		ThriftGenPHP
   COMMAND   thrift
-  ARGS      -r --gen php -o ${CMAKE_CURRENT_SOURCE_DIR}
+  ARGS      -r --gen php:classmap
+            -o ${HYPERTABLE_BINARY_DIR}/src/php/ThriftClient
             ${ThriftBroker_IDL_DIR}/Hql.thrift
   DEPENDS   ${ThriftBroker_IDL_DIR}/Client.thrift
             ${ThriftBroker_IDL_DIR}/Hql.thrift
-  COMMENT   "thrift2php"
+  COMMENT   "ThriftPhpGen"
 )
 
-add_custom_target(ThriftGenPHP ALL DEPENDS ${GenPHP_SRCS})
-
-if (PHPTHRIFT_FOUND)
-  add_test(ThriftClient-php env PHPTHRIFT_ROOT=${INSTALL_DIR}/lib/php
-           php ${CMAKE_CURRENT_SOURCE_DIR}/client_test.php)
-endif ()
+         
 
 if (NOT HT_COMONENT_INSTALL OR PACKAGE_THRIFTBROKER)
-  install(DIRECTORY gen-php DESTINATION lib/php)
-  install(FILES client_test.php ThriftClient.php DESTINATION lib/php)
+
+  install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/php/lib/ DESTINATION lib/php/Thrift)
+
+  file(GLOB PHPFILES ${HYPERTABLE_SOURCE_DIR}/src/php/*.php)
+  install(FILES ${PHPFILES} DESTINATION lib/php)
+
+  install(DIRECTORY ${HYPERTABLE_BINARY_DIR}/src/php/ThriftClient/gen-php DESTINATION lib/php)
+
+
+  add_test(ThriftClient-php 
+            env PHPTHRIFT_ROOT=${INSTALL_DIR}/lib/php
+            php ${CMAKE_CURRENT_SOURCE_DIR}/client_test.php)
+            
 endif ()

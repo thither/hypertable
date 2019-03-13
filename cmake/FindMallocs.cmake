@@ -16,40 +16,58 @@
 # along with Hypertable. If not, see <http://www.gnu.org/licenses/>
 #
 
-find_package(Tcmalloc)
-find_package(Jemalloc)
-find_package(Hoard)
-# set malloc library (maybe)
-if (USE_JEMALLOC)
-  if (Jemalloc_FOUND)
-    set(MALLOC_LIBRARY ${Jemalloc_LIBRARIES})
-	HT_INSTALL_LIBS(lib ${MALLOC_LIBRARY})
+
+if (USE_GLIBC_MALLOC OR (
+              CMAKE_SYSTEM_PROCESSOR STREQUAL "i386" OR
+              CMAKE_SYSTEM_PROCESSOR STREQUAL "i586" OR
+              CMAKE_SYSTEM_PROCESSOR STREQUAL "i686"))
+  set(JEMALLOC_LIBRARIES_SHARED )
+  set(JEMALLOC_LIBRARIES_STATIC )
+
+
+elseif (USE_JEMALLOC)
+  find_package(Jemalloc)
+  if (JEMALLOC_FOUND)
+    set(MALLOC_LIBRARIES_SHARED ${JEMALLOC_LIBRARIES_SHARED})
+    set(MALLOC_LIBRARIES_STATIC ${JEMALLOC_LIBRARIES_STATIC})
   else ()
     message(FATAL_ERROR "Unable to use jemalloc: library not found")
   endif ()
+
+
 elseif (USE_HOARD)
+  find_package(Hoard)
   if (Hoard_FOUND)
-    set(MALLOC_LIBRARY ${Hoard_LIBRARIES})
-	HT_INSTALL_LIBS(lib ${MALLOC_LIBRARY})
+    set(MALLOC_LIBRARIES_SHARED ${HOARD_LIBRARIES_SHARED})
+    set(MALLOC_LIBRARIES_STATIC ${HOARD_LIBRARIES_STATIC})
   else ()
     message(FATAL_ERROR "Unable to use hoard malloc: library not found")
   endif ()
-elseif (NOT USE_GLIBC_MALLOC AND TCMALLOC_FOUND)
-  set(MALLOC_LIBRARY ${TCMALLOC_LIBRARIES})
-  if (TCMALLOC_LIBRARIES MATCHES "tcmalloc_minimal")
-    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTCMALLOC_MINIMAL")
-	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTCMALLOC_MINIMAL")
-  else ()
-    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTCMALLOC")
-    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTCMALLOC")
+
+
+else()  # TCMALLOC default if found
+  find_package(Tcmalloc)
+  if (TCMALLOC_FOUND)
+    if (TCMALLOC_LIBRARIES_SHARED MATCHES "tcmalloc_minimal")
+      SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTCMALLOC_MINIMAL")
+	    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTCMALLOC_MINIMAL")
+    else ()
+      SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTCMALLOC")
+      SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTCMALLOC -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+    endif ()
+
+    set(MALLOC_LIBRARIES_SHARED ${TCMALLOC_LIBRARIES_SHARED})
+    set(MALLOC_LIBRARIES_STATIC ${TCMALLOC_LIBRARIES_STATIC})
   endif ()
+  
 endif ()
 
-# Disable tcmalloc for 32-bit systems
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL "i386" OR
-    CMAKE_SYSTEM_PROCESSOR STREQUAL "i586" OR
-    CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
-  set(MALLOC_LIBRARY "")
+
+
+if(MALLOC_LIBRARIES_SHARED)
+  message(STATUS "Using MALLOC: ${MALLOC_LIBRARIES_SHARED} ${TCMALLOC_LIBRARIES_STATIC} ")
+  HT_INSTALL_LIBS(lib ${MALLOC_LIBRARIES_SHARED})
 else ()
-	message(STATUS "Using MALLOC: ${MALLOC_LIBRARY} ")
+  message(STATUS "Using MALLOC: GLIBC_MALLOC ")
 endif ()
+

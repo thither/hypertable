@@ -18,9 +18,15 @@
 #
 
 # apache_log_load
-add_executable(apache_log_load apache_log_load.cc)
-target_link_libraries(apache_log_load Hypertable)
+ADD_TEST_EXEC(
+	NAME apache_log_load 
+	SRCS apache_log_load.cc
+  TARGETS Hypertable
+)
 
 # apache_log_query
-add_executable(apache_log_query apache_log_query.cc)
-target_link_libraries(apache_log_query Hypertable)
+ADD_TEST_EXEC(
+	NAME apache_log_query 
+	SRCS apache_log_query.cc
+  TARGETS Hypertable
+)

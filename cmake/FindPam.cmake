@@ -23,7 +23,7 @@
 #  PAM_LIBRARIES   - List of libraries when using Ceph.
 #  PAM_FOUND       - True if Ceph found.
 
-HT_FASTLIB_SET(
+SET_DEPS(
   NAME "PAM" 
   LIB_PATHS "/lib/x86_64-linux-gnu/"
 	SHARED libpam.so.0.83.1 libpam_misc.so.0.82.0

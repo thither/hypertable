@@ -56,7 +56,7 @@ endif ()
 
 
 
-if (PYPY2_FOUND AND Pybind11_FOUND)
+if (PYPY2_FOUND AND PYBIND11_FOUND)
 	add_library(HyperPyPy2 MODULE SerializedCells_pyBind11.cc)
 	add_dependencies(HyperPyPy2 ThriftClientPy)
 	target_link_libraries(HyperPyPy2 HyperThrift HyperCommon Hypertable ${PYPY2_LIBDIR} ${THRIFT_LIBRARIES} ${LibEvent_LIBS})
@@ -66,7 +66,7 @@ if (PYPY2_FOUND AND Pybind11_FOUND)
 					  -DPYPY_VERSION=1
 					  -DWITH_THREAD
 					  )
-	target_include_directories(HyperPyPy2 PRIVATE ${Pybind11_INCLUDE_DIR} ${PYPY2_INCLUDE_DIR})
+	target_include_directories(HyperPyPy2 PRIVATE ${PYBIND11_INCLUDE_PATHS} ${PYPY2_INCLUDE_DIR})
 	
 	install(TARGETS HyperPyPy2
         RUNTIME DESTINATION bin
@@ -78,7 +78,7 @@ if (PYPY2_FOUND AND Pybind11_FOUND)
 
 endif ()
 
-if (PYPY3_FOUND AND Pybind11_FOUND)
+if (PYPY3_FOUND AND PYBIND11_FOUND)
 	add_library(HyperPyPy3 MODULE SerializedCells_pyBind11.cc)
 	add_dependencies(HyperPyPy3 ThriftClientPy)
 	target_link_libraries(HyperPyPy3 HyperThrift HyperCommon Hypertable ${PYPY3_LIBDIR} ${THRIFT_LIBRARIES} ${LibEvent_LIBS})
@@ -88,7 +88,7 @@ if (PYPY3_FOUND AND Pybind11_FOUND)
 					  -DPYPY_VERSION=1
 					  -DWITH_THREAD
 					  )
-	target_include_directories(HyperPyPy3 PRIVATE ${Pybind11_INCLUDE_DIR} ${PYPY3_INCLUDE_DIR})
+	target_include_directories(HyperPyPy3 PRIVATE ${PYBIND11_INCLUDE_PATHS} ${PYPY3_INCLUDE_DIR})
 	
 	install(TARGETS HyperPyPy3
         RUNTIME DESTINATION bin
