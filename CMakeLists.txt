@@ -77,6 +77,7 @@ else()
   	  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fuse-linker-plugin -ffat-lto-objects")
       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -floop-interchange")
     endif ()
+
   elseif(HT_O_LEVEL MATCHES "[3-7]")
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
     
@@ -87,6 +88,7 @@ else()
     
       if(HT_O_LEVEL MATCHES "[5-7]")
         set(BUILD_LINKING "STATIC")
+        set(TEST_LINKING "DUAL")
       endif ()
 
       if(HT_O_LEVEL MATCHES "[6-7]")
