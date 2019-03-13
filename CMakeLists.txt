@@ -71,7 +71,6 @@ else()
   SET (CMAKE_CXX_FLAGS_DEBUG          "")
 
   if(HT_O_LEVEL MATCHES "[1-2]")
-  if (HT_O_LEVEL STREQUAL "1")
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
     
     if (HT_O_LEVEL STREQUAL "2")
@@ -100,6 +99,7 @@ else()
     endif ()
       
   endif ()
+
 endif ()
 
 
