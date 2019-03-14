@@ -115,13 +115,12 @@ namespace Hypertable {
             &RangeServerConnectionEntry::location> >,
         hashed_non_unique<const_mem_fun<RangeServerConnectionEntry, const String&,
             &RangeServerConnectionEntry::hostname> >,
-        hashed_unique<const_mem_fun<RangeServerConnectionEntry, InetAddr,
+        hashed_non_unique<const_mem_fun<RangeServerConnectionEntry, InetAddr,
             &RangeServerConnectionEntry::public_addr>, InetAddrHash>,
         hashed_non_unique<const_mem_fun<RangeServerConnectionEntry, InetAddr,
             &RangeServerConnectionEntry::local_addr>, InetAddrHash>
         >
       > ConnectionList;
-    // public_addr > hashed_non_unique ( conn uniqueness by location)
 
     typedef ConnectionList::nth_index<0>::type Sequence;
     typedef ConnectionList::nth_index<1>::type LocationIndex;
