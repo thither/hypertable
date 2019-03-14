@@ -1,5 +1,4 @@
 ﻿/.vs
 .idea
 /CppProperties.json
-built_logs/*
 .vscode/*
