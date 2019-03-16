@@ -12,19 +12,11 @@ add_subdirectory(cc/Hypertable)
 
 add_subdirectory(cc/HyperAppHelper)
 
-if (THRIFT_FOUND)
-  add_subdirectory(cc/ThriftBroker)
-endif ()
-
-add_subdirectory(cc/Tools)
-add_subdirectory(cc/FsBroker/local)
-
-add_subdirectory(py/ganglia)
-add_subdirectory(rb/Monitoring)
 
 
 # THRIFT CLIENTS
 if (THRIFT_FOUND)
+  add_subdirectory(cc/ThriftBroker)
   
   if (LANGS OR LANG_JAVA)
     add_subdirectory(java/ThriftClient)
@@ -62,7 +54,11 @@ endif ()
 
 
 
+
 # DISTRIBUTES FILE SYSTEMS
+
+add_subdirectory(cc/FsBroker/local)
+
 if (CEPH_FOUND)
    add_subdirectory(cc/FsBroker/ceph)
 endif ()
@@ -81,6 +77,14 @@ if (LANGS OR LANG_JAVA OR FSBROKERS OR FSBROKER_HDFS)
 	endif ()
 endif ()
 
+
+
+
+
+add_subdirectory(cc/Tools)
+
+add_subdirectory(py/ganglia)
+add_subdirectory(rb/Monitoring)
 
 
 
