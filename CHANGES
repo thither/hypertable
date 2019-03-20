@@ -9,6 +9,11 @@ Version 0.9.8.16:
    changed use of newly generated thrift sources with all languages 
    changed HyperThrift library has no dependency for other targets 
    added lib HyperThriftExtentions includes the SerializedCells related and ThriftHelper
+   added SmartFd to Hypertable::Filesystem
+   added new methods working with SmartFd to Hypertable::Filesystem
+   added support of SmartFd to FsBroker::Lib::Client
+   changed Metalog, Commitlog, AccessGroupHintsFile to work with smartfd
+   TODO: switch cellstore to work with smartfd 
 
 Version 0.9.8.15:
 (2018-12-19)
