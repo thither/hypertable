@@ -13,6 +13,7 @@ Version 0.9.8.16:
    added new methods working with SmartFd to Hypertable::Filesystem
    added support of SmartFd to FsBroker::Lib::Client
    changed Metalog, Commitlog, AccessGroupHintsFile to work with smartfd
+   improved Failure Tolerence of FsClient
    TODO: switch cellstore to work with smartfd 
 
 Version 0.9.8.15:
