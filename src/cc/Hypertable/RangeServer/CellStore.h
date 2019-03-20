@@ -137,6 +137,11 @@ namespace Hypertable {
                       const String &end_row, int32_t fd, int64_t file_length,
                       CellStoreTrailer *trailer) = 0;
 
+    /** Opens with SmartFdPtr **/
+    virtual void open(Filesystem::SmartFdPtr smartfd_ptr, const String &start_row,
+                      const String &end_row, int64_t file_length,
+                      CellStoreTrailer *trailer) = 0;
+
     virtual void rescope(const String &start_row, const String &end_row) {
       HT_FATAL("Not implemented!");
     }
@@ -251,6 +256,13 @@ namespace Hypertable {
      * @return open file descriptor
      */
     virtual int32_t get_fd() = 0;
+
+    /**
+     * Returns the open smart file descriptor for the CellStore file
+     *
+     * @return open smart file descriptor
+     */
+    virtual Filesystem::SmartFdPtr get_smartfd_ptr() = 0;
 
     /**
      * Closes and reopens the underlying CellStore file

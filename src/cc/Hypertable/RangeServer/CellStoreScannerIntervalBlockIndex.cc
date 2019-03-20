@@ -58,7 +58,7 @@ CellStoreScannerIntervalBlockIndex<IndexT>::CellStoreScannerIntervalBlockIndex(C
   m_key_decompressor = m_cellstore->create_key_decompressor();
 
   m_end_row = (m_end_key) ? m_end_key.row() : Key::END_ROW_MARKER;
-  m_fd = m_cellstore->get_fd();
+  m_smartfd_ptr = m_cellstore->get_smartfd_ptr();
 
   if (m_start_key && (m_iter = m_index->lower_bound(m_start_key)) == m_index->end())
     return;
@@ -241,7 +241,8 @@ bool CellStoreScannerIntervalBlockIndex<IndexT>::fetch_next_block(bool eob) {
 
 	  /** Read compressed block **/
           DispatchHandlerSynchronizer sync_handler;
-	  Global::dfs->pread(m_fd, m_block.zlength, m_block.offset, second_try, &sync_handler);
+	        Global::dfs->pread(m_smartfd_ptr, m_block.zlength, m_block.offset, 
+                             second_try, &sync_handler);
           if (!sync_handler.wait_for_reply(event))
             HT_THROW(Protocol::response_code(event.get()),
                      Protocol::string_format_message(event).c_str());
@@ -288,10 +289,9 @@ bool CellStoreScannerIntervalBlockIndex<IndexT>::fetch_next_block(bool eob) {
         }
       }
       catch (Exception &e) {
-        HT_WARN_OUT << "Error reading cell store (fd=" << m_fd << " file="
-                    << m_cellstore->get_filename() << ") : "
-                    << e << HT_END;
-        HT_WARN_OUT << "pread(fd=" << m_fd << ", zlen="
+        HT_WARN_OUT << "Error reading cell store " << m_smartfd_ptr->to_str() 
+                    << " : " << e << HT_END;
+        HT_WARN_OUT << "pread(" << m_smartfd_ptr->to_str() << ", zlen="
                     << m_block.zlength << ", offset=" << m_block.offset
                     << HT_END;
         if (second_try)

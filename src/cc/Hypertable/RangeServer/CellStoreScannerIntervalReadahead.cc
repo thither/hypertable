@@ -93,13 +93,13 @@ CellStoreScannerIntervalReadahead<IndexT>::CellStoreScannerIntervalReadahead(Cel
     buf_size = MINIMUM_READAHEAD_AMOUNT;
 
   try {
-    m_fd = Global::dfs->open_buffered(cellstore->get_filename(), m_oflags,
-                                      buf_size, 5, start_offset, m_end_offset);
+    m_smartfd_ptr = Filesystem::SmartFd::make_ptr(cellstore->get_filename(), m_oflags);
+    Global::dfs->open_buffered(m_smartfd_ptr, buf_size, 5, start_offset, m_end_offset);
   }
   catch (Exception &e) {
     m_eos = true;
     HT_THROW2F(e.code(), e, "Problem opening cell store in "
-               "readahead mode: %s", e.what());
+               "readahead mode: %s, %s", e.what(), m_smartfd_ptr->to_str().c_str());
   }
 
   if (!fetch_next_block_readahead()) {
@@ -147,14 +147,14 @@ CellStoreScannerIntervalReadahead<IndexT>::CellStoreScannerIntervalReadahead(Cel
 template <typename IndexT>
 CellStoreScannerIntervalReadahead<IndexT>::~CellStoreScannerIntervalReadahead() {
   try {
-    if (m_fd != -1)
-      Global::dfs->close(m_fd);
+    if (m_smartfd_ptr && m_smartfd_ptr->valid())
+      Global::dfs->close(m_smartfd_ptr);
     delete [] m_block.base;
     delete m_zcodec;
     delete m_key_decompressor;
   }
   catch (Exception &e) {
-    HT_ERROR_OUT << e << HT_END;
+    HT_ERROR_OUT << e << ", " << m_smartfd_ptr->to_str() << HT_END;
   }
   catch (...) {
     HT_ERRORF("Unknown exception caught in %s", HT_FUNC);
@@ -257,7 +257,7 @@ bool CellStoreScannerIntervalReadahead<IndexT>::fetch_next_block_readahead(bool 
       BlockHeaderCellStore header(m_cellstore->block_header_format());
       DynamicBuffer input_buf( header.encoded_length() );
 
-      nread = Global::dfs->read(m_fd, input_buf.base, header.encoded_length() );
+      nread = Global::dfs->read(m_smartfd_ptr, input_buf.base, header.encoded_length() );
       HT_EXPECT(nread == header.encoded_length(), Error::RANGESERVER_SHORT_CELLSTORE_READ);
 
       size_t remaining = nread;
@@ -271,7 +271,7 @@ bool CellStoreScannerIntervalReadahead<IndexT>::fetch_next_block_readahead(bool 
       }
 
       input_buf.grow( input_buf.fill() + header.get_data_zlength() + extra );
-      nread = Global::dfs->read(m_fd, input_buf.ptr,  header.get_data_zlength()+extra);
+      nread = Global::dfs->read(m_smartfd_ptr, input_buf.ptr,  header.get_data_zlength()+extra);
       HT_EXPECT(nread == header.get_data_zlength()+extra, Error::RANGESERVER_SHORT_CELLSTORE_READ);
       input_buf.ptr += header.get_data_zlength() + extra;
 
@@ -288,9 +288,8 @@ bool CellStoreScannerIntervalReadahead<IndexT>::fetch_next_block_readahead(bool 
                  "Error inflating cell store block - magic string mismatch");
     }
     catch (Exception &e) {
-      HT_ERROR_OUT <<"Error reading cell store ( fd=" << m_fd << " file="
-                   << m_cellstore->get_filename() <<") block: "
-                   << e << HT_END;
+      HT_ERROR_OUT <<"Error reading cell store " << m_smartfd_ptr->to_str() 
+                  << " block: " << e << HT_END;
       HT_THROW2(e.code(), e, e.what());
     }
 

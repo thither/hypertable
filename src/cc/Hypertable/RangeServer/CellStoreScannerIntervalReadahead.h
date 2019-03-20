@@ -66,7 +66,7 @@ namespace Hypertable {
     ByteString             m_cur_value;
     BlockCompressionCodec *m_zcodec {};
     KeyDecompressor       *m_key_decompressor {};
-    int32_t                m_fd {-1};
+    Filesystem::SmartFdPtr m_smartfd_ptr;
     int64_t                m_offset {};
     int64_t                m_end_offset {};
     bool                   m_check_for_range_end {};
