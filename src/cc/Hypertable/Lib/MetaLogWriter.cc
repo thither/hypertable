@@ -124,20 +124,25 @@ Writer::~Writer() {
   close();
 }
 
-void Writer::close() {
+void Writer::close(bool do_throw=true) {
   lock_guard<mutex> lock(m_mutex);
-  try {
-    if (m_smartfd && m_smartfd->valid()) {
-      m_fs->close(m_smartfd);
+
+  if(m_backup_fd!=-1){
+    try{
       ::close(m_backup_fd);
-      m_backup_fd = -1;
+    }catch(..){}
+    m_backup_fd = -1;
+  }
+  if (m_smartfd && m_smartfd->valid()) {
+    try {
+      m_fs->close(m_smartfd);
+    }
+    catch (Exception &e) {
+      if(do_throw)
+        HT_THROW2F(e.code(), e, "Error closing metalog: %s ", 
+          m_smartfd->to_str().c_str());
     }
   }
-  catch (Exception &e) {
-    HT_THROW2F(e.code(), e, "Error closing metalog: %s ", 
-      m_smartfd->to_str().c_str());
-  }
-
 }
 
 
@@ -162,11 +167,7 @@ void Writer::purge_old_log_files() {
 void Writer::roll() {
 
   // Close descriptors
-  if (m_smartfd && m_smartfd->valid()) {
-    m_fs->close(m_smartfd);
-    ::close(m_backup_fd);
-    m_backup_fd = -1;
-  }
+  close(false);
 
   int32_t next_id = m_file_ids.front() + 1;
 
