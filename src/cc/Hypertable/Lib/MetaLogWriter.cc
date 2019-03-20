@@ -124,13 +124,13 @@ Writer::~Writer() {
   close();
 }
 
-void Writer::close(bool do_throw=true) {
+void Writer::close(bool do_throw) {
   lock_guard<mutex> lock(m_mutex);
 
   if(m_backup_fd!=-1){
     try{
       ::close(m_backup_fd);
-    }catch(..){}
+    }catch(...){}
     m_backup_fd = -1;
   }
   if (m_smartfd && m_smartfd->valid()) {
