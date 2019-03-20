@@ -71,6 +71,9 @@ using namespace Hypertable::FsBroker;
 using namespace Hypertable::FsBroker::Lib;
 using namespace std;
 
+
+
+// Client Initializers
 Client::Client(ConnectionManagerPtr &conn_mgr, const sockaddr_in &addr,
 	uint32_t timeout_ms)
 	: m_conn_mgr(conn_mgr), m_addr(addr), m_timeout_ms(timeout_ms) {
@@ -108,7 +111,6 @@ Client::Client(const String &host, int port, uint32_t timeout_ms)
 			"Timed out waiting for connection to FS Broker");
 }
 
-
 Client::~Client() {
 	/** this causes deadlock in RangeServer shutdown
 	if (m_conn_mgr)
@@ -117,6 +119,1071 @@ Client::~Client() {
 }
 
 
+// CLIENT-NON-FILE-COMMAND
+void
+Client::debug(int32_t command, StaticBuffer &serialized_parameters,
+	            DispatchHandler *handler) {
+	CommHeader header(Request::Handler::Factory::FUNCTION_DEBUG);
+	Request::Parameters::Debug params(command);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length(),
+		serialized_parameters));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { 
+    send_message(cbuf, handler); 
+  }
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, 
+			"Error sending debug command %d request", command);
+	}
+}
+
+void
+Client::debug(int32_t command, StaticBuffer &serialized_parameters) {
+	DispatchHandlerSynchronizer sync_handler;
+
+	try {
+		debug(command, serialized_parameters, &sync_handler);
+
+	  EventPtr event;
+		if (!sync_handler.wait_for_reply(event))
+			HT_THROW(Protocol::response_code(event.get()),
+				Protocol::string_format_message(event).c_str());
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, 
+			"Error sending debug command %d request", command);
+	}
+}
+
+void
+Client::shutdown(uint16_t flags, DispatchHandler *handler) {
+	CommHeader header(Request::Handler::Factory::FUNCTION_SHUTDOWN);
+	Request::Parameters::Shutdown params(flags);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { send_message(cbuf, handler); }
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "sending FS shutdown (flags=%d)", (int)flags);
+	}
+}
+
+void Client::status(Status &status, Timer *timer) {
+	DispatchHandlerSynchronizer sync_handler;
+	EventPtr event;
+	CommHeader header(Request::Handler::Factory::FUNCTION_STATUS);
+	CommBufPtr cbuf(new CommBuf(header));
+
+	try {
+		send_message(cbuf, &sync_handler, timer);
+
+		if (!sync_handler.wait_for_reply(event))
+			HT_THROW(Protocol::response_code(event.get()),
+				Protocol::string_format_message(event).c_str());
+
+		decode_response_status(event, status);
+	}
+	catch (Exception &e) {
+		status.set(Status::Code::CRITICAL,
+			format("%s - %s", Error::get_text(e.code()), e.what()));
+	}
+}
+
+void Client::decode_response_status(EventPtr &event, Status &status) {
+	int error = Protocol::response_code(event);
+	if (error != Error::OK)
+		HT_THROW(error, Protocol::string_format_message(event));
+
+	const uint8_t *ptr = event->payload + 4;
+	size_t remain = event->payload_len - 4;
+
+	Response::Parameters::Status params;
+	params.decode(&ptr, &remain);
+	status = params.status();
+}
+
+
+bool Client::wait_for_connection(int e_code, const String &e_desc) {
+	
+  HT_DEBUG_OUT << "Client::wait_for_connection " << e_code 
+								<< ", " << e_desc << HT_END;
+	if (m_dfsclient_retries < 10 && (
+		e_code == Error::COMM_NOT_CONNECTED ||
+		e_code == Error::COMM_BROKEN_CONNECTION ||
+		e_code == Error::COMM_CONNECT_ERROR ||
+		e_code == Error::COMM_SEND_ERROR ||
+		e_code == Error::FSBROKER_BAD_FILE_HANDLE ||
+		e_code == Error::FSBROKER_IO_ERROR)) {
+
+		lock_guard<mutex> lock(m_mutex);
+		if (m_dfsclient_retries == 10 
+				&& !m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms))
+			HT_THROW(e_code,
+				format("Timed out waiting for connection to FS Broker, tried %d times - %s", 
+														m_dfsclient_retries.load(), e_desc.c_str()));
+		else {
+			HT_INFOF("FsClient conn-established after %d tries to error: %s", 
+							 m_dfsclient_retries.load(), e_desc.c_str());
+			m_dfsclient_retries.store(0);
+			return true;
+		}
+		m_dfsclient_retries++;
+		HT_INFOF("FsClient conn-retry: %d ",  m_dfsclient_retries.load());
+	}
+
+	HT_INFOF("FsClient skip trying to conn on error: %d, %s ",  
+		e_code, e_desc.c_str());
+	return false;
+}
+
+
+void
+Client::send_message(CommBufPtr &cbuf, DispatchHandler *handler, Timer *timer) {
+	uint32_t deadline = timer ? timer->remaining() : m_timeout_ms;
+	int error = m_comm->send_request(m_addr, deadline, cbuf, handler);
+
+	if (error != Error::OK)
+		HT_THROWF(error, "FS send_request to %s failed", m_addr.format().c_str());
+}
+
+
+
+// Methods based on SmartFdPtr(ClientFdPtr)
+
+ClientFdPtr get_clientfd_ptr(Filesystem::SmartFdPtr smartfd_ptr){
+	return std::dynamic_pointer_cast<ClientFd>(smartfd_ptr);
+}
+
+// OPEN
+void
+Client::open(Filesystem::SmartFdPtr smartfd_ptr, DispatchHandler *handler) {
+	
+ 	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_OPEN);
+	Request::Parameters::Open params(smartfd_ptr->filepath(), smartfd_ptr->flags(), 0);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try {
+		if(smartfd_ptr->valid())
+			try{close(smartfd_ptr);}catch(Exception &e) {}
+		
+		send_message(cbuf, handler);
+	}
+	catch (Exception &e) {
+		String e_desc = format("Error opening FS: %s", 
+			smartfd_ptr->to_str().c_str());
+	  if (wait_for_connection(e.code(), e_desc))
+		  goto try_again;
+		HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+void
+Client::open(Filesystem::SmartFdPtr smartfd_ptr) {
+ 	// try_again:
+	DispatchHandlerSynchronizer sync_handler;
+
+	try {
+		open(smartfd_ptr, &sync_handler);
+
+	  EventPtr event;
+		if (!sync_handler.wait_for_reply(event)){
+			int e_code = Protocol::response_code(event.get());
+			String e_desc = Protocol::string_format_message(event);
+  		// if (wait_for_connection(e_code, e_desc))
+		  // 	goto try_again;
+			HT_THROW(e_code, e_desc.c_str());
+		}
+
+		decode_response_open(smartfd_ptr, event);
+		// if (!smartfd_ptr->valid())
+		//	goto try_again;
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error opening FS: %s", 
+			smartfd_ptr->to_str().c_str());
+	}
+}
+
+void
+Client::open_buffered(Filesystem::SmartFdPtr &smartfd_ptr, uint32_t buf_size,
+                      uint32_t outstanding, uint64_t start_offset,
+                      uint64_t end_offset) {
+	try {
+		HT_ASSERT((smartfd_ptr->flags() & Filesystem::OPEN_FLAG_DIRECTIO) == 0 ||
+			(HT_IO_ALIGNED(buf_size) &&
+				HT_IO_ALIGNED(start_offset) &&
+				HT_IO_ALIGNED(end_offset)));
+		
+		if(!(smartfd_ptr->flags() & OPEN_FLAG_VERIFY_CHECKSUM))
+			smartfd_ptr->flags(smartfd_ptr->flags() | OPEN_FLAG_VERIFY_CHECKSUM);
+    
+		// a clientfd needed for BuffReader
+		
+   	ClientFdPtr	clientfd_ptr = get_clientfd_ptr(smartfd_ptr);
+		if(!clientfd_ptr){
+		 	clientfd_ptr = std::make_shared<ClientFd>(
+				 smartfd_ptr->filepath(), smartfd_ptr->flags());
+			Filesystem::SmartFdPtr new_ptr = 
+				std::static_pointer_cast<Filesystem::SmartFd>(clientfd_ptr);
+			smartfd_ptr = new_ptr;
+		}
+
+		open(smartfd_ptr);
+    clientfd_ptr->reader = std::make_shared<ClientBufferedReaderHandler>(
+        this, smartfd_ptr, buf_size, outstanding, start_offset, end_offset);
+	}
+	catch (Exception &e)  {
+		HT_THROW2(e.code(), e, format("Error opening buffered FS: %s, buf_size=%u "
+													 "outstanding=%u start_offset=%llu end_offset=%llu", 
+			smartfd_ptr->to_str().c_str(), buf_size, outstanding, 
+			(Llu)start_offset, (Llu)end_offset));
+  }
+}
+
+void Client::decode_response_open(Filesystem::SmartFdPtr smartfd_ptr, 
+																	EventPtr &event) {
+	int error = Protocol::response_code(event);
+	if (error != Error::OK)
+		HT_THROW(error, Protocol::string_format_message(event));
+
+	const uint8_t *ptr = event->payload + 4;
+	size_t remain = event->payload_len - 4;
+
+	Response::Parameters::Open params;
+	params.decode(&ptr, &remain);
+  
+	smartfd_ptr->fd(params.get_fd());
+}
+
+
+// CREATE
+void
+Client::create(Filesystem::SmartFdPtr smartfd_ptr, int32_t bufsz,
+              int32_t replication, int64_t blksz,
+              DispatchHandler *handler) {
+ 	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_CREATE);
+	Request::Parameters::Create params(smartfd_ptr->filepath(), 
+																		 smartfd_ptr->flags(), 
+                                     bufsz, replication, blksz);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try {
+		send_message(cbuf, handler);
+	}
+	catch (Exception &e) {
+		String e_desc = format("Error creating FS: %s:", 
+			smartfd_ptr->to_str().c_str());
+		if (wait_for_connection(e.code(), e_desc))
+			goto try_again;
+		HT_THROW2(e.code(), e, e_desc.c_str());
+	}
+}
+
+void
+Client::create(Filesystem::SmartFdPtr smartfd_ptr, int32_t bufsz,
+               int32_t replication, int64_t blksz) {
+	// try_again:
+	DispatchHandlerSynchronizer sync_handler;
+
+	try {
+		create(smartfd_ptr, bufsz, replication, blksz, &sync_handler);
+
+	  EventPtr event;
+		if (!sync_handler.wait_for_reply(event)){
+			int e_code = Protocol::response_code(event.get());
+			String e_desc = Protocol::string_format_message(event);
+  		// if (wait_for_connection(e_code, e_desc))
+		  //	goto try_again;
+			HT_THROW(e_code, e_desc.c_str());
+		}
+
+		decode_response_create(smartfd_ptr, event);
+		// if (!smartfd_ptr->valid())
+		//	goto try_again;
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error creating FS: %s", 
+			smartfd_ptr->to_str().c_str());
+	}
+}
+
+void Client::decode_response_create(Filesystem::SmartFdPtr smartfd_ptr, 
+																		EventPtr &event) {
+	decode_response_open(smartfd_ptr, event);
+}
+
+
+// CLOSE
+void
+Client::close(Filesystem::SmartFdPtr smartfd_ptr, DispatchHandler *handler) {
+	CommHeader header(Request::Handler::Factory::FUNCTION_CLOSE);
+	header.gid = smartfd_ptr->fd();
+	Request::Parameters::Close params(smartfd_ptr->fd());
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	// clear irrelevant data, keeping filepath & flags
+	smartfd_ptr->fd(-1);
+	smartfd_ptr->pos(0);
+	
+  ClientFdPtr clientfd_ptr = get_clientfd_ptr(smartfd_ptr);
+	if (clientfd_ptr && clientfd_ptr->reader)
+		clientfd_ptr->reader = nullptr;
+	try {
+		send_message(cbuf, handler);
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e,  "Error closing FS: %s",
+			smartfd_ptr->to_str().c_str());
+	}
+}
+
+void
+Client::close(Filesystem::SmartFdPtr smartfd_ptr) {
+	DispatchHandlerSynchronizer sync_handler;
+
+	try {
+		close(smartfd_ptr, &sync_handler);
+
+	  EventPtr event;
+		if (!sync_handler.wait_for_reply(event))
+			HT_THROW(Protocol::response_code(event.get()),
+				Protocol::string_format_message(event).c_str());
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e,  "Error closing FS: %s", 
+			smartfd_ptr->to_str().c_str());
+	}
+}
+
+
+// READ
+void
+Client::read(Filesystem::SmartFdPtr smartfd_ptr, size_t len, 
+						 DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_READ);
+	header.gid = smartfd_ptr->fd();
+	Request::Parameters::Read params(smartfd_ptr->fd(), len);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try {
+		send_message(cbuf, handler);
+	}
+	catch (Exception &e) {
+	  String e_desc = format("Error reading %u bytes from FS: %s",
+		 (unsigned)len, smartfd_ptr->to_str().c_str());
+	  if (wait_for_connection(e.code(), e_desc)) {
+		  open(smartfd_ptr);
+			if(!smartfd_ptr->valid()) {
+				seek(smartfd_ptr, smartfd_ptr->pos());
+				goto try_again;
+			}
+	  }
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+size_t
+Client::read(Filesystem::SmartFdPtr smartfd_ptr, void *dst, size_t len) {
+	
+  ClientFdPtr clientfd_ptr = get_clientfd_ptr(smartfd_ptr);
+	if (clientfd_ptr && clientfd_ptr->reader)
+		return clientfd_ptr->reader->read(dst, len);
+
+	// try_again:
+	DispatchHandlerSynchronizer sync_handler;
+
+  try{
+		read(smartfd_ptr, len, &sync_handler);
+
+		EventPtr event;
+		if (!sync_handler.wait_for_reply(event)){
+			int e_code = Protocol::response_code(event.get());
+			String e_desc = Protocol::string_format_message(event);
+			/*
+  		if (wait_for_connection(e_code, e_desc)) {
+		  	open(smartfd_ptr);
+				if(!smartfd_ptr->valid()) {
+			  	seek(smartfd_ptr, smartfd_ptr->pos());
+			  	goto try_again;
+		  	}
+				
+	  	}
+			*/
+			HT_THROW(e_code, e_desc.c_str());
+		}
+
+		uint32_t length;
+		uint64_t offset;
+		const void *data;
+		decode_response_read(smartfd_ptr, event, &data, &offset, &length);
+		HT_ASSERT(length <= len);
+		memcpy(dst, data, length);
+		return length;
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error reading %u bytes from FS: %s", 
+			(unsigned)len, smartfd_ptr->to_str().c_str());
+	}
+}
+
+void Client::decode_response_read(Filesystem::SmartFdPtr smartfd_ptr, 
+	EventPtr &event, const void **buffer,	uint64_t *offset, uint32_t *length) {
+	int error = Protocol::response_code(event);
+	if (error != Error::OK)
+		HT_THROW(error, Protocol::string_format_message(event));
+
+	const uint8_t *ptr = event->payload + 4;
+	size_t remain = event->payload_len - 4;
+
+	Response::Parameters::Read params;
+	params.decode(&ptr, &remain);
+	*offset = params.get_offset();
+	*length = params.get_amount();
+
+	if (*length == (uint32_t)-1) {
+		*length = 0;
+		return;
+	}
+
+	if (remain < (size_t)*length)
+		HT_THROWF(Error::RESPONSE_TRUNCATED, "%lu < %lu", (Lu)remain, (Lu)*length);
+
+	*buffer = ptr;
+  smartfd_ptr->pos(*offset+(uint64_t)*length);
+}
+
+
+// PREAD
+void
+Client::pread(Filesystem::SmartFdPtr smartfd_ptr, size_t len, uint64_t offset,
+	            bool verify_checksum, DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_PREAD);
+	header.gid = smartfd_ptr->fd();
+	Request::Parameters::Pread params(smartfd_ptr->fd(), 
+																		offset, len, verify_checksum);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { 
+    send_message(cbuf, handler); 
+  }
+	catch (Exception &e) {
+	  String e_desc = format("Error sending pread request at byte %llu on FS: %s",
+													(Llu)offset, smartfd_ptr->to_str().c_str());
+	  if (wait_for_connection(e.code(), e_desc)) {
+		  open(smartfd_ptr);
+			if(!smartfd_ptr->valid()) 
+				goto try_again;
+	  }
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+size_t
+Client::pread(Filesystem::SmartFdPtr smartfd_ptr, void *dst, size_t len,
+	 					  uint64_t offset, bool verify_checksum) {
+	// try_again:
+	DispatchHandlerSynchronizer sync_handler;
+	
+	try {
+		pread(smartfd_ptr, len, offset, verify_checksum, &sync_handler);
+
+    EventPtr event;
+		if (!sync_handler.wait_for_reply(event)){
+			int e_code = Protocol::response_code(event.get());
+			String e_desc = Protocol::string_format_message(event);
+			/*
+  		if (wait_for_connection(e_code, e_desc)) {
+		  	open(smartfd_ptr);
+		  	if(!smartfd_ptr->valid()) 
+			  	goto try_again;
+	  	}
+			*/
+			HT_THROW(e_code, e_desc.c_str());
+		}
+
+		uint32_t length;
+		uint64_t off;
+		const void *data;
+		decode_response_pread(smartfd_ptr, event, &data, &off, &length);
+		HT_ASSERT(length <= len);
+		memcpy(dst, data, length);
+		return length;
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error sending pread request at byte %llu on FS: %s", 
+			(Llu)offset, smartfd_ptr->to_str().c_str());
+	}
+}
+
+void Client::decode_response_pread(Filesystem::SmartFdPtr smartfd_ptr, 
+	EventPtr &event, const void **buffer, uint64_t *offset, uint32_t *length) {
+	decode_response_read(smartfd_ptr, event, buffer, offset, length);
+}
+
+
+// APPEND
+void
+Client::append(Filesystem::SmartFdPtr smartfd_ptr, StaticBuffer &buffer, 
+	Flags flags, DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_APPEND);
+	header.gid = smartfd_ptr->fd();
+	header.alignment = HT_DIRECT_IO_ALIGNMENT;
+	CommBuf *cbuf = new CommBuf(header, HT_DIRECT_IO_ALIGNMENT, buffer);
+	Request::Parameters::Append params(smartfd_ptr->fd(), 
+																		 buffer.size, static_cast<uint8_t>(flags));
+	uint8_t *base = (uint8_t *)cbuf->get_data_ptr();
+	params.encode(cbuf->get_data_ptr_address());
+	size_t padding = HT_DIRECT_IO_ALIGNMENT -
+		(((uint8_t *)cbuf->get_data_ptr()) - base);
+	memset(cbuf->get_data_ptr(), 0, padding);
+	cbuf->advance_data_ptr(padding);
+
+	CommBufPtr cbp(cbuf);
+
+	try {
+		send_message(cbp, handler);
+	}
+	catch (Exception &e) {
+	  String e_desc = format("Error appending %u bytes to FS: %s",
+		                (unsigned)buffer.size, smartfd_ptr->to_str().c_str());
+	  if (wait_for_connection(e.code(), e_desc)) {
+		  open(smartfd_ptr);
+			if(!smartfd_ptr->valid()) {
+				seek(smartfd_ptr, smartfd_ptr->pos());
+				goto try_again;
+			}
+	  }
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+size_t Client::append(Filesystem::SmartFdPtr smartfd_ptr, StaticBuffer &buffer, 
+											Flags flags) {
+	// try_again:
+	DispatchHandlerSynchronizer sync_handler;
+
+	try {
+		append(smartfd_ptr, buffer, flags, &sync_handler);
+
+	  EventPtr event;
+		if (!sync_handler.wait_for_reply(event)){
+			int e_code = Protocol::response_code(event.get());
+			String e_desc = Protocol::string_format_message(event);
+			/*
+  		if (wait_for_connection(e_code, e_desc)) {
+		  	open(smartfd_ptr);
+		  	if(!smartfd_ptr->valid()) {
+			  	seek(smartfd_ptr, smartfd_ptr->pos());
+			  	goto try_again;
+		  	}
+	  	}
+			*/
+			HT_THROW(e_code, e_desc.c_str());
+		}
+
+		uint64_t offset;
+		uint32_t amount;
+		decode_response_append(smartfd_ptr, event, &offset, &amount);
+
+		if (buffer.size != amount)
+			HT_THROWF(Error::FSBROKER_IO_ERROR, "tried to append %u bytes but got %u,"
+				" FS: %s" ,
+				(unsigned)buffer.size, (unsigned)amount, smartfd_ptr->to_str().c_str());
+		return (size_t)amount;
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error appending %u bytes to FS: %s",
+		                (unsigned)buffer.size, smartfd_ptr->to_str().c_str());
+	}
+}
+
+void Client::decode_response_append(Filesystem::SmartFdPtr smartfd_ptr, 
+	EventPtr &event, uint64_t *offset, uint32_t *length) {
+	int error = Protocol::response_code(event);
+	if (error != Error::OK)
+		HT_THROW(error, Protocol::string_format_message(event));
+
+	const uint8_t *ptr = event->payload + 4;
+	size_t remain = event->payload_len - 4;
+
+	Response::Parameters::Append params;
+	params.decode(&ptr, &remain);
+	*offset = params.get_offset();
+	*length = params.get_amount();
+  
+  smartfd_ptr->pos(*offset+(uint64_t)*length);
+}
+
+
+// SEEK
+void
+Client::seek(Filesystem::SmartFdPtr smartfd_ptr, uint64_t offset, 
+						 DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_SEEK);
+	header.gid = smartfd_ptr->fd();
+	Request::Parameters::Seek params(smartfd_ptr->fd(), offset);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { 
+    send_message(cbuf, handler); 
+  }
+	catch (Exception &e) {
+	  String e_desc = format("Error seeking to %llu on FS: %s", 
+			(Llu)offset, smartfd_ptr->to_str().c_str());
+	  if (wait_for_connection(e.code(), e_desc)) {
+		  open(smartfd_ptr);
+			if(!smartfd_ptr->valid())
+				goto try_again;
+	  }
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+void
+Client::seek(Filesystem::SmartFdPtr smartfd_ptr, uint64_t offset) {
+	// try_again:
+	DispatchHandlerSynchronizer sync_handler;
+	try {
+		seek(smartfd_ptr, offset, &sync_handler);
+
+	  EventPtr event;
+		if (!sync_handler.wait_for_reply(event)){
+			int e_code = Protocol::response_code(event.get());
+			String e_desc = Protocol::string_format_message(event);
+			/*
+  		if (wait_for_connection(e_code, e_desc)) {
+		  	open(smartfd_ptr);
+		  	if(!smartfd_ptr->valid())
+					goto try_again;
+	  	}
+			*/
+			HT_THROW(e_code, e_desc.c_str());
+		}
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error seeking to %llu on FS: %s",
+		 (Llu)offset, smartfd_ptr->to_str().c_str());
+	}
+}
+
+
+// FLUSH/SYNC
+void
+Client::flush(Filesystem::SmartFdPtr smartfd_ptr, DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_FLUSH);
+	header.gid = smartfd_ptr->fd();
+	Request::Parameters::Flush params(smartfd_ptr->fd());
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { 
+    send_message(cbuf, handler);
+  }
+	catch (Exception &e) {
+	  String e_desc = format("Error flushing FS: %s", 
+			smartfd_ptr->to_str().c_str());
+	  if (wait_for_connection(e.code(), e_desc))
+			goto try_again;
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+void
+Client::flush(Filesystem::SmartFdPtr smartfd_ptr) {
+	// try_again:
+	DispatchHandlerSynchronizer sync_handler;
+	
+	try {
+		flush(smartfd_ptr, &sync_handler);
+
+    EventPtr event;
+		if (!sync_handler.wait_for_reply(event)){
+			int e_code = Protocol::response_code(event.get());
+			String e_desc = Protocol::string_format_message(event);
+			/*
+  		if (wait_for_connection(e_code, e_desc))
+		  	goto try_again;
+			*/
+			HT_THROW(e_code, e_desc.c_str());
+		}
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error flushing FS: %s", 
+			smartfd_ptr->to_str().c_str());
+	}
+}
+
+void
+Client::sync(Filesystem::SmartFdPtr smartfd_ptr) {
+	// try_again:
+	DispatchHandlerSynchronizer sync_handler;
+	CommHeader header(Request::Handler::Factory::FUNCTION_SYNC);
+	header.gid = smartfd_ptr->fd();
+	Request::Parameters::Sync params(smartfd_ptr->fd());
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try {
+		send_message(cbuf, &sync_handler);
+
+		EventPtr event;
+		if (!sync_handler.wait_for_reply(event)){
+			int e_code = Protocol::response_code(event.get());
+			String e_desc = Protocol::string_format_message(event);
+			/*
+  		if (wait_for_connection(e_code, e_desc))
+		  	goto try_again;
+			*/
+			HT_THROW(e_code, e_desc.c_str());
+		}
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error syncing FS: %s", 
+			smartfd_ptr->to_str().c_str());
+	}
+}
+
+
+
+// Methods based on File/Path name
+
+// REMOVE
+void
+Client::remove(const String &name, DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_REMOVE);
+	Request::Parameters::Remove params(name);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { 
+    send_message(cbuf, handler); 
+  }
+	catch (Exception &e) {
+	  String e_desc = format("Error removing FS file: %s", name.c_str());
+	  if (wait_for_connection(e.code(), e_desc))
+		  goto try_again;
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+void
+Client::remove(const String &name, bool force) {
+	DispatchHandlerSynchronizer sync_handler;
+
+	try {
+		remove(name, &sync_handler);
+
+	  EventPtr event;
+		if (!sync_handler.wait_for_reply(event)) {
+			int error = Protocol::response_code(event.get());
+			if (!force || error != Error::FSBROKER_FILE_NOT_FOUND)
+				HT_THROW(error, Protocol::string_format_message(event).c_str());
+		}
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error removing FS file: %s", name.c_str());
+	}
+}
+
+
+// LENGTH
+void Client::length(const String &name, bool accurate,
+	DispatchHandler *handler) {
+	try_again:
+
+	CommHeader header(Request::Handler::Factory::FUNCTION_LENGTH);
+	Request::Parameters::Length params(name, accurate);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { 
+    send_message(cbuf, handler); 
+  }
+	catch (Exception &e) {
+	  String e_desc = format("Error sending length request for FS file: %s", 
+			name.c_str());
+	  if (wait_for_connection(e.code(), e_desc))
+		  goto try_again;
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+int64_t Client::length(const String &name, bool accurate) {
+	DispatchHandlerSynchronizer sync_handler;
+	
+	try {
+		length(name, accurate, &sync_handler);
+    
+    EventPtr event;
+		if (!sync_handler.wait_for_reply(event))
+			HT_THROW(Protocol::response_code(event.get()),
+				Protocol::string_format_message(event).c_str());
+
+		return decode_response_length(event);
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error getting length of FS file: %s",
+			name.c_str());
+	}
+}
+
+int64_t Client::decode_response_length(EventPtr &event) {
+	int error = Protocol::response_code(event);
+	if (error != Error::OK)
+		HT_THROW(error, Protocol::string_format_message(event));
+
+	const uint8_t *ptr = event->payload + 4;
+	size_t remain = event->payload_len - 4;
+
+	Response::Parameters::Length params;
+	params.decode(&ptr, &remain);
+	return params.get_length();
+}
+
+
+// MKDIRS
+void Client::mkdirs(const String &name, DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_MKDIRS);
+	Request::Parameters::Mkdirs params(name);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { 
+		send_message(cbuf, handler); 
+	}
+	catch (Exception &e) {
+	  String e_desc = format("Error sending mkdirs request for FS "
+			"directory: %s", name.c_str());
+	  if (wait_for_connection(e.code(), e_desc))
+		  goto try_again;
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+void
+Client::mkdirs(const String &name) {
+	DispatchHandlerSynchronizer sync_handler;
+
+	try {
+		mkdirs(name, &sync_handler);
+
+		EventPtr event;
+		if (!sync_handler.wait_for_reply(event))
+			HT_THROW(Protocol::response_code(event.get()),
+				Protocol::string_format_message(event).c_str());
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error mkdirs FS directory %s", name.c_str());
+	}
+}
+
+
+// RMDIR
+void Client::rmdir(const String &name, DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_RMDIR);
+	Request::Parameters::Rmdir params(name);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { 
+		send_message(cbuf, handler); 
+	} 
+	catch (Exception &e) {
+	  String e_desc = format("Error sending rmdir request for FS directory: "
+			"%s", name.c_str());
+	  if (wait_for_connection(e.code(), e_desc))
+		   goto try_again;
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+void
+Client::rmdir(const String &name, bool force) {
+	DispatchHandlerSynchronizer sync_handler;
+
+	try {
+		rmdir(name, &sync_handler);
+
+		EventPtr event;
+		if (!sync_handler.wait_for_reply(event)) {
+			int error = Protocol::response_code(event.get());
+
+			if (!force || error != Error::FSBROKER_FILE_NOT_FOUND)
+				HT_THROW(error, Protocol::string_format_message(event).c_str());
+		}
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error removing FS directory: %s", name.c_str());
+	}
+}
+
+
+// READDIR
+void Client::readdir(const String &name, DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_READDIR);
+	Request::Parameters::Readdir params(name);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { 
+		send_message(cbuf, handler); 
+	}
+	catch (Exception &e) {
+	  String e_desc = format("Error sending readdir request for FS directory"
+			": %s", name.c_str());
+	  if (wait_for_connection(e.code(), e_desc))
+		  goto try_again;
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+void Client::readdir(const String &name, std::vector<Dirent> &listing) {
+	DispatchHandlerSynchronizer sync_handler;
+	
+	try {
+		readdir(name, &sync_handler);
+
+    EventPtr event;
+		if (!sync_handler.wait_for_reply(event))
+			HT_THROW(Protocol::response_code(event.get()),
+				Protocol::string_format_message(event).c_str());
+
+		decode_response_readdir(event, listing);
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error reading directory entries for FS "
+			"directory: %s", name.c_str());
+	}
+}
+
+void Client::decode_response_readdir(EventPtr &event,
+	std::vector<Dirent> &listing) {
+	int error = Protocol::response_code(event);
+	if (error != Error::OK)
+		HT_THROW(error, Protocol::string_format_message(event));
+
+	const uint8_t *ptr = event->payload + 4;
+	size_t remain = event->payload_len - 4;
+
+	Response::Parameters::Readdir params;
+	params.decode(&ptr, &remain);
+	params.get_listing(listing);
+}
+
+
+// EXISTS
+void Client::exists(const String &name, DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_EXISTS);
+	Request::Parameters::Exists params(name);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { send_message(cbuf, handler); }
+	catch (Exception &e) {
+	  String e_desc = format("sending 'exists' request for FS path: %s",
+			name.c_str());
+	  if (wait_for_connection(e.code(), e_desc))
+		  goto try_again;
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+bool Client::exists(const String &name) {
+	DispatchHandlerSynchronizer sync_handler;
+
+	try {
+		exists(name, &sync_handler);
+    
+    EventPtr event;
+		if (!sync_handler.wait_for_reply(event))
+			HT_THROW(Protocol::response_code(event.get()),
+				Protocol::string_format_message(event).c_str());
+
+		return decode_response_exists(event);
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error checking existence of FS path: %s",
+			name.c_str());
+	}
+}
+
+bool Client::decode_response_exists(EventPtr &event) {
+	int error = Protocol::response_code(event);
+	if (error != Error::OK)
+		HT_THROW(error, Protocol::string_format_message(event));
+
+	const uint8_t *ptr = event->payload + 4;
+	size_t remain = event->payload_len - 4;
+
+	Response::Parameters::Exists params;
+	params.decode(&ptr, &remain);
+	return params.get_exists();
+}
+
+
+// RENAME
+void
+Client::rename(const String &src, const String &dst, DispatchHandler *handler) {
+	try_again:
+	CommHeader header(Request::Handler::Factory::FUNCTION_RENAME);
+	Request::Parameters::Rename params(src, dst);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { 
+    send_message(cbuf, handler); 
+  }
+	catch (Exception &e) {
+	  String e_desc = format("Error sending 'rename' request for FS "
+			"path: %s -> %s", src.c_str(), dst.c_str());
+	  if (wait_for_connection(e.code(), e_desc))
+		  goto try_again;
+	  HT_THROW2(e.code(), e, e_desc);
+	}
+}
+
+void
+Client::rename(const String &src, const String &dst) {
+	DispatchHandlerSynchronizer sync_handler;
+
+	try {
+		rename(src, dst, &sync_handler);
+
+    EventPtr event;
+		if (!sync_handler.wait_for_reply(event))
+			HT_THROW(Protocol::response_code(event.get()),
+				Protocol::string_format_message(event).c_str());
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error renaming of FS path: %s -> %s",
+			src.c_str(), dst.c_str());
+	}
+}
+
+
+
+// Methods based on int-fd, Depreciated FsBroker-Client methods -- for compatabillity to Common:FileSystem
+
+// OPEN
 void
 Client::open(const String &name, uint32_t flags, DispatchHandler *handler) {
 	CommHeader header(Request::Handler::Factory::FUNCTION_OPEN);
@@ -131,7 +1198,6 @@ Client::open(const String &name, uint32_t flags, DispatchHandler *handler) {
 		HT_THROW2F(e.code(), e, "Error opening FS file: %s", name.c_str());
 	}
 }
-
 
 int
 Client::open(const String &name, uint32_t flags) {
@@ -158,7 +1224,6 @@ Client::open(const String &name, uint32_t flags) {
 	}
 }
 
-
 int
 Client::open_buffered(const String &name, uint32_t flags, uint32_t buf_size,
 	uint32_t outstanding, uint64_t start_offset,
@@ -172,9 +1237,15 @@ Client::open_buffered(const String &name, uint32_t flags, uint32_t buf_size,
 		{
 			lock_guard<mutex> lock(m_mutex);
 			HT_ASSERT(m_buffered_reader_map.find(fd) == m_buffered_reader_map.end());
-			m_buffered_reader_map[fd] =
-				new ClientBufferedReaderHandler(this, fd, buf_size, outstanding,
-					start_offset, end_offset);
+			
+			ClientFdPtr cliendfd = std::make_shared<ClientFd>(
+				name, flags|OPEN_FLAG_VERIFY_CHECKSUM, fd, 0);
+			Filesystem::SmartFdPtr smartfd_ptr = 
+				std::static_pointer_cast<Filesystem::SmartFd>(cliendfd);
+    	cliendfd->reader = std::make_shared<ClientBufferedReaderHandler>(
+          this, smartfd_ptr, buf_size, outstanding, start_offset, end_offset);
+			// store in map with SmartFdPtr
+			m_buffered_reader_map[fd] = smartfd_ptr;
 		}
 		return fd;
 	}
@@ -199,6 +1270,7 @@ void Client::decode_response_open(EventPtr &event, int32_t *fd) {
 }
 
 
+// CREATE
 void
 Client::create(const String &name, uint32_t flags, int32_t bufsz,
 	int32_t replication, int64_t blksz,
@@ -215,7 +1287,6 @@ Client::create(const String &name, uint32_t flags, int32_t bufsz,
 		HT_THROW2F(e.code(), e, "Error creating FS file: %s:", name.c_str());
 	}
 }
-
 
 int
 Client::create(const String &name, uint32_t flags, int32_t bufsz,
@@ -243,73 +1314,12 @@ Client::create(const String &name, uint32_t flags, int32_t bufsz,
 	}
 }
 
-
 void Client::decode_response_create(EventPtr &event, int32_t *fd) {
 	decode_response_open(event, fd);
 }
 
 
-void
-Client::close(int32_t fd, DispatchHandler *handler) {
-	ClientBufferedReaderHandler *reader_handler = 0;
-	CommHeader header(Request::Handler::Factory::FUNCTION_CLOSE);
-	header.gid = fd;
-	Request::Parameters::Close params(fd);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	{
-		lock_guard<mutex> lock(m_mutex);
-		auto iter = m_buffered_reader_map.find(fd);
-		if (iter != m_buffered_reader_map.end()) {
-			reader_handler = (*iter).second;
-			m_buffered_reader_map.erase(iter);
-		}
-	}
-	delete reader_handler;
-
-	try {
-		send_message(cbuf, handler);
-	}
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error closing FS fd: %d", (int)fd);
-	}
-}
-
-
-void
-Client::close(int32_t fd) {
-	ClientBufferedReaderHandler *reader_handler = 0;
-	DispatchHandlerSynchronizer sync_handler;
-	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_CLOSE);
-	header.gid = fd;
-	Request::Parameters::Close params(fd);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-	{
-		lock_guard<mutex> lock(m_mutex);
-		auto iter = m_buffered_reader_map.find(fd);
-		if (iter != m_buffered_reader_map.end()) {
-			reader_handler = (*iter).second;
-			m_buffered_reader_map.erase(iter);
-		}
-	}
-	delete reader_handler;
-
-	try {
-		send_message(cbuf, &sync_handler);
-
-		if (!sync_handler.wait_for_reply(event))
-			HT_THROW(Protocol::response_code(event.get()),
-				Protocol::string_format_message(event).c_str());
-	}
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error closing FS fd: %d", (int)fd);
-	}
-}
-
-
+// READ
 void
 Client::read(int32_t fd, size_t len, DispatchHandler *handler) {
 	CommHeader header(Request::Handler::Factory::FUNCTION_READ);
@@ -327,19 +1337,18 @@ Client::read(int32_t fd, size_t len, DispatchHandler *handler) {
 	}
 }
 
-
 size_t
 Client::read(int32_t fd, void *dst, size_t len) {
-	ClientBufferedReaderHandler *reader_handler = 0;
+	ClientFdPtr clientfd_ptr;
 	{
 		lock_guard<mutex> lock(m_mutex);
 		auto iter = m_buffered_reader_map.find(fd);
 		if (iter != m_buffered_reader_map.end())
-			reader_handler = (*iter).second;
+   		clientfd_ptr = get_clientfd_ptr((*iter).second);
 	}
+	if (clientfd_ptr)
+		return clientfd_ptr->reader->read(dst, len);
 	try {
-		if (reader_handler)
-			return reader_handler->read(dst, len);
 
 		DispatchHandlerSynchronizer sync_handler;
 		EventPtr event;
@@ -393,6 +1402,63 @@ void Client::decode_response_read(EventPtr &event, const void **buffer,
 	*buffer = ptr;
 }
 
+
+// PREAD
+void
+Client::pread(int32_t fd, size_t len, uint64_t offset,
+	bool verify_checksum, DispatchHandler *handler) {
+	CommHeader header(Request::Handler::Factory::FUNCTION_PREAD);
+	header.gid = fd;
+	Request::Parameters::Pread params(fd, offset, len, verify_checksum);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try { send_message(cbuf, handler); }
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error sending pread request at byte %llu "
+			"on FS fd %d", (Llu)offset, (int)fd);
+	}
+}
+
+size_t
+Client::pread(int32_t fd, void *dst, size_t len, uint64_t offset, 
+							bool verify_checksum) {
+	DispatchHandlerSynchronizer sync_handler;
+	EventPtr event;
+	CommHeader header(Request::Handler::Factory::FUNCTION_PREAD);
+	header.gid = fd;
+	Request::Parameters::Pread params(fd, offset, len, verify_checksum);
+	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
+	params.encode(cbuf->get_data_ptr_address());
+
+	try {
+		send_message(cbuf, &sync_handler);
+
+		if (!sync_handler.wait_for_reply(event))
+			HT_THROW(Protocol::response_code(event.get()),
+				Protocol::string_format_message(event).c_str());
+
+		uint32_t length;
+		uint64_t off;
+		const void *data;
+		decode_response_pread(event, &data, &off, &length);
+		HT_ASSERT(length <= len);
+		memcpy(dst, data, length);
+		return length;
+	}
+	catch (Exception &e) {
+		HT_THROW2F(e.code(), e, "Error preading at byte %llu on FS fd %d",
+			(Llu)offset, (int)fd);
+	}
+}
+
+void Client::decode_response_pread(EventPtr &event, const void **buffer,
+	uint64_t *offset, uint32_t *length) {
+	decode_response_read(event, buffer, offset, length);
+}
+
+
+// APPEND
 void
 Client::append(int32_t fd, StaticBuffer &buffer, Flags flags,
 	DispatchHandler *handler) {
@@ -400,7 +1466,8 @@ Client::append(int32_t fd, StaticBuffer &buffer, Flags flags,
 	header.gid = fd;
 	header.alignment = HT_DIRECT_IO_ALIGNMENT;
 	CommBuf *cbuf = new CommBuf(header, HT_DIRECT_IO_ALIGNMENT, buffer);
-	Request::Parameters::Append params(fd, buffer.size, static_cast<uint8_t>(flags));
+	Request::Parameters::Append params(fd, buffer.size, 
+																		 static_cast<uint8_t>(flags));
 	uint8_t *base = (uint8_t *)cbuf->get_data_ptr();
 	params.encode(cbuf->get_data_ptr_address());
 	size_t padding = HT_DIRECT_IO_ALIGNMENT -
@@ -418,7 +1485,6 @@ Client::append(int32_t fd, StaticBuffer &buffer, Flags flags,
 			(unsigned)buffer.size, (int)fd);
 	}
 }
-
 
 size_t Client::append(int32_t fd, StaticBuffer &buffer, Flags flags) {
 	DispatchHandlerSynchronizer sync_handler;
@@ -460,7 +1526,6 @@ size_t Client::append(int32_t fd, StaticBuffer &buffer, Flags flags) {
 	}
 }
 
-
 void Client::decode_response_append(EventPtr &event, uint64_t *offset,
 	uint32_t *length) {
 	int error = Protocol::response_code(event);
@@ -477,6 +1542,7 @@ void Client::decode_response_append(EventPtr &event, uint64_t *offset,
 }
 
 
+// SEEK
 void
 Client::seek(int32_t fd, uint64_t offset, DispatchHandler *handler) {
 	CommHeader header(Request::Handler::Factory::FUNCTION_SEEK);
@@ -491,7 +1557,6 @@ Client::seek(int32_t fd, uint64_t offset, DispatchHandler *handler) {
 			(Llu)offset, (int)fd);
 	}
 }
-
 
 void
 Client::seek(int32_t fd, uint64_t offset) {
@@ -517,235 +1582,7 @@ Client::seek(int32_t fd, uint64_t offset) {
 }
 
 
-void
-Client::remove(const String &name, DispatchHandler *handler) {
-	CommHeader header(Request::Handler::Factory::FUNCTION_REMOVE);
-	Request::Parameters::Remove params(name);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try { send_message(cbuf, handler); }
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error removing FS file: %s", name.c_str());
-	}
-}
-
-
-void
-Client::remove(const String &name, bool force) {
-	DispatchHandlerSynchronizer sync_handler;
-	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_REMOVE);
-	Request::Parameters::Remove params(name);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try {
-		send_message(cbuf, &sync_handler);
-
-		if (!sync_handler.wait_for_reply(event)) {
-			int error = Protocol::response_code(event.get());
-			if (!force || error != Error::FSBROKER_FILE_NOT_FOUND)
-				HT_THROW(error, Protocol::string_format_message(event).c_str());
-		}
-	}
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error removing FS file: %s", name.c_str());
-	}
-}
-
-
-void
-Client::shutdown(uint16_t flags, DispatchHandler *handler) {
-	CommHeader header(Request::Handler::Factory::FUNCTION_SHUTDOWN);
-	Request::Parameters::Shutdown params(flags);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try { send_message(cbuf, handler); }
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "sending FS shutdown (flags=%d)", (int)flags);
-	}
-}
-
-
-void Client::status(Status &status, Timer *timer) {
-	DispatchHandlerSynchronizer sync_handler;
-	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_STATUS);
-	CommBufPtr cbuf(new CommBuf(header));
-
-	try {
-		send_message(cbuf, &sync_handler, timer);
-
-		if (!sync_handler.wait_for_reply(event))
-			HT_THROW(Protocol::response_code(event.get()),
-				Protocol::string_format_message(event).c_str());
-
-		decode_response_status(event, status);
-	}
-	catch (Exception &e) {
-		status.set(Status::Code::CRITICAL,
-			format("%s - %s", Error::get_text(e.code()), e.what()));
-	}
-}
-
-void Client::decode_response_status(EventPtr &event, Status &status) {
-	int error = Protocol::response_code(event);
-	if (error != Error::OK)
-		HT_THROW(error, Protocol::string_format_message(event));
-
-	const uint8_t *ptr = event->payload + 4;
-	size_t remain = event->payload_len - 4;
-
-	Response::Parameters::Status params;
-	params.decode(&ptr, &remain);
-	status = params.status();
-}
-
-
-
-void Client::length(const String &name, bool accurate,
-	DispatchHandler *handler) {
-	CommHeader header(Request::Handler::Factory::FUNCTION_LENGTH);
-	Request::Parameters::Length params(name, accurate);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try { send_message(cbuf, handler); }
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error sending length request for FS file: %s",
-			name.c_str());
-	}
-}
-
-
-int64_t Client::length(const String &name, bool accurate) {
-	DispatchHandlerSynchronizer sync_handler;
-	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_LENGTH);
-	Request::Parameters::Length params(name, accurate);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try {
-		send_message(cbuf, &sync_handler);
-
-		if (!sync_handler.wait_for_reply(event))
-			HT_THROW(Protocol::response_code(event.get()),
-				Protocol::string_format_message(event).c_str());
-
-		return decode_response_length(event);
-	}
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error getting length of FS file: %s",
-			name.c_str());
-	}
-}
-
-int64_t Client::decode_response_length(EventPtr &event) {
-	int error = Protocol::response_code(event);
-	if (error != Error::OK)
-		HT_THROW(error, Protocol::string_format_message(event));
-
-	const uint8_t *ptr = event->payload + 4;
-	size_t remain = event->payload_len - 4;
-
-	Response::Parameters::Length params;
-	params.decode(&ptr, &remain);
-	return params.get_length();
-}
-
-
-void
-Client::pread(int32_t fd, size_t len, uint64_t offset,
-	bool verify_checksum, DispatchHandler *handler) {
-	CommHeader header(Request::Handler::Factory::FUNCTION_PREAD);
-	header.gid = fd;
-	Request::Parameters::Pread params(fd, offset, len, verify_checksum);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try { send_message(cbuf, handler); }
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error sending pread request at byte %llu "
-			"on FS fd %d", (Llu)offset, (int)fd);
-	}
-}
-
-
-size_t
-Client::pread(int32_t fd, void *dst, size_t len, uint64_t offset, bool verify_checksum) {
-	DispatchHandlerSynchronizer sync_handler;
-	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_PREAD);
-	header.gid = fd;
-	Request::Parameters::Pread params(fd, offset, len, verify_checksum);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try {
-		send_message(cbuf, &sync_handler);
-
-		if (!sync_handler.wait_for_reply(event))
-			HT_THROW(Protocol::response_code(event.get()),
-				Protocol::string_format_message(event).c_str());
-
-		uint32_t length;
-		uint64_t off;
-		const void *data;
-		decode_response_pread(event, &data, &off, &length);
-		HT_ASSERT(length <= len);
-		memcpy(dst, data, length);
-		return length;
-	}
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error preading at byte %llu on FS fd %d",
-			(Llu)offset, (int)fd);
-	}
-}
-
-void Client::decode_response_pread(EventPtr &event, const void **buffer,
-	uint64_t *offset, uint32_t *length) {
-	decode_response_read(event, buffer, offset, length);
-}
-
-void Client::mkdirs(const String &name, DispatchHandler *handler) {
-	CommHeader header(Request::Handler::Factory::FUNCTION_MKDIRS);
-	Request::Parameters::Mkdirs params(name);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try { send_message(cbuf, handler); }
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error sending mkdirs request for FS "
-			"directory: %s", name.c_str());
-	}
-}
-
-
-void
-Client::mkdirs(const String &name) {
-	DispatchHandlerSynchronizer sync_handler;
-	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_MKDIRS);
-	Request::Parameters::Mkdirs params(name);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try {
-		send_message(cbuf, &sync_handler);
-
-		if (!sync_handler.wait_for_reply(event))
-			HT_THROW(Protocol::response_code(event.get()),
-				Protocol::string_format_message(event).c_str());
-	}
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error mkdirs FS directory %s", name.c_str());
-	}
-}
-
-
+// FLUSH/SYNC
 void
 Client::flush(int32_t fd, DispatchHandler *handler) {
 	CommHeader header(Request::Handler::Factory::FUNCTION_FLUSH);
@@ -759,7 +1596,6 @@ Client::flush(int32_t fd, DispatchHandler *handler) {
 		HT_THROW2F(e.code(), e, "Error flushing FS fd %d", (int)fd);
 	}
 }
-
 
 void
 Client::flush(int32_t fd) {
@@ -782,7 +1618,6 @@ Client::flush(int32_t fd) {
 		HT_THROW2F(e.code(), e, "Error flushing FS fd %d", (int)fd);
 	}
 }
-
 
 void
 Client::sync(int32_t fd) {
@@ -807,174 +1642,51 @@ Client::sync(int32_t fd) {
 }
 
 
-void Client::rmdir(const String &name, DispatchHandler *handler) {
-	CommHeader header(Request::Handler::Factory::FUNCTION_RMDIR);
-	Request::Parameters::Rmdir params(name);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try { send_message(cbuf, handler); }
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error sending rmdir request for FS directory: "
-			"%s", name.c_str());
-	}
-}
-
-
+// CLOSE
 void
-Client::rmdir(const String &name, bool force) {
-	DispatchHandlerSynchronizer sync_handler;
-	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_RMDIR);
-	Request::Parameters::Rmdir params(name);
+Client::close(int32_t fd, DispatchHandler *handler) {
+	CommHeader header(Request::Handler::Factory::FUNCTION_CLOSE);
+	header.gid = fd;
+	Request::Parameters::Close params(fd);
 	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
 	params.encode(cbuf->get_data_ptr_address());
 
-	try {
-		send_message(cbuf, &sync_handler);
-
-		if (!sync_handler.wait_for_reply(event)) {
-			int error = Protocol::response_code(event.get());
-
-			if (!force || error != Error::FSBROKER_FILE_NOT_FOUND)
-				HT_THROW(error, Protocol::string_format_message(event).c_str());
+	{
+		lock_guard<mutex> lock(m_mutex);
+		auto iter = m_buffered_reader_map.find(fd);
+		if (iter != m_buffered_reader_map.end()) {
+			// Filesystem::SmartFdPtr smartfd_ptr = (*iter).second;
+			// ptr delete smartfd_ptr->reader
+			m_buffered_reader_map.erase(iter);
 		}
 	}
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error removing FS directory: %s", name.c_str());
-	}
-}
-
-
-void Client::readdir(const String &name, DispatchHandler *handler) {
-	CommHeader header(Request::Handler::Factory::FUNCTION_READDIR);
-	Request::Parameters::Readdir params(name);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try { send_message(cbuf, handler); }
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error sending readdir request for FS directory"
-			": %s", name.c_str());
-	}
-}
-
-
-void Client::readdir(const String &name, std::vector<Dirent> &listing) {
-	DispatchHandlerSynchronizer sync_handler;
-	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_READDIR);
-	Request::Parameters::Readdir params(name);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
 
 	try {
-		send_message(cbuf, &sync_handler);
-
-		if (!sync_handler.wait_for_reply(event))
-			HT_THROW(Protocol::response_code(event.get()),
-				Protocol::string_format_message(event).c_str());
-
-		decode_response_readdir(event, listing);
+		send_message(cbuf, handler);
 	}
 	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error reading directory entries for FS "
-			"directory: %s", name.c_str());
+		HT_THROW2F(e.code(), e, "Error closing FS fd: %d", (int)fd);
 	}
 }
-
-
-void Client::decode_response_readdir(EventPtr &event,
-	std::vector<Dirent> &listing) {
-	int error = Protocol::response_code(event);
-	if (error != Error::OK)
-		HT_THROW(error, Protocol::string_format_message(event));
-
-	const uint8_t *ptr = event->payload + 4;
-	size_t remain = event->payload_len - 4;
-
-	Response::Parameters::Readdir params;
-	params.decode(&ptr, &remain);
-	params.get_listing(listing);
-}
-
-
-void Client::exists(const String &name, DispatchHandler *handler) {
-	CommHeader header(Request::Handler::Factory::FUNCTION_EXISTS);
-	Request::Parameters::Exists params(name);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try { send_message(cbuf, handler); }
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "sending 'exists' request for FS path: %s",
-			name.c_str());
-	}
-}
-
-
-bool Client::exists(const String &name) {
-	DispatchHandlerSynchronizer sync_handler;
-	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_EXISTS);
-	Request::Parameters::Exists params(name);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try {
-		send_message(cbuf, &sync_handler);
-
-		if (!sync_handler.wait_for_reply(event))
-			HT_THROW(Protocol::response_code(event.get()),
-				Protocol::string_format_message(event).c_str());
-
-		return decode_response_exists(event);
-	}
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error checking existence of FS path: %s",
-			name.c_str());
-	}
-}
-
-
-bool Client::decode_response_exists(EventPtr &event) {
-	int error = Protocol::response_code(event);
-	if (error != Error::OK)
-		HT_THROW(error, Protocol::string_format_message(event));
-
-	const uint8_t *ptr = event->payload + 4;
-	size_t remain = event->payload_len - 4;
-
-	Response::Parameters::Exists params;
-	params.decode(&ptr, &remain);
-	return params.get_exists();
-}
-
-
 
 void
-Client::rename(const String &src, const String &dst, DispatchHandler *handler) {
-	CommHeader header(Request::Handler::Factory::FUNCTION_RENAME);
-	Request::Parameters::Rename params(src, dst);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try { send_message(cbuf, handler); }
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error sending 'rename' request for FS "
-			"path: %s -> %s", src.c_str(), dst.c_str());
-	}
-}
-
-
-void
-Client::rename(const String &src, const String &dst) {
+Client::close(int32_t fd) {
 	DispatchHandlerSynchronizer sync_handler;
 	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_RENAME);
-	Request::Parameters::Rename params(src, dst);
+	CommHeader header(Request::Handler::Factory::FUNCTION_CLOSE);
+	header.gid = fd;
+	Request::Parameters::Close params(fd);
 	CommBufPtr cbuf(new CommBuf(header, params.encoded_length()));
 	params.encode(cbuf->get_data_ptr_address());
+	{
+		lock_guard<mutex> lock(m_mutex);
+		auto iter = m_buffered_reader_map.find(fd);
+		if (iter != m_buffered_reader_map.end()) {
+			// Filesystem::SmartFdPtr smartfd_ptr = (*iter).second;
+			// ptr delete smartfd_ptr->reader
+			m_buffered_reader_map.erase(iter);
+		}
+	}
 
 	try {
 		send_message(cbuf, &sync_handler);
@@ -984,57 +1696,6 @@ Client::rename(const String &src, const String &dst) {
 				Protocol::string_format_message(event).c_str());
 	}
 	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error renaming of FS path: %s -> %s",
-			src.c_str(), dst.c_str());
+		HT_THROW2F(e.code(), e, "Error closing FS fd: %d", (int)fd);
 	}
-}
-
-
-void
-Client::debug(int32_t command, StaticBuffer &serialized_parameters,
-	DispatchHandler *handler) {
-	CommHeader header(Request::Handler::Factory::FUNCTION_DEBUG);
-	Request::Parameters::Debug params(command);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length(),
-		serialized_parameters));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try { send_message(cbuf, handler); }
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error sending debug command %d request", command);
-	}
-}
-
-
-void
-Client::debug(int32_t command, StaticBuffer &serialized_parameters) {
-	DispatchHandlerSynchronizer sync_handler;
-	EventPtr event;
-	CommHeader header(Request::Handler::Factory::FUNCTION_DEBUG);
-	Request::Parameters::Debug params(command);
-	CommBufPtr cbuf(new CommBuf(header, params.encoded_length(),
-		serialized_parameters));
-	params.encode(cbuf->get_data_ptr_address());
-
-	try {
-		send_message(cbuf, &sync_handler);
-
-		if (!sync_handler.wait_for_reply(event))
-			HT_THROW(Protocol::response_code(event.get()),
-				Protocol::string_format_message(event).c_str());
-	}
-	catch (Exception &e) {
-		HT_THROW2F(e.code(), e, "Error sending debug command %d request", command);
-	}
-}
-
-
-
-void
-Client::send_message(CommBufPtr &cbuf, DispatchHandler *handler, Timer *timer) {
-	uint32_t deadline = timer ? timer->remaining() : m_timeout_ms;
-	int error = m_comm->send_request(m_addr, deadline, cbuf, handler);
-
-	if (error != Error::OK)
-		HT_THROWF(error, "FS send_request to %s failed", m_addr.format().c_str());
 }
