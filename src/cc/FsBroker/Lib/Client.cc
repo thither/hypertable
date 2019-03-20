@@ -205,36 +205,43 @@ void Client::decode_response_status(EventPtr &event, Status &status) {
 
 
 bool Client::wait_for_connection(int e_code, const String &e_desc) {
-	
-  HT_DEBUG_OUT << "Client::wait_for_connection " << e_code 
-								<< ", " << e_desc << HT_END;
-	if (m_dfsclient_retries < 10 && (
-		e_code == Error::COMM_NOT_CONNECTED ||
-		e_code == Error::COMM_BROKEN_CONNECTION ||
-		e_code == Error::COMM_CONNECT_ERROR ||
-		e_code == Error::COMM_SEND_ERROR ||
-		e_code == Error::FSBROKER_BAD_FILE_HANDLE ||
-		e_code == Error::FSBROKER_IO_ERROR)) {
+	HT_INFOF("Client::wait_for_connection, %d: %s", e_code ,e_desc.c_str());
 
-		lock_guard<mutex> lock(m_mutex);
-		if (m_dfsclient_retries == 10 
-				&& !m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms))
-			HT_THROW(e_code,
-				format("Timed out waiting for connection to FS Broker, tried %d times - %s", 
-														m_dfsclient_retries.load(), e_desc.c_str()));
-		else {
-			HT_INFOF("FsClient conn-established after %d tries to error: %s", 
-							 m_dfsclient_retries.load(), e_desc.c_str());
-			m_dfsclient_retries.store(0);
-			return true;
-		}
-		m_dfsclient_retries++;
-		HT_INFOF("FsClient conn-retry: %d ",  m_dfsclient_retries.load());
+	if(!(e_code == Error::COMM_NOT_CONNECTED ||
+		 e_code == Error::COMM_BROKEN_CONNECTION ||
+		 e_code == Error::COMM_CONNECT_ERROR ||
+		 e_code == Error::COMM_SEND_ERROR ||
+		 e_code == Error::FSBROKER_BAD_FILE_HANDLE ||
+		 e_code == Error::FSBROKER_IO_ERROR)) {
+			 
+		HT_INFOF("FsClient skip trying to connect on error: %d, %s ",  
+							e_code, e_desc.c_str());
+		return false;
 	}
 
-	HT_INFOF("FsClient skip trying to conn on error: %d, %s ",  
-		e_code, e_desc.c_str());
-	return false;
+	if (m_dfsclient_retries == 10)
+		HT_THROW(e_code,
+			format("Timed out waiting for connection to FS Broker, tried %d times - %s", 
+							m_dfsclient_retries.load(), e_desc.c_str()));
+
+	
+	lock_guard<mutex> lock(m_mutex);
+
+	if(e_code == Error::COMM_NOT_CONNECTED)
+		Client(m_conn_mgr, m_addr, m_timeout_ms);
+			
+	if (!m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms)){
+		m_dfsclient_retries++;	
+		HT_INFOF("FsClient conn-retry: %d failed, to error: %s",  
+							m_dfsclient_retries.load(), e_desc.c_str());
+		return false;						
+	} else {
+		HT_INFOF("FsClient conn-established after %d tries to error: %s", 
+						 m_dfsclient_retries.load(), e_desc.c_str());
+		m_dfsclient_retries.store(0);
+		return true;
+	}
+
 }
 
 
