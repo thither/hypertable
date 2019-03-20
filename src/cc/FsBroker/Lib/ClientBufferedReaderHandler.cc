@@ -21,7 +21,6 @@
 
 #include <Common/Compat.h>
 
-#include "ClientBufferedReaderHandler.h"
 #include "Client.h"
 
 #include <AsyncComm/Protocol.h>
@@ -33,11 +32,12 @@ using namespace Hypertable::FsBroker::Lib;
 using namespace std;
 
 ClientBufferedReaderHandler::ClientBufferedReaderHandler(
-    Client *client, uint32_t fd, uint32_t buf_size,
+    Client *client, Filesystem::SmartFdPtr smartfd_ptr, uint32_t buf_size,
     uint32_t outstanding, uint64_t start_offset, uint64_t end_offset) :
-    m_client(client), m_fd(fd), m_read_size(buf_size), m_eof(false),
+    m_client(client), m_smartfd_ptr(smartfd_ptr), 
+    m_read_size(buf_size), m_eof(false),
     m_error(Error::OK) {
-
+  
   m_max_outstanding = outstanding;
   m_end_offset = end_offset;
   m_outstanding_offset = start_offset;
@@ -47,7 +47,7 @@ ClientBufferedReaderHandler::ClientBufferedReaderHandler(
    * Seek to initial offset
    */
   if (start_offset > 0) {
-    try { m_client->seek(m_fd, start_offset); }
+    try { m_client->seek(m_smartfd_ptr, start_offset); }
     catch (...) {
       m_eof = true;
       throw;
@@ -66,7 +66,7 @@ ClientBufferedReaderHandler::ClientBufferedReaderHandler(
       else
         toread = m_read_size;
 
-      try { m_client->read(m_fd, toread, this); }
+      try { m_client->read(m_smartfd_ptr, toread, this); }
       catch (...) {
         m_eof = true;
         throw;
@@ -104,8 +104,8 @@ void ClientBufferedReaderHandler::handle(EventPtr &event) {
   if (event->type == Event::MESSAGE) {
     if ((m_error = (int)Protocol::response_code(event)) != Error::OK) {
       m_error_msg = Protocol::string_format_message(event);
-      HT_ERRORF("FS read error (amount=%u, fd=%d) : %s",
-                m_read_size, m_fd, m_error_msg.c_str());
+      HT_ERRORF("FS read error (amount=%u, fd=%s) : %s",
+        m_read_size, m_smartfd_ptr->to_str().c_str(), m_error_msg.c_str());
       m_eof = true;
       m_cond.notify_all();
       return;
@@ -116,7 +116,8 @@ void ClientBufferedReaderHandler::handle(EventPtr &event) {
       uint32_t amount;
       uint64_t offset;
       const void *data;
-      m_client->decode_response_read(event, &data, &offset, &amount);
+      m_client->decode_response_read(
+        m_smartfd_ptr, event, &data, &offset, &amount);
       m_actual_offset += amount;
       if (amount < m_read_size)
         m_eof = true;
@@ -161,7 +162,8 @@ ClientBufferedReaderHandler::read(void *buf, size_t len) {
       uint64_t offset;
       uint32_t amount;
       EventPtr &event = m_queue.front();
-      m_client->decode_response_read(event, (const void **)&m_ptr, &offset, &amount);
+      m_client->decode_response_read(
+        m_smartfd_ptr, event, (const void **)&m_ptr, &offset, &amount);
       m_end_ptr = m_ptr + amount;
     }
 
@@ -194,7 +196,7 @@ ClientBufferedReaderHandler::read(void *buf, size_t len) {
     m_ptr = 0;
     read_ahead();
   }
-
+  
   return nread;
 }
 
@@ -220,7 +222,7 @@ void ClientBufferedReaderHandler::read_ahead() {
     else
       toread = m_read_size;
 
-    try { m_client->read(m_fd, toread, this); }
+    try { m_client->read(m_smartfd_ptr, toread, this); }
     catch(...) {
       m_eof = true;
       throw;

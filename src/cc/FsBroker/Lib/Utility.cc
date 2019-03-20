@@ -45,20 +45,21 @@ namespace {
 void FsBroker::Lib::copy(ClientPtr &client, const std::string &from,
                          const std::string &to, int64_t offset) {
   DispatchHandlerSynchronizer sync_handler;
-  int32_t from_fd {};
-  int32_t to_fd {};
+  Filesystem::SmartFdPtr from_smartfd_ptr = Filesystem::SmartFd::make_ptr(from, 0);
+  Filesystem::SmartFdPtr to_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+    to, Filesystem::OPEN_FLAG_OVERWRITE);
 
   try {
 
-    from_fd = client->open(from, 0);
+    client->open(from_smartfd_ptr);
     if (offset > 0)
-      client->seek(from_fd, offset);
+      client->seek(from_smartfd_ptr, offset);
 
-    to_fd = client->create(to, Filesystem::OPEN_FLAG_OVERWRITE, -1, -1, -1);    
+    client->create(to_smartfd_ptr, -1, -1, -1);    
 
-    client->read(from_fd, BUFFER_SIZE, &sync_handler);
-    client->read(from_fd, BUFFER_SIZE, &sync_handler);
-    client->read(from_fd, BUFFER_SIZE, &sync_handler);
+    client->read(from_smartfd_ptr, BUFFER_SIZE, &sync_handler);
+    client->read(from_smartfd_ptr, BUFFER_SIZE, &sync_handler);
+    client->read(from_smartfd_ptr, BUFFER_SIZE, &sync_handler);
 
     EventPtr event;
     uint8_t *dst;
@@ -66,12 +67,13 @@ void FsBroker::Lib::copy(ClientPtr &client, const std::string &from,
 
     while (sync_handler.wait_for_reply(event)) {
 
-      client->decode_response_pread(event, (const void **)&dst, (uint64_t *)&offset, &amount);
+      client->decode_response_pread(
+        from_smartfd_ptr, event, (const void **)&dst, (uint64_t *)&offset, &amount);
 
       StaticBuffer send_buf;
       if (amount > 0) {
         send_buf.set(dst, amount, false);
-        client->append(to_fd, send_buf);
+        client->append(to_smartfd_ptr, send_buf);
       }
 
       if (amount < (uint32_t)BUFFER_SIZE) {
@@ -79,28 +81,27 @@ void FsBroker::Lib::copy(ClientPtr &client, const std::string &from,
         break;
       }
 
-      client->read(from_fd, BUFFER_SIZE, &sync_handler);
+      client->read(from_smartfd_ptr, BUFFER_SIZE, &sync_handler);
     }
 
-    client->close(from_fd);
-    client->close(to_fd);
+    client->close(from_smartfd_ptr);
+    client->close(to_smartfd_ptr);
 
   }
   catch (Exception &e) {
-    if (from_fd)
-      client->close(from_fd);
-    if (to_fd)
-      client->close(to_fd);
+    if (from_smartfd_ptr->valid())
+      client->close(from_smartfd_ptr);
+    if (to_smartfd_ptr->valid())
+      client->close(to_smartfd_ptr);
     throw;
   }
 
 }
 
 
-void FsBroker::Lib::copy_from_local(ClientPtr &client, const string &from, const string &to,
-                                    int64_t offset) {
+void FsBroker::Lib::copy_from_local(ClientPtr &client, 
+  const string &from, const string &to, int64_t offset) {
   DispatchHandlerSynchronizer sync_handler;
-  int32_t fd = 0;
   FILE *fp = 0;
   size_t nread;
   uint8_t *buf;
@@ -116,7 +117,10 @@ void FsBroker::Lib::copy_from_local(ClientPtr &client, const string &from, const
         HT_THROW(Error::EXTERNAL, strerror(errno));
     }
 
-    fd = client->create(to, Filesystem::OPEN_FLAG_OVERWRITE, -1, -1, -1);
+    Filesystem::SmartFdPtr to_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+      to, Filesystem::OPEN_FLAG_OVERWRITE);
+
+    client->create(to_smartfd_ptr, -1, -1, -1);
 
     // send 3 appends
     for (int i=0; i<3; i++) {
@@ -124,7 +128,7 @@ void FsBroker::Lib::copy_from_local(ClientPtr &client, const string &from, const
       if ((nread = fread(buf, 1, BUFFER_SIZE, fp)) == 0)
         goto done;
       send_buf.set(buf, nread, true);
-      client->append(fd, send_buf);
+      client->append(to_smartfd_ptr, send_buf);
     }
 
     while (true) {
@@ -132,11 +136,11 @@ void FsBroker::Lib::copy_from_local(ClientPtr &client, const string &from, const
       if ((nread = fread(buf, 1, BUFFER_SIZE, fp)) == 0)
         break;
       send_buf.set(buf, nread, true);
-      client->append(fd, send_buf);
+      client->append(to_smartfd_ptr, send_buf);
     }
 
   done:
-    client->close(fd);
+    client->close(to_smartfd_ptr);
 
   }
   catch (Exception &e) {
@@ -147,8 +151,8 @@ void FsBroker::Lib::copy_from_local(ClientPtr &client, const string &from, const
 }
 
 
-void FsBroker::Lib::copy_to_local(ClientPtr &client, const string &from, const string &to,
-                                  int64_t offset) {
+void FsBroker::Lib::copy_to_local(ClientPtr &client, 
+  const string &from, const string &to, int64_t offset) {
   DispatchHandlerSynchronizer sync_handler;
   FILE *fp = 0;
 
@@ -157,14 +161,16 @@ void FsBroker::Lib::copy_to_local(ClientPtr &client, const string &from, const s
     if ((fp = fopen(to.c_str(), "w+")) == 0)
       HT_THROW(Error::EXTERNAL, strerror(errno));
 
-    int32_t fd = client->open(from, 0);
+
+    Filesystem::SmartFdPtr from_smartfd_ptr = Filesystem::SmartFd::make_ptr(from, 0);
+    client->open(from_smartfd_ptr);
 
     if (offset > 0)
-      client->seek(fd, offset);
+      client->seek(from_smartfd_ptr, offset);
 
-    client->read(fd, BUFFER_SIZE, &sync_handler);
-    client->read(fd, BUFFER_SIZE, &sync_handler);
-    client->read(fd, BUFFER_SIZE, &sync_handler);
+    client->read(from_smartfd_ptr, BUFFER_SIZE, &sync_handler);
+    client->read(from_smartfd_ptr, BUFFER_SIZE, &sync_handler);
+    client->read(from_smartfd_ptr, BUFFER_SIZE, &sync_handler);
 
     EventPtr event;
     const uint8_t *dst;
@@ -172,7 +178,8 @@ void FsBroker::Lib::copy_to_local(ClientPtr &client, const string &from, const s
 
     while (sync_handler.wait_for_reply(event)) {
 
-      client->decode_response_pread(event, (const void **)&dst, (uint64_t *)&offset, &amount);
+      client->decode_response_pread(from_smartfd_ptr, 
+            event, (const void **)&dst, (uint64_t *)&offset, &amount);
 
       if (amount > 0) {
         if (fwrite(dst, amount, 1, fp) != 1)
@@ -184,10 +191,10 @@ void FsBroker::Lib::copy_to_local(ClientPtr &client, const string &from, const s
         break;
       }
 
-      client->read(fd, BUFFER_SIZE, &sync_handler);
+      client->read(from_smartfd_ptr, BUFFER_SIZE, &sync_handler);
     }
 
-    client->close(fd);
+    client->close(from_smartfd_ptr);
 
     fclose(fp);
 

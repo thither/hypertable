@@ -96,19 +96,24 @@ namespace Lib {
     struct impl {
       impl(ClientPtr &client, const String &filename,
            bool accurate_length, BOOST_IOS::openmode mode)
-           : m_client(client), m_filename(filename), m_open(false),
-             m_bytes_read(0), m_bytes_written(0), m_length(0)
+           : m_client(client), m_open(false), 
+           m_bytes_read(0), m_bytes_written(0), m_length(0)
       {
+        
         // if file is opened for output then create if it doesn't exist
         if (mode & BOOST_IOS::in) {
           if (!m_client->exists(filename))
             HT_THROW(Error::FILE_NOT_FOUND, (String)"fs://" + filename);
           m_length = m_client->length(filename, accurate_length);
-          m_fd = m_client->open_buffered(filename, Filesystem::OPEN_FLAG_DIRECTIO,
-                                         READAHEAD_BUFFER_SIZE, OUTSTANDING_READS);
+          m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+            filename, Filesystem::OPEN_FLAG_DIRECTIO);
+          m_client->open_buffered(
+            m_smartfd_ptr, READAHEAD_BUFFER_SIZE, OUTSTANDING_READS);
         }
         else if (mode & BOOST_IOS::out) {
-          m_fd = m_client->create(filename, Filesystem::OPEN_FLAG_OVERWRITE, -1 , -1, -1);
+          m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+            filename, Filesystem::OPEN_FLAG_OVERWRITE);
+          m_client->create(m_smartfd_ptr, -1 , -1, -1);
         }
         m_open = true;
       }
@@ -119,7 +124,7 @@ namespace Lib {
 
       void close() {
          if (m_open) {
-          m_client->close(m_fd);
+          m_client->close(m_smartfd_ptr);
           m_bytes_read = m_bytes_written = 0;
           m_open = false;
         }
@@ -129,7 +134,7 @@ namespace Lib {
         if (amount + m_bytes_read > m_length)
           amount = m_length - m_bytes_read;
         if (amount > 0 ) {
-          size_t bytes_read = m_client->read(m_fd, (void *)dst, amount);
+          size_t bytes_read = m_client->read(m_smartfd_ptr, (void *)dst, amount);
           m_bytes_read += bytes_read;
           return bytes_read;
         }
@@ -148,7 +153,7 @@ namespace Lib {
 
       size_t write(const char_type *dst, size_t amount) {
         StaticBuffer write_buffer((void *)dst, amount, false);
-        size_t bytes_written =  m_client->append(m_fd, write_buffer);
+        size_t bytes_written =  m_client->append(m_smartfd_ptr, write_buffer);
         m_bytes_written += bytes_written;
         return bytes_written;
       }
@@ -157,9 +162,8 @@ namespace Lib {
         return m_bytes_written;
       }
 
-      ClientPtr m_client;
-      String m_filename;
-      int m_fd;
+      ClientPtr   m_client;
+      Filesystem::SmartFdPtr m_smartfd_ptr;
       bool m_open;
       size_t m_bytes_read;
       size_t m_bytes_written;
