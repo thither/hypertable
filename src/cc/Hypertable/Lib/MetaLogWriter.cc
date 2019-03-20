@@ -124,7 +124,7 @@ Writer::~Writer() {
   close();
 }
 
-void Writer::close(bool do_throw) {
+void Writer::close() {
   lock_guard<mutex> lock(m_mutex);
 
   if(m_backup_fd!=-1){
@@ -138,9 +138,8 @@ void Writer::close(bool do_throw) {
       m_fs->close(m_smartfd);
     }
     catch (Exception &e) {
-      if(do_throw)
-        HT_THROW2F(e.code(), e, "Error closing metalog: %s ", 
-          m_smartfd->to_str().c_str());
+      HT_THROW2F(e.code(), e, "Error closing metalog: %s ", 
+        m_smartfd->to_str().c_str());
     }
   }
 }
@@ -167,7 +166,11 @@ void Writer::purge_old_log_files() {
 void Writer::roll() {
 
   // Close descriptors
-  close(false);
+  if (m_smartfd && m_smartfd->valid()) {
+    m_fs->close(m_smartfd);
+    ::close(m_backup_fd);
+    m_backup_fd = -1;
+  } // double lock at using Writer::close();
 
   int32_t next_id = m_file_ids.front() + 1;
 

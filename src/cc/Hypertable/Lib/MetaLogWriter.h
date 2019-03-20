@@ -105,9 +105,8 @@ namespace Hypertable {
 
       /** Closes open file descriptors.
        * This method closes both #m_smartfd and #m_backup_fd and sets them to -1.
-       * by default throw on error
        */
-      void close(bool do_throw=true);
+      void close();
 
       /** Persists an Entity to the log.
        * @anchor single_entity_record_state
