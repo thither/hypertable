@@ -72,13 +72,15 @@ namespace {
 
     if (!Global::dfs->exists(parent_dir))
       Global::dfs->mkdirs(parent_dir);
+    
+    Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(
+      parent_dir + "/hints", Filesystem::OPEN_FLAG_OVERWRITE);
 
-    int32_t fd = Global::dfs->create(parent_dir + "/hints",
-                                     Filesystem::OPEN_FLAG_OVERWRITE, -1, -1, -1);
+    Global::dfs->create(smartfd_ptr, -1, -1, -1);
     StaticBuffer sbuf(contents.length());
     memcpy(sbuf.base, contents.c_str(), contents.length());
-    Global::dfs->append(fd, sbuf);
-    Global::dfs->close(fd);
+    Global::dfs->append(smartfd_ptr, sbuf);
+    Global::dfs->close(smartfd_ptr);
   }
 
 }

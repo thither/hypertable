@@ -94,7 +94,8 @@ namespace Hypertable {
      * @return <i>true</i> if valid header was encountered, <i>false</i>
      * otherwise
      */
-    static bool read_header(FilesystemPtr &fs, int32_t fd,
+    static bool read_header(FilesystemPtr &fs, 
+                            Filesystem::SmartFdPtr smartfd_ptr,
                             uint32_t *versionp, uint64_t *next_offset);
 
     /** Writes commit log file header.
@@ -113,7 +114,8 @@ namespace Hypertable {
      * @param fs Reference to filesystem object
      * @param fd File descriptor of newly opened commit log file
      */
-    static void write_header(FilesystemPtr &fs, int32_t fd);
+    static void write_header(FilesystemPtr &fs, 
+                            Filesystem::SmartFdPtr smartfd_ptr);
 
     /** Size of header.
      * @return Size of header in bytes
@@ -142,8 +144,8 @@ namespace Hypertable {
     /// Version of commit log fragment file format
     uint32_t m_version;
 
-    /// File descriptor
-    int32_t m_fd;
+    /// Smart File descriptor
+    Filesystem::SmartFdPtr m_smartfd_ptr = nullptr;
 
     /// Current read offset within the fragment file
     uint64_t m_cur_offset;

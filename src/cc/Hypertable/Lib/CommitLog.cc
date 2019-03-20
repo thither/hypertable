@@ -122,15 +122,16 @@ CommitLog::initialize(const string &log_dir, PropertiesPtr &props,
 
   try {
     m_fs->mkdirs(m_log_dir);
-    m_fd = m_fs->create(m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE,
-                        -1, m_replication, -1);
-    CommitLogBlockStream::write_header(m_fs, m_fd);
+    m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+      m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE);
+    m_fs->create(m_smartfd_ptr, -1, m_replication, -1);
+    CommitLogBlockStream::write_header(m_fs, m_smartfd_ptr);
     m_cur_fragment_length = CommitLogBlockStream::header_size();
   }
   catch (Hypertable::Exception &e) {
     HT_ERRORF("Problem initializing commit log '%s' - %s (%s)",
               m_log_dir.c_str(), e.what(), Error::get_text(e.code()));
-    m_fd = -1;
+    m_smartfd_ptr = nullptr;
     throw;
   }
 }
@@ -145,13 +146,13 @@ int CommitLog::flush() {
   int error {};
 
   try {
-    if (m_fd == -1)
+    if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
       return Error::CLOSED;
-    m_fs->flush(m_fd);
+    m_fs->flush(m_smartfd_ptr);
   }
   catch (Exception &e) {
     HT_ERRORF("Problem flushing commit log: %s: %s",
-              m_cur_fragment_fname.c_str(), e.what());
+              m_smartfd_ptr->to_str().c_str(), e.what());
     error = e.code();
   }
 
@@ -163,13 +164,13 @@ int CommitLog::sync() {
   int error {};
 
   try {
-    if (m_fd == -1)
+    if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
       return Error::CLOSED;
-    m_fs->sync(m_fd);
+    m_fs->sync(m_smartfd_ptr);
   }
   catch (Exception &e) {
     HT_ERRORF("Problem syncing commit log: %s: %s",
-              m_cur_fragment_fname.c_str(), e.what());
+              m_smartfd_ptr->to_str().c_str(), e.what());
     error = e.code();
   }
 
@@ -251,10 +252,10 @@ int CommitLog::link_log(uint64_t cluster_id, CommitLogBase *log_base) {
     StaticBuffer send_buf(input);
     CommitLogFileInfo *file_info = 0;
 
-    if (m_fd == -1)
+    if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
       return Error::CLOSED;
 
-    m_fs->append(m_fd, send_buf);
+    m_fs->append(m_smartfd_ptr, send_buf);
     m_cur_fragment_length += amount;
 
     if ((error = roll(&file_info)) != Error::OK)
@@ -291,14 +292,14 @@ int CommitLog::close() {
   lock_guard<mutex> lock(m_mutex);
 
   try {
-    if (m_fd >= 0) {
-      m_fs->close(m_fd);
-      m_fd = -1;
+    if (m_smartfd_ptr && m_smartfd_ptr->valid()){
+      m_fs->close(m_smartfd_ptr);
+      m_smartfd_ptr = nullptr;
     }
   }
   catch (Hypertable::Exception &e) {
     HT_ERRORF("Problem closing commit log file '%s' - %s (%s)",
-              m_cur_fragment_fname.c_str(), e.what(),
+              m_smartfd_ptr->to_str().c_str(), e.what(),
               Error::get_text(e.code()));
     return e.code();
   }
@@ -311,7 +312,7 @@ int CommitLog::purge(int64_t revision, StringSet &remove_ok_logs,
                      StringSet &removed_logs, string *trace) {
   lock_guard<mutex> lock(m_mutex);
 
-  if (m_fd == -1)
+  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
     return Error::CLOSED;
 
   if (trace) {
@@ -406,7 +407,7 @@ void CommitLog::remove_file_info(CommitLogFileInfo *fi, StringSet &removed_logs)
 int CommitLog::roll(CommitLogFileInfo **clfip) {
   CommitLogFileInfo *file_info;
 
-  if (m_fd == -1)
+  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
     return Error::CLOSED;
 
   if (m_latest_revision == TIMESTAMP_MIN)
@@ -416,19 +417,17 @@ int CommitLog::roll(CommitLogFileInfo **clfip) {
 
   if (clfip)
     *clfip = 0;
-
-  if (m_fd >= 0) {
+  if(m_smartfd_ptr->valid()){
     try {
-      m_fs->close(m_fd);
+      m_fs->close(m_smartfd_ptr);
     }
     catch (Exception &e) {
       HT_ERRORF("Problem closing commit log fragment: %s: %s",
-		m_cur_fragment_fname.c_str(), e.what());
+		            m_smartfd_ptr->to_str().c_str(), e.what());
       return e.code();
     }
 
-    m_fd = -1;
-
+  
     file_info = new CommitLogFileInfo();
     if (clfip)
       *clfip = file_info;
@@ -454,16 +453,16 @@ int CommitLog::roll(CommitLogFileInfo **clfip) {
     m_cur_fragment_fname = m_log_dir + "/" + m_cur_fragment_num;
 
   }
-
   try {
-    m_fd = m_fs->create(m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE,
-                        -1, m_replication, -1);
-    CommitLogBlockStream::write_header(m_fs, m_fd);
+    m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+      m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE);
+    m_fs->create(m_smartfd_ptr, -1, m_replication, -1);
+    CommitLogBlockStream::write_header(m_fs, m_smartfd_ptr);
     m_cur_fragment_length = CommitLogBlockStream::header_size();
   }
   catch (Exception &e) {
     HT_ERRORF("Problem rolling commit log: %s: %s",
-              m_cur_fragment_fname.c_str(), e.what());
+              m_smartfd_ptr->to_str().c_str(), e.what());
     return e.code();
   }
 
@@ -483,7 +482,7 @@ CommitLog::compress_and_write(DynamicBuffer &input, BlockHeader *header,
   // Compress block and kick off log write (protected by lock)
   try {
 
-    if (m_fd == -1)
+    if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
       return Error::CLOSED;
 
     m_compressor->deflate(input, zblock, *header);
@@ -491,7 +490,7 @@ CommitLog::compress_and_write(DynamicBuffer &input, BlockHeader *header,
     size_t amount = zblock.fill();
     StaticBuffer send_buf(zblock);
 
-    m_fs->append(m_fd, send_buf, flags);
+    m_fs->append(m_smartfd_ptr, send_buf, flags);
     assert(revision != 0);
     if (revision > m_latest_revision)
       m_latest_revision = revision;
@@ -499,7 +498,7 @@ CommitLog::compress_and_write(DynamicBuffer &input, BlockHeader *header,
   }
   catch (Exception &e) {
     HT_ERRORF("Problem writing commit log: %s: %s",
-              m_cur_fragment_fname.c_str(), e.what());
+              m_smartfd_ptr->to_str().c_str(), e.what());
     error = e.code();
   }
 
@@ -513,7 +512,7 @@ void CommitLog::load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map)
   uint32_t distance = 0;
   CumulativeFragmentData frag_data;
 
-  if (m_fd == -1)
+  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
     HT_THROWF(Error::CLOSED, "Commit log '%s' has been closed", m_log_dir.c_str());
 
   memset(&frag_data, 0, sizeof(frag_data));
@@ -544,7 +543,7 @@ void CommitLog::load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map)
 void CommitLog::get_stats(const string &prefix, string &result) {
   lock_guard<mutex> lock(m_mutex);
 
-  if (m_fd == -1)
+  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
     HT_THROWF(Error::CLOSED, "Commit log '%s' has been closed", m_log_dir.c_str());
 
   try {

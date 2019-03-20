@@ -76,7 +76,8 @@ namespace {
 }
 
 void AccessGroupHintsFile::write(String location) {
-  int32_t fd = -1;
+  Filesystem::SmartFdPtr smartfd_ptr;
+
   bool first_try = true;
 
   String parent_dir = format("%s/tables/%s/default/%s",
@@ -100,17 +101,18 @@ void AccessGroupHintsFile::write(String location) {
 
   try {
     if (!first_try) {
-      if (fd != -1)
-        Global::dfs->close(fd);
+      if (smartfd_ptr && smartfd_ptr->valid())
+        Global::dfs->close(smartfd_ptr);
       if (!Global::dfs->exists(parent_dir))
         Global::dfs->mkdirs(parent_dir);
     }
-    fd = Global::dfs->create(parent_dir + "/hints",
-                             Filesystem::OPEN_FLAG_OVERWRITE, -1, -1, -1);
+    smartfd_ptr = Filesystem::SmartFd::make_ptr(
+      parent_dir + "/hints", Filesystem::OPEN_FLAG_OVERWRITE);
+    Global::dfs->create(smartfd_ptr, -1, -1, -1);
     StaticBuffer sbuf(contents.length());
     memcpy(sbuf.base, contents.c_str(), contents.length());
-    Global::dfs->append(fd, sbuf);
-    Global::dfs->close(fd);
+    Global::dfs->append(smartfd_ptr, sbuf);
+    Global::dfs->close(smartfd_ptr);
   }
   catch (Exception &e) {
     HT_INFOF("Exception caught writing hints file %s/hints - %s",
@@ -126,7 +128,7 @@ void AccessGroupHintsFile::write(String location) {
 }
 
 void AccessGroupHintsFile::read() {
-  int32_t fd = -1;
+  Filesystem::SmartFdPtr smartfd_ptr;
   AccessGroup::Hints h;
   DynamicBuffer dbuf;
 
@@ -141,10 +143,12 @@ void AccessGroupHintsFile::read() {
     const char *base;
 
     dbuf.grow(length+1);
-
-    fd = Global::dfs->open(filename, Filesystem::OPEN_FLAG_VERIFY_CHECKSUM);
-    size_t nread = Global::dfs->read(fd, dbuf.base, length);
-    Global::dfs->close(fd);
+    
+    smartfd_ptr = Filesystem::SmartFd::make_ptr(
+      filename, Filesystem::OPEN_FLAG_VERIFY_CHECKSUM);
+    Global::dfs->open(smartfd_ptr);
+    size_t nread = Global::dfs->read(smartfd_ptr, dbuf.base, length);
+    Global::dfs->close(smartfd_ptr);
     dbuf.base[nread] = 0;
 
     parse_header((const char *)dbuf.base, &base);

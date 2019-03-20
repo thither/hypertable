@@ -587,11 +587,12 @@ namespace {
     String mark_filename = logdir + "/" + (int64_t)num + ".mark";
 
     try {
-      int fd = Global::log_dfs->create(mark_filename, 0, -1, -1, -1);
+      Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(mark_filename, 0);
+      Global::log_dfs->create(smartfd_ptr, -1, -1, -1);
       StaticBuffer buf(1);
       *buf.base = '0';
-      Global::log_dfs->append(fd, buf);
-      Global::log_dfs->close(fd);
+      Global::log_dfs->append(smartfd_ptr, buf);
+      Global::log_dfs->close(smartfd_ptr);
     }
     catch (Hypertable::Exception &) {
       HT_FATALF("Unable to create file '%s'", mark_filename.c_str());

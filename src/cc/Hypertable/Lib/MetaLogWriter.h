@@ -83,7 +83,7 @@ namespace Hypertable {
        * with a call to purge_old_log_files() with a "keep count" of 30.
        * It then sets #m_filename equal
        * to  <code>path/next_id</code> and opens it for writing, setting
-       * the #m_fd to the opened file descriptor.  The replication factor is
+       * the #m_smartfd to the opened file descriptor.  The replication factor is
        * set to the <code>Hypertable.Metadata.Replication</code> property.  It
        * then sets #m_backup_filename to #m_backup_path + <code>\/next_id</code>
        * and opens it for writing (in the local filesystem), setting
@@ -104,7 +104,7 @@ namespace Hypertable {
       ~Writer();
 
       /** Closes open file descriptors.
-       * This method closes both #m_fd and #m_backup_fd and sets them to -1.
+       * This method closes both #m_smartfd and #m_backup_fd and sets them to -1.
        */
       void close();
 
@@ -226,11 +226,10 @@ namespace Hypertable {
       /// Path name of %MetaLog directory
       std::string  m_path;
 
-      /// Full pathname of %MetaLog file open for writing
-      std::string  m_filename;
-
-      /// File descriptor of %MetaLog file in FS
-      int m_fd {-1};
+      /// SmartFdPtr stores, 
+      //   Full pathname of %MetaLog file open for writing
+      ///  File descriptor of %MetaLog file in FS
+      Filesystem::SmartFdPtr m_smartfd = nullptr;
 
       /// Pathname of local log backup directory
       std::string  m_backup_path;
