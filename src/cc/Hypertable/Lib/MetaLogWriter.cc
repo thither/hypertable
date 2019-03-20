@@ -95,8 +95,8 @@ Writer::Writer(FilesystemPtr &fs, DefinitionPtr &definition, const string &path,
   int32_t next_id = m_file_ids.empty() ? 0 : m_file_ids.front()+1;
 
   // Open FS file
-  m_filename = m_path + "/" + next_id;
-  m_fd = m_fs->create(m_filename, 0, FS_BUFFER_SIZE, m_replication, FS_BLOCK_SIZE);
+  m_smartfd = Filesystem::SmartFd::make_ptr(m_path + "/" + next_id, 0);
+  m_fs->create(m_smartfd, FS_BUFFER_SIZE, m_replication, FS_BLOCK_SIZE);
 
   // Open backup file
   m_backup_filename = m_backup_path + "/" + next_id;
@@ -127,15 +127,15 @@ Writer::~Writer() {
 void Writer::close() {
   lock_guard<mutex> lock(m_mutex);
   try {
-    if (m_fd != -1) {
-      m_fs->close(m_fd);
-      m_fd = -1;
+    if (m_smartfd && m_smartfd->valid()) {
+      m_fs->close(m_smartfd);
       ::close(m_backup_fd);
       m_backup_fd = -1;
     }
   }
   catch (Exception &e) {
-    HT_THROW2F(e.code(), e, "Error closing metalog: %s (fd=%d)", m_filename.c_str(), m_fd);
+    HT_THROW2F(e.code(), e, "Error closing metalog: %s ", 
+      m_smartfd->to_str().c_str());
   }
 
 }
@@ -162,9 +162,8 @@ void Writer::purge_old_log_files() {
 void Writer::roll() {
 
   // Close descriptors
-  if (m_fd != -1) {
-    m_fs->close(m_fd);
-    m_fd = -1;
+  if (m_smartfd && m_smartfd->valid()) {
+    m_fs->close(m_smartfd);
     ::close(m_backup_fd);
     m_backup_fd = -1;
   }
@@ -172,8 +171,8 @@ void Writer::roll() {
   int32_t next_id = m_file_ids.front() + 1;
 
   // Open next brokered FS file
-  m_filename = m_path + "/" + next_id;
-  m_fd = m_fs->create(m_filename, 0, FS_BUFFER_SIZE, m_replication, FS_BLOCK_SIZE);
+  m_smartfd = Filesystem::SmartFd::make_ptr(m_path + "/" + next_id, 0);
+  m_fs->create(m_smartfd, FS_BUFFER_SIZE, m_replication, FS_BLOCK_SIZE);
 
   // Open next backup file
   m_backup_filename = m_backup_path + "/" + next_id;
@@ -208,7 +207,7 @@ void Writer::roll() {
 
   // Write contents to file(s)
   FileUtils::write(m_backup_fd, buf.base, buf.size);
-  m_fs->append(m_fd, buf, m_flush_method);
+  m_fs->append(m_smartfd, buf, m_flush_method);
   
 }
 
@@ -236,7 +235,7 @@ void Writer::service_write_queue() {
     m_offset += buf.size;
 
     FileUtils::write(m_backup_fd, buf.base, buf.size);
-    m_fs->append(m_fd, buf, m_flush_method);
+    m_fs->append(m_smartfd, buf, m_flush_method);
 
     m_write_queue.clear();
 
@@ -303,10 +302,10 @@ void Writer::write_header() {
   memcpy(backup_buf, buf.base, Header::LENGTH);
 
   FileUtils::write(m_backup_fd, backup_buf, Header::LENGTH);
-  if (m_fs->append(m_fd, buf, m_flush_method) != Header::LENGTH)
+  if (m_fs->append(m_smartfd, buf, m_flush_method) != Header::LENGTH)
     HT_THROWF(Error::FSBROKER_IO_ERROR, "Error writing %s "
               "metalog header to file: %s", m_definition->name(),
-              m_filename.c_str());
+              m_smartfd->to_str().c_str());
 
   m_offset += Header::LENGTH;
 }
@@ -317,7 +316,7 @@ void Writer::record_state(EntityPtr entity) {
   size_t length;
   StaticBufferPtr buf;
 
-  if (m_fd == -1)
+  if (!m_smartfd || !m_smartfd->valid())
     HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
 
   {
@@ -363,7 +362,7 @@ void Writer::record_state(std::vector<EntityPtr> &entities) {
   if (entities.empty())
     return;
 
-  if (m_fd == -1)
+  if (!m_smartfd || !m_smartfd->valid())
     HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
 
   size_t i=0;
@@ -414,7 +413,7 @@ void Writer::record_removal(EntityPtr entity) {
   StaticBufferPtr buf = make_shared<StaticBuffer>(EntityHeader::LENGTH);
   uint8_t *ptr = buf->base;
 
-  if (m_fd == -1)
+  if (!m_smartfd || !m_smartfd->valid())
     HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
 
   entity->header.flags |= EntityHeader::FLAG_REMOVE;
@@ -444,7 +443,7 @@ void Writer::record_removal(std::vector<EntityPtr> &entities) {
   if (entities.empty())
     return;
 
-  if (m_fd == -1)
+  if (!m_smartfd || !m_smartfd->valid())
     HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
 
   size_t length = entities.size() * EntityHeader::LENGTH;
