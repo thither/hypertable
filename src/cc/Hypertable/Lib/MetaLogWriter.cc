@@ -167,7 +167,7 @@ void Writer::roll() {
 
   // Close descriptors
   if (m_smartfd && m_smartfd->valid()) {
-    m_fs->close(m_smartfd);
+    try{m_fs->close(m_smartfd);}catch(...){}
     ::close(m_backup_fd);
     m_backup_fd = -1;
   } // double lock at using Writer::close();
@@ -213,6 +213,25 @@ void Writer::roll() {
   FileUtils::write(m_backup_fd, buf.base, buf.size);
   m_fs->append(m_smartfd, buf, m_flush_method);
   
+}
+
+void Writer::try_service_write_queue() {
+  int write_tries = 0;
+
+  try_again:
+  try{
+    service_write_queue();
+  }
+  catch (Exception &e) {
+    HT_INFOF("Exception caught, %s - MetaLog::service_write_queue, MetaLog %s",
+             m_smartfd->to_str().c_str(), Error::get_text(e.code()));
+
+    if(write_tries < 10 && e.code() == Error::FSBROKER_BAD_FILE_HANDLE){
+      write_tries++;
+      roll();
+      goto try_again;
+    }
+  }
 }
 
 void Writer::service_write_queue() {
@@ -353,7 +372,7 @@ void Writer::record_state(EntityPtr entity) {
 
   m_cond.wait(lock);
 
-  service_write_queue();
+  try_service_write_queue();
 }
 
 void Writer::record_state(std::vector<EntityPtr> &entities) {
@@ -408,7 +427,7 @@ void Writer::record_state(std::vector<EntityPtr> &entities) {
 
   m_cond.wait(lock);
 
-  service_write_queue();
+  try_service_write_queue();
 
 }
 
@@ -437,7 +456,7 @@ void Writer::record_removal(EntityPtr entity) {
 
   m_cond.wait(lock);
 
-  service_write_queue();
+  try_service_write_queue();
 }
 
 
@@ -471,7 +490,7 @@ void Writer::record_removal(std::vector<EntityPtr> &entities) {
 
   m_cond.wait(lock);
 
-  service_write_queue();
+  try_service_write_queue();
 
 }
 

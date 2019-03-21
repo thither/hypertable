@@ -586,15 +586,27 @@ namespace {
     long num = strtol(listing2.back().name.c_str(), &endptr, 10);
     String mark_filename = logdir + "/" + (int64_t)num + ".mark";
 
+    bool file_created = false;
+    int write_tries = 0;
+    try_create_mark_again:
     try {
       Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(mark_filename, 0);
       Global::log_dfs->create(smartfd_ptr, -1, -1, -1);
+      file_created = true;
       StaticBuffer buf(1);
       *buf.base = '0';
       Global::log_dfs->append(smartfd_ptr, buf);
       Global::log_dfs->close(smartfd_ptr);
     }
-    catch (Hypertable::Exception &) {
+    catch (Exception &e) {
+      if(file_created) {
+        Global::dfs->remove(mark_filename);
+        file_created = false;
+      }
+      if(write_tries < 10 && e.code() == Error::FSBROKER_BAD_FILE_HANDLE){
+        write_tries++; 
+        goto try_create_mark_again;
+      }
       HT_FATALF("Unable to create file '%s'", mark_filename.c_str());
     }
   }

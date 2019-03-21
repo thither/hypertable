@@ -571,6 +571,9 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
     cellstore_props = m_cellstore_props;
   }
 
+  int write_tries = 0;
+  try_create_cellstore_again:
+
   try {
     time_t now = time(0);
     int64_t max_num_entries {};
@@ -663,7 +666,7 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
         HT_ASSERT(scanner);
       }
     }
-
+ 
     cellstore->create(cs_file.c_str(), max_num_entries, cellstore_props, &m_identifier);
 
     if (mscanner) {
@@ -834,6 +837,10 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
         }
         catch (Hypertable::Exception &e) {
         }
+      }
+      if(write_tries < 10 && e.code() == Error::FSBROKER_BAD_FILE_HANDLE){
+        write_tries++; 
+        goto try_create_cellstore_again;
       }
       HT_ERROR_OUT << m_full_name << " " << e << HT_END;
       throw;

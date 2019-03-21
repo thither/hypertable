@@ -131,6 +131,13 @@ namespace Hypertable {
             return m_conn_mgr->wait_for_connection(m_addr, max_wait_ms);
           return true;
         }
+        
+        /** Tries to re-connect to FS Broker max retries time estimated to m_timeout_ms X hypretable.fsbroker.ClientRetries 
+        return True if re-connected, 
+        @param e_code last exception error code
+        @param e last exception
+        @param e_desc last error description (added to waiting for connection Exception)
+        */
         bool wait_for_connection(int e_code, const String &e_desc);
 
         enum {
@@ -318,14 +325,8 @@ namespace Hypertable {
         uint32_t m_timeout_ms;
         std::unordered_map<uint32_t, Filesystem::SmartFdPtr> m_buffered_reader_map;
         
-        /** Tries to re-connect to FS Broker max retries time estimated to m_timeout_ms X hypretable.fsbroker.ClientRetries 
-        return True if re-connected, 
-        @param e_code last exception error code
-        @param e last exception
-        @param e_desc last error description (added to waiting for connection Exception)
-        */
-        
-        std::atomic<int> m_dfsclient_retries = 0;
+        int m_conn_retries = 0;
+        bool m_conn_active = true;
 
       };
 

@@ -120,18 +120,31 @@ CommitLog::initialize(const string &log_dir, PropertiesPtr &props,
 
   m_cur_fragment_fname = m_log_dir + "/" + m_cur_fragment_num;
 
+  
+  int write_tries = 0;
+  bool file_created = false;
+
+  try_write_again:
   try {
     m_fs->mkdirs(m_log_dir);
     m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
       m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE);
     m_fs->create(m_smartfd_ptr, -1, m_replication, -1);
+    file_created = true;
     CommitLogBlockStream::write_header(m_fs, m_smartfd_ptr);
     m_cur_fragment_length = CommitLogBlockStream::header_size();
   }
   catch (Hypertable::Exception &e) {
-    HT_ERRORF("Problem initializing commit log '%s' - %s (%s)",
-              m_log_dir.c_str(), e.what(), Error::get_text(e.code()));
-    m_smartfd_ptr = nullptr;
+    HT_ERRORF("Problem initializing commit log '%s', try: %d  - %s (%s)",
+              m_log_dir.c_str(), write_tries, e.what(), Error::get_text(e.code()));
+    if(file_created) {
+      m_fs->remove(m_cur_fragment_fname);
+      file_created = false;
+    }
+    if(write_tries < 10 && e.code() == Error::FSBROKER_BAD_FILE_HANDLE){
+      write_tries++; 
+      goto try_write_again;
+    }
     throw;
   }
 }
@@ -182,8 +195,9 @@ int
 CommitLog::write(uint64_t cluster_id, DynamicBuffer &buffer, int64_t revision,
                  Filesystem::Flags flags) {
   int error;
-  BlockHeaderCommitLog header(MAGIC_DATA, revision, cluster_id);
 
+  int write_tries = 0;
+  try_write_again:
   if (m_needs_roll) {
     lock_guard<mutex> lock(m_mutex);
     if ((error = roll()) != Error::OK)
@@ -193,8 +207,18 @@ CommitLog::write(uint64_t cluster_id, DynamicBuffer &buffer, int64_t revision,
   /**
    * Compress and write the commit block
    */
-  if ((error = compress_and_write(buffer, &header, revision, flags)) != Error::OK)
+  BlockHeaderCommitLog header(MAGIC_DATA, revision, cluster_id);
+  if ((error = compress_and_write(buffer, &header, revision, flags)) != Error::OK){
+    if(write_tries < 10 && (
+        error == Error::FSBROKER_BAD_FILE_HANDLE || 
+        error ==  Error::CLOSED)){
+      m_needs_roll=true;
+      write_tries++;
+      goto try_write_again;
+    }
     return error;
+  }
+
 
   /**
    * Roll the log
@@ -405,64 +429,75 @@ void CommitLog::remove_file_info(CommitLogFileInfo *fi, StringSet &removed_logs)
 }
 
 int CommitLog::roll(CommitLogFileInfo **clfip) {
-  CommitLogFileInfo *file_info;
 
-  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
-    return Error::CLOSED;
-
-  if (m_latest_revision == TIMESTAMP_MIN)
-    return Error::OK;
-
-  m_needs_roll = true;
-
-  if (clfip)
-    *clfip = 0;
   if(m_smartfd_ptr->valid()){
+    if (m_latest_revision == TIMESTAMP_MIN)
+      return Error::OK;
     try {
       m_fs->close(m_smartfd_ptr);
     }
     catch (Exception &e) {
       HT_ERRORF("Problem closing commit log fragment: %s: %s",
 		            m_smartfd_ptr->to_str().c_str(), e.what());
-      return e.code();
+      //return e.code();
     }
-
-  
-    file_info = new CommitLogFileInfo();
-    if (clfip)
-      *clfip = file_info;
-    file_info->log_dir = m_log_dir;
-    file_info->log_dir_hash = md5_hash(m_log_dir.c_str());
-    file_info->num = m_cur_fragment_num;
-    file_info->size = m_cur_fragment_length;
-    assert(m_latest_revision != TIMESTAMP_MIN);
-    file_info->revision = m_latest_revision;
-
-    if (m_fragment_queue.empty() || m_fragment_queue.back()->revision
-        < file_info->revision)
-      m_fragment_queue.push_back(file_info);
-    else {
-      m_fragment_queue.push_back(file_info);
-      struct LtClfip swo;
-      sort(m_fragment_queue.begin(), m_fragment_queue.end(), swo);
-    }
-
-    m_latest_revision = TIMESTAMP_MIN;
-
-    m_cur_fragment_num++;
-    m_cur_fragment_fname = m_log_dir + "/" + m_cur_fragment_num;
-
   }
+  
+  CommitLogFileInfo *file_info;
+  m_needs_roll = true;
+
+  if (clfip)
+    *clfip = 0;
+  
+  file_info = new CommitLogFileInfo();
+  if (clfip)
+    *clfip = file_info;
+  file_info->log_dir = m_log_dir;
+  file_info->log_dir_hash = md5_hash(m_log_dir.c_str());
+  file_info->num = m_cur_fragment_num;
+  file_info->size = m_cur_fragment_length;
+  assert(m_latest_revision != TIMESTAMP_MIN);
+  file_info->revision = m_latest_revision;
+
+  if (m_fragment_queue.empty() || m_fragment_queue.back()->revision
+      < file_info->revision)
+    m_fragment_queue.push_back(file_info);
+  else {
+    m_fragment_queue.push_back(file_info);
+    struct LtClfip swo;
+    sort(m_fragment_queue.begin(), m_fragment_queue.end(), swo);
+  }
+
+  m_latest_revision = TIMESTAMP_MIN;
+
+  m_cur_fragment_num++;
+  m_cur_fragment_fname = m_log_dir + "/" + m_cur_fragment_num;
+
+
+  int write_tries = 0;
+  bool file_created = false;
+
+  try_write_again:
   try {
     m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
       m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE);
     m_fs->create(m_smartfd_ptr, -1, m_replication, -1);
+    file_created = true;
     CommitLogBlockStream::write_header(m_fs, m_smartfd_ptr);
     m_cur_fragment_length = CommitLogBlockStream::header_size();
+
   }
   catch (Exception &e) {
-    HT_ERRORF("Problem rolling commit log: %s: %s",
-              m_smartfd_ptr->to_str().c_str(), e.what());
+    HT_ERRORF("Problem rolling commit log: %s, try: %d , %s",
+              m_smartfd_ptr->to_str().c_str(), write_tries, e.what());
+    if(file_created) {
+      m_fs->remove(m_cur_fragment_fname);
+      file_created = false;
+    }
+    if(write_tries < 10 && e.code() == Error::FSBROKER_BAD_FILE_HANDLE){
+      write_tries++; 
+      goto try_write_again;
+    }
     return e.code();
   }
 

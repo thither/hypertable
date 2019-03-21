@@ -209,6 +209,8 @@ namespace Hypertable {
 
       void roll();
 
+      void try_service_write_queue();
+
       void service_write_queue();
 
       /// %Mutex for serializing access to members

@@ -19,6 +19,7 @@ Hypertable.Config.OnFileChange.file=@INSTALL_DIR@/conf/hypertable-dyn.cfg
 # to write Hypertable state.  If it is a relative path, the path is
 # relative to the Hypertable installation.
 FsBroker.Local.Root=fs/local
+FsBroker.Timeout=30000
 
 # Qfs Broker specific properties
 #FsBroker.Qfs.MetaServer.Name=localhost

@@ -147,8 +147,9 @@ CellStoreScannerIntervalReadahead<IndexT>::CellStoreScannerIntervalReadahead(Cel
 template <typename IndexT>
 CellStoreScannerIntervalReadahead<IndexT>::~CellStoreScannerIntervalReadahead() {
   try {
-    if (m_smartfd_ptr && m_smartfd_ptr->valid())
-      Global::dfs->close(m_smartfd_ptr);
+    if (m_smartfd_ptr && m_smartfd_ptr->valid()){
+      try{Global::dfs->close(m_smartfd_ptr);}catch(...){}
+    }
     delete [] m_block.base;
     delete m_zcodec;
     delete m_key_decompressor;
