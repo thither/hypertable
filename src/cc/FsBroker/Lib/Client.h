@@ -343,9 +343,10 @@ namespace Hypertable {
         InetAddr m_addr;
         uint32_t m_timeout_ms;
         gInt32tPtr m_write_retry_limit {};
+        gInt32tPtr m_retry_limit {};
         std::unordered_map<uint32_t, Filesystem::SmartFdPtr> m_buffered_reader_map;
         
-        int m_conn_retries = 0;
+        int32_t m_conn_retries = 0;
         bool m_conn_active = true;
 
       };

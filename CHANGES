@@ -17,7 +17,8 @@ Version 0.9.8.16:
    set FsBroker::Lib::Client methods based on int fd to warn-deprecated
    changed Metalog, Commitlog, AccessGroupHintsFile to work with smartfd
    changed CellStore to work with smartfd, except CellStoreV0-6
-   added dyn config option FsBroker.WriteRetryLimit=100, zero for skip
+   added dyn config option FsBroker.WriteRetryLimit, zero to skip
+   added dyn config option FsBroker.RetryLimit, zero to skip
    added bool retry_write_ok to FsBroker::Lib::Client
    added a try again loops for processes relay on FsBrokerClient append
    major improvment on Failure Tolerence of FsClient use and connection to FsBroker

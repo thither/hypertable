@@ -322,6 +322,9 @@ void DefaultPolicy::init_options() {
     ("FsBroker.Timeout", i32(), "Length of time, "
         "in milliseconds, to wait before timing out FS Broker requests. This "
         "takes precedence over Hypertable.Request.Timeout")
+    ("FsBroker.RetryLimit", g_i32(100), "Retry limit for a Client "
+        "in establishing connection, total time before throw Timeout X RetryLimit, " 
+        "counter undergo reset on successful connection ")
     ("FsBroker.WriteRetryLimit", g_i32(100), "Write retry limit for Client "
         "in creating new descriptor and do write before Throw, Zero for skip")
     ("FsBroker.DisableFileRemoval", boo(false),

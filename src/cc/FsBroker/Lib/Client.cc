@@ -82,6 +82,7 @@ Client::Client(ConnectionManagerPtr &conn_mgr, const sockaddr_in &addr,
 	conn_mgr->add(m_addr, m_timeout_ms, "FS Broker");
 	
   m_write_retry_limit = Config::get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
+  m_retry_limit = Config::get_ptr<gInt32t>("FsBroker.RetryLimit");
 }
 
 Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &props)
@@ -94,6 +95,7 @@ Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &props)
   m_timeout_ms = props->get_pref<int32_t>(
 			{"FsBroker.Timeout", "Hypertable.Request.Timeout"});
   m_write_retry_limit = props->get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
+  m_retry_limit =  props->get_ptr<gInt32t>("FsBroker.RetryLimit");
 	
 	InetAddr::initialize(&m_addr, host.c_str(), port);
 
@@ -104,6 +106,7 @@ Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &props)
 Client::Client(Comm *comm, const sockaddr_in &addr, uint32_t timeout_ms)
 	: m_comm(comm), m_conn_mgr(0), m_addr(addr), m_timeout_ms(timeout_ms) {
   m_write_retry_limit = Config::get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
+  m_retry_limit = Config::get_ptr<gInt32t>("FsBroker.RetryLimit");
 }
 
 Client::Client(const String &host, int port, uint32_t timeout_ms)
@@ -117,6 +120,7 @@ Client::Client(const String &host, int port, uint32_t timeout_ms)
 			"Timed out waiting for connection to FS Broker");
 	
   m_write_retry_limit = Config::get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
+  m_retry_limit = Config::get_ptr<gInt32t>("FsBroker.RetryLimit");
 }
 
 Client::~Client() {
@@ -234,7 +238,7 @@ bool Client::wait_for_connection(int e_code, const String &e_desc) {
 
 	lock_guard<mutex> lock(m_mutex);
 
-	if (m_conn_retries == 10)
+	if (m_conn_retries == m_retry_limit->get())
 		HT_THROW(e_code,
 			format("Timed out waiting for connection to FS Broker, tried %d times - %s", 
 							m_conn_retries, e_desc.c_str()));
