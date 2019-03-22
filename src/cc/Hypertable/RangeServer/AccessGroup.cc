@@ -677,7 +677,6 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
           filtered_cache->add(key, value);
         mscanner->forward();
       }
-      m_garbage_tracker.adjust_targets(now, mscanner.get());
     }
     else {
       while (scanner->get(key, value)) {
@@ -710,6 +709,9 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
           !MaintenanceFlag::relinquish(maintenance_flags))
         FailureInducer::instance->maybe_fail("compact-manual-1");
     }
+    
+    if (mscanner)
+      m_garbage_tracker.adjust_targets(now, mscanner.get());
   }
   catch (Exception &e) {
     
