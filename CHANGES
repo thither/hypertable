@@ -4,17 +4,26 @@ Version 0.9.8.16:
    updated for Thrift 0.12.0, gcc 8.3
    changed cmake build instructions, now builds with cmake/utils.cmake
    removal of redundant compiler flags
+   added thrift 0.12.0 gen sources for all languages 
+   change RangeServer BlockCache.MaxMemory to 90% of RangeServer.MemoryLimit from 100% physical
    added pam_ht_maxretries - Pluggable Authentication Module (Hypertable Max Retries)
    added Python Write Dipatcher Module (PyHelper based on HyperThrift C++)
-   changed use of newly generated thrift sources with all languages 
-   changed HyperThrift library has no dependency for other targets 
+   changed generate new thrift sources on build with all languages 
+   changed no dependency for other targets for HyperThrift library
    added lib HyperThriftExtentions includes the SerializedCells related and ThriftHelper
    added SmartFd to Hypertable::Filesystem
-   added new methods working with SmartFd to Hypertable::Filesystem
+   added new methods based on SmartFd to Hypertable::Filesystem
    added support of SmartFd to FsBroker::Lib::Client
+   set FsBroker::Lib::Client methods based on int fd to warn-deprecated
    changed Metalog, Commitlog, AccessGroupHintsFile to work with smartfd
-   improved Failure Tolerence of FsClient
-   TODO: switch cellstore to work with smartfd 
+   changed CellStore to work with smartfd, except CellStoreV0-6
+   added dyn config option FsBroker.WriteRetryLimit=100, zero for skip
+   added bool retry_write_ok to FsBroker::Lib::Client
+   added a try again loops for processes relay on FsBrokerClient append
+   major improvment on Failure Tolerence of FsClient use and connection to FsBroker
+   changed repr of fd/filename in logging of FsBroker::Lib::Client to a SmartFd 
+   changed RangeServerConnectionManager maps RemoteAddr as nonunique 
+   TODO: 
 
 Version 0.9.8.15:
 (2018-12-19)
