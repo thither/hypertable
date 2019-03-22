@@ -496,7 +496,6 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
   bool merging = false;
   bool major = false;
   bool gc = false;
-  bool cellstore_created = false;
   size_t merge_offset=0, merge_length=0;
   String added_file;
 
@@ -571,15 +570,17 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
     cellstore_props = m_cellstore_props;
   }
 
-  int write_tries = 0;
-  try_create_cellstore_again:
+  time_t now;
+  int64_t max_num_entries;
+  CellListScannerPtr scanner;
+  MergeScannerAccessGroupPtr mscanner;
+  ScanContextPtr scan_ctx;
 
+  int32_t write_tries = 0;
+  try_create_cellstore_again:
   try {
-    time_t now = time(0);
-    int64_t max_num_entries {};
-    CellListScannerPtr scanner;
-    MergeScannerAccessGroupPtr mscanner;
-    ScanContextPtr scan_ctx;
+    now = time(0);
+    max_num_entries = {};
 
     {
       lock_guard<mutex> lock(m_mutex);
@@ -709,12 +710,22 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
           !MaintenanceFlag::relinquish(maintenance_flags))
         FailureInducer::instance->maybe_fail("compact-manual-1");
     }
-
-    cellstore_created = true;
-
-    /**
-     * Install new CellCache and CellStore and update Live file tracker
-     */
+  }
+  catch (Exception &e) {
+    
+    if(Global::dfs->retry_write_ok(cellstore->get_smartfd_ptr(), 
+                                   e.code(), &write_tries))
+      goto try_create_cellstore_again;
+    
+    HT_ERROR_OUT << m_full_name << " " << e << HT_END;
+    throw;
+  }
+  
+  
+  /**
+  * Install new CellCache and CellStore and update Live file tracker
+  */
+  try{
     vector<String> removed_files;
     int64_t total_index_entries = 0;
     {
@@ -826,25 +837,8 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
 
     HT_INFOF("Finished Compaction of %s(%s) to %s", m_range_name.c_str(),
              m_name.c_str(), added_file.c_str());
-
   }
   catch (Exception &e) {
-    // Remove newly created file
-    if (!cellstore_created) {
-      if (!cs_file.empty()) {
-        try {
-          Global::dfs->remove(cs_file);
-        }
-        catch (Hypertable::Exception &e) {
-        }
-      }
-      if(write_tries < 10 && e.code() == Error::FSBROKER_BAD_FILE_HANDLE){
-        write_tries++; 
-        goto try_create_cellstore_again;
-      }
-      HT_ERROR_OUT << m_full_name << " " << e << HT_END;
-      throw;
-    }
     HT_FATALF("Problem compacting access group %s: %s - %s",
               m_full_name.c_str(), Error::get_text(e.code()), e.what());
   }

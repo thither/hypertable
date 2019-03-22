@@ -121,30 +121,25 @@ CommitLog::initialize(const string &log_dir, PropertiesPtr &props,
   m_cur_fragment_fname = m_log_dir + "/" + m_cur_fragment_num;
 
   
-  int write_tries = 0;
-  bool file_created = false;
 
+  m_fs->mkdirs(m_log_dir);
+  m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+      m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE);
+
+  int32_t write_tries = 0;
   try_write_again:
   try {
-    m_fs->mkdirs(m_log_dir);
-    m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
-      m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE);
     m_fs->create(m_smartfd_ptr, -1, m_replication, -1);
-    file_created = true;
     CommitLogBlockStream::write_header(m_fs, m_smartfd_ptr);
     m_cur_fragment_length = CommitLogBlockStream::header_size();
   }
   catch (Hypertable::Exception &e) {
     HT_ERRORF("Problem initializing commit log '%s', try: %d  - %s (%s)",
               m_log_dir.c_str(), write_tries, e.what(), Error::get_text(e.code()));
-    if(file_created) {
-      m_fs->remove(m_cur_fragment_fname);
-      file_created = false;
-    }
-    if(write_tries < 10 && e.code() == Error::FSBROKER_BAD_FILE_HANDLE){
-      write_tries++; 
+              
+    if(m_fs->retry_write_ok(m_smartfd_ptr, e.code(), &write_tries))
       goto try_write_again;
-    }
+      
     throw;
   }
 }
@@ -196,8 +191,9 @@ CommitLog::write(uint64_t cluster_id, DynamicBuffer &buffer, int64_t revision,
                  Filesystem::Flags flags) {
   int error;
 
-  int write_tries = 0;
+  int32_t write_tries = 0;
   try_write_again:
+  
   if (m_needs_roll) {
     lock_guard<mutex> lock(m_mutex);
     if ((error = roll()) != Error::OK)
@@ -209,11 +205,8 @@ CommitLog::write(uint64_t cluster_id, DynamicBuffer &buffer, int64_t revision,
    */
   BlockHeaderCommitLog header(MAGIC_DATA, revision, cluster_id);
   if ((error = compress_and_write(buffer, &header, revision, flags)) != Error::OK){
-    if(write_tries < 10 && (
-        error == Error::FSBROKER_BAD_FILE_HANDLE || 
-        error ==  Error::CLOSED)){
+    if(m_fs->retry_write_ok(m_smartfd_ptr, error, &write_tries)){
       m_needs_roll=true;
-      write_tries++;
       goto try_write_again;
     }
     return error;
@@ -235,11 +228,19 @@ CommitLog::write(uint64_t cluster_id, DynamicBuffer &buffer, int64_t revision,
 
 int CommitLog::link_log(uint64_t cluster_id, CommitLogBase *log_base) {
   lock_guard<mutex> lock(m_mutex);
-  int error;
-  int64_t link_revision = log_base->get_latest_revision();
-  BlockHeaderCommitLog header(MAGIC_LINK, link_revision, cluster_id);
+  
+  int32_t write_tries = 0;
+  try_link_log_again:
+  
+  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
+    m_needs_roll = true;
 
-  DynamicBuffer input;
+  int error;
+  if (m_needs_roll) {
+    if ((error = roll()) != Error::OK)
+      return error;
+  }
+
   string &log_dir = log_base->get_log_dir();
 
   if (m_linked_log_hashes.count(md5_hash(log_dir.c_str())) > 0) {
@@ -247,10 +248,8 @@ int CommitLog::link_log(uint64_t cluster_id, CommitLogBase *log_base) {
     return Error::OK;
   }
 
-  if (m_needs_roll) {
-    if ((error = roll()) != Error::OK)
-      return error;
-  }
+  int64_t link_revision = log_base->get_latest_revision();
+  BlockHeaderCommitLog header(MAGIC_LINK, link_revision, cluster_id);
 
   HT_INFOF("clgc Linking log %s into fragment %d; link_rev=%lld latest_rev=%lld",
            log_dir.c_str(), m_cur_fragment_num, (Lld)link_revision, (Lld)m_latest_revision);
@@ -260,6 +259,7 @@ int CommitLog::link_log(uint64_t cluster_id, CommitLogBase *log_base) {
   if (link_revision > m_latest_revision)
     m_latest_revision = link_revision;
 
+  DynamicBuffer input;
   input.ensure(header.encoded_length());
 
   header.set_revision(link_revision);
@@ -275,9 +275,6 @@ int CommitLog::link_log(uint64_t cluster_id, CommitLogBase *log_base) {
     size_t amount = input.fill();
     StaticBuffer send_buf(input);
     CommitLogFileInfo *file_info = 0;
-
-    if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
-      return Error::CLOSED;
 
     m_fs->append(m_smartfd_ptr, send_buf);
     m_cur_fragment_length += amount;
@@ -303,6 +300,10 @@ int CommitLog::link_log(uint64_t cluster_id, CommitLogBase *log_base) {
   }
   catch (Hypertable::Exception &e) {
     HT_ERRORF("Problem linking external log into commit log - %s", e.what());
+    if(m_fs->retry_write_ok(m_smartfd_ptr, e.code(), &write_tries)){
+      m_needs_roll=true;
+      goto try_link_log_again;
+    }
     return e.code();
   }
 
@@ -474,30 +475,22 @@ int CommitLog::roll(CommitLogFileInfo **clfip) {
   m_cur_fragment_fname = m_log_dir + "/" + m_cur_fragment_num;
 
 
-  int write_tries = 0;
-  bool file_created = false;
+  m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+    m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE);
 
+  int32_t write_tries = 0;
   try_write_again:
   try {
-    m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
-      m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE);
     m_fs->create(m_smartfd_ptr, -1, m_replication, -1);
-    file_created = true;
     CommitLogBlockStream::write_header(m_fs, m_smartfd_ptr);
     m_cur_fragment_length = CommitLogBlockStream::header_size();
-
   }
   catch (Exception &e) {
     HT_ERRORF("Problem rolling commit log: %s, try: %d , %s",
               m_smartfd_ptr->to_str().c_str(), write_tries, e.what());
-    if(file_created) {
-      m_fs->remove(m_cur_fragment_fname);
-      file_created = false;
-    }
-    if(write_tries < 10 && e.code() == Error::FSBROKER_BAD_FILE_HANDLE){
-      write_tries++; 
+              
+    if(m_fs->retry_write_ok(m_smartfd_ptr, e.code(), &write_tries))
       goto try_write_again;
-    }
     return e.code();
   }
 

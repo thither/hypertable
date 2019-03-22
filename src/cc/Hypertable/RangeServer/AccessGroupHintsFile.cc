@@ -76,10 +76,6 @@ namespace {
 }
 
 void AccessGroupHintsFile::write(String location) {
-  Filesystem::SmartFdPtr smartfd_ptr;
-
-  int write_tries = 0;
-  bool file_created = false;
 
   String parent_dir = format("%s/tables/%s/default/%s",
                              Global::toplevel_dir.c_str(),
@@ -98,20 +94,16 @@ void AccessGroupHintsFile::write(String location) {
                        (Lld)h.disk_usage, h.files.c_str());
   contents += "}\n";
 
- try_again:
+  if (!Global::dfs->exists(parent_dir))
+    Global::dfs->mkdirs(parent_dir);
 
+  Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(
+    parent_dir + "/hints", Filesystem::OPEN_FLAG_OVERWRITE);
+
+  int32_t write_tries = 0;
+  try_again:
   try {
-    if (write_tries == 0) {
-      if (smartfd_ptr && smartfd_ptr->valid())
-        Global::dfs->close(smartfd_ptr);
-      if (!Global::dfs->exists(parent_dir))
-        Global::dfs->mkdirs(parent_dir);
-    } 
-
-    smartfd_ptr = Filesystem::SmartFd::make_ptr(
-      parent_dir + "/hints", Filesystem::OPEN_FLAG_OVERWRITE);
     Global::dfs->create(smartfd_ptr, -1, -1, -1);
-    file_created = true;
     StaticBuffer sbuf(contents.length());
     memcpy(sbuf.base, contents.c_str(), contents.length());
     Global::dfs->append(smartfd_ptr, sbuf);
@@ -121,15 +113,9 @@ void AccessGroupHintsFile::write(String location) {
     HT_INFOF("Exception caught writing hints file %s/hints - %s",
              parent_dir.c_str(), Error::get_text(e.code()));
     
-    if(file_created) {
-      Global::dfs->remove(parent_dir+"/hints");
-      file_created = false;
-    }
-    if(write_tries < 10 && e.code() == Error::FSBROKER_BAD_FILE_HANDLE){
-      write_tries++; 
+    if(Global::dfs->retry_write_ok(smartfd_ptr, e.code(), &write_tries))
       goto try_again;
-    }
-
+      
     HT_ERRORF("Problem writing hints file %s/hints - %s",
               parent_dir.c_str(), Error::get_text(e.code()));
   }
