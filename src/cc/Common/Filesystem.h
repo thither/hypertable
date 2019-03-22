@@ -670,7 +670,19 @@ namespace Hypertable {
 
     virtual	void sync(SmartFdPtr fd_obj) = 0;
 
+    
 
+    /** Determines if it is OK to retry write.
+     *
+     * @param smartfd_ptr the SmartFdPtr 
+     * @param e_code Exception code
+     * @param tries_count pointer to write_count
+     * @return true if OK, otherwise false
+     */
+    virtual bool retry_write_ok(SmartFdPtr smartfd_ptr, 
+			int32_t e_code, int32_t *tries_count) = 0;
+
+    virtual	int32_t get_retry_write_limit() = 0;
 
   };
 

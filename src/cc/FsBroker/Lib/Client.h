@@ -309,6 +309,25 @@ namespace Hypertable {
         */
         uint32_t get_timeout() { return m_timeout_ms; }
 
+        /** Gets the configured write retry limit.
+        *
+        * @return limit count
+        */
+        int32_t get_retry_write_limit() override;
+        
+        /** Determines if it is OK to retry write.
+        * Closes a fd if open, removes the previous file
+        * if retry limit reached return False 
+        * else increment tries_count and return True
+        *
+        * @param smartfd_ptr the SmartFdPtr 
+        * @param e_code Exception code
+        * @param tries_count pointer to write_count
+        * @return true if OK, otherwise false
+        */
+        bool retry_write_ok(Filesystem::SmartFdPtr smartfd_ptr, 
+														int32_t e_code, int32_t *tries_count) override;
+
       private:
 
         /// Sends a message to the FS broker.
@@ -323,6 +342,7 @@ namespace Hypertable {
         ConnectionManagerPtr m_conn_mgr;
         InetAddr m_addr;
         uint32_t m_timeout_ms;
+        gInt32tPtr m_write_retry_limit {};
         std::unordered_map<uint32_t, Filesystem::SmartFdPtr> m_buffered_reader_map;
         
         int m_conn_retries = 0;

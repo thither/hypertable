@@ -60,6 +60,7 @@
 #include <AsyncComm/CommHeader.h>
 #include <AsyncComm/Protocol.h>
 
+#include <Common/Config.h>
 #include <Common/Error.h>
 #include <Common/Filesystem.h>
 #include <Common/Logger.h>
@@ -79,6 +80,8 @@ Client::Client(ConnectionManagerPtr &conn_mgr, const sockaddr_in &addr,
 	: m_conn_mgr(conn_mgr), m_addr(addr), m_timeout_ms(timeout_ms) {
 	m_comm = conn_mgr->get_comm();
 	conn_mgr->add(m_addr, m_timeout_ms, "FS Broker");
+	
+  m_write_retry_limit = Config::get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
 }
 
 Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &props)
@@ -90,14 +93,17 @@ Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &props)
 
   m_timeout_ms = props->get_pref<int32_t>(
 			{"FsBroker.Timeout", "Hypertable.Request.Timeout"});
+  m_write_retry_limit = props->get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
 	
 	InetAddr::initialize(&m_addr, host.c_str(), port);
 
 	conn_mgr->add(m_addr, m_timeout_ms, "FS Broker");
+	
 }
 
 Client::Client(Comm *comm, const sockaddr_in &addr, uint32_t timeout_ms)
 	: m_comm(comm), m_conn_mgr(0), m_addr(addr), m_timeout_ms(timeout_ms) {
+  m_write_retry_limit = Config::get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
 }
 
 Client::Client(const String &host, int port, uint32_t timeout_ms)
@@ -109,6 +115,8 @@ Client::Client(const String &host, int port, uint32_t timeout_ms)
 	if (!m_conn_mgr->wait_for_connection(m_addr, timeout_ms))
 		HT_THROW(Error::REQUEST_TIMEOUT,
 			"Timed out waiting for connection to FS Broker");
+	
+  m_write_retry_limit = Config::get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
 }
 
 Client::~Client() {
@@ -203,16 +211,21 @@ void Client::decode_response_status(EventPtr &event, Status &status) {
 	status = params.status();
 }
 
-
-bool Client::wait_for_connection(int e_code, const String &e_desc) {
-
-	if(!(e_code == Error::COMM_NOT_CONNECTED ||
+//local namespace
+namespace{
+bool is_error_handlable(int e_code){
+	return (e_code == Error::COMM_NOT_CONNECTED ||
 		 e_code == Error::COMM_BROKEN_CONNECTION ||
 		 e_code == Error::COMM_CONNECT_ERROR ||
 		 e_code == Error::COMM_SEND_ERROR ||
 		 e_code == Error::FSBROKER_BAD_FILE_HANDLE ||
-		 e_code == Error::FSBROKER_IO_ERROR)) {
-			 
+		 e_code == Error::FSBROKER_IO_ERROR);
+}
+}
+
+bool Client::wait_for_connection(int e_code, const String &e_desc) {
+
+	if(!is_error_handlable(e_code)) {
 		HT_INFOF("FsClient skip from waiting to error: %d, %s ",  
 							e_code, e_desc.c_str());
 		return false;
@@ -258,11 +271,41 @@ Client::send_message(CommBufPtr &cbuf, DispatchHandler *handler, Timer *timer) {
 }
 
 
+int32_t Client::get_retry_write_limit() { 
+  if(m_write_retry_limit == nullptr)
+      m_write_retry_limit = Config::get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
+  return m_write_retry_limit->get();
+}
+
 
 // Methods based on SmartFdPtr(ClientFdPtr)
 
 ClientFdPtr get_clientfd_ptr(Filesystem::SmartFdPtr smartfd_ptr){
 	return std::dynamic_pointer_cast<ClientFd>(smartfd_ptr);
+}
+
+
+bool Client::retry_write_ok(Filesystem::SmartFdPtr smartfd_ptr, 
+														int32_t e_code, int32_t *tries_count){
+  if(smartfd_ptr->valid()) { 
+    try{close(smartfd_ptr);}
+    catch(...){}
+	}
+	if(!smartfd_ptr->filepath().empty()) {
+    try{remove(smartfd_ptr->filepath());}
+    catch(...){}
+  }
+	
+  if(*tries_count < m_write_retry_limit->get()
+     && is_error_handlable(e_code)){
+    *tries_count = *tries_count+1; 
+		HT_INFOF("FsClient retry_write_ok, try %d to error: %d %s", 
+						 *tries_count, e_code, smartfd_ptr->to_str().c_str());
+		return true;
+  }
+	HT_WARNF("FsClient retry_write_ok, FALSE to error: %d %s", 
+						 e_code, smartfd_ptr->to_str().c_str());
+	return false;
 }
 
 // OPEN
@@ -1181,6 +1224,7 @@ Client::rename(const String &src, const String &dst) {
 // Methods based on int-fd, Depreciated FsBroker-Client methods -- for compatabillity to Common:FileSystem
 
 // OPEN
+[[deprecated("open(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::open(const String &name, uint32_t flags, DispatchHandler *handler) {
 	CommHeader header(Request::Handler::Factory::FUNCTION_OPEN);
@@ -1221,6 +1265,7 @@ Client::open(const String &name, uint32_t flags) {
 	}
 }
 
+[[deprecated("open_buffered(Filesystem::SmartFdPtr fd_obj,..)")]]
 int
 Client::open_buffered(const String &name, uint32_t flags, uint32_t buf_size,
 	uint32_t outstanding, uint64_t start_offset,
@@ -1268,6 +1313,7 @@ void Client::decode_response_open(EventPtr &event, int32_t *fd) {
 
 
 // CREATE
+[[deprecated("create(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::create(const String &name, uint32_t flags, int32_t bufsz,
 	int32_t replication, int64_t blksz,
@@ -1285,6 +1331,7 @@ Client::create(const String &name, uint32_t flags, int32_t bufsz,
 	}
 }
 
+[[deprecated("create(Filesystem::SmartFdPtr fd_obj,..)")]]
 int
 Client::create(const String &name, uint32_t flags, int32_t bufsz,
 	int32_t replication, int64_t blksz) {
@@ -1317,6 +1364,7 @@ void Client::decode_response_create(EventPtr &event, int32_t *fd) {
 
 
 // READ
+[[deprecated("read(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::read(int32_t fd, size_t len, DispatchHandler *handler) {
 	CommHeader header(Request::Handler::Factory::FUNCTION_READ);
@@ -1334,6 +1382,7 @@ Client::read(int32_t fd, size_t len, DispatchHandler *handler) {
 	}
 }
 
+[[deprecated("read(Filesystem::SmartFdPtr fd_obj,..)")]]
 size_t
 Client::read(int32_t fd, void *dst, size_t len) {
 	ClientFdPtr clientfd_ptr;
@@ -1401,6 +1450,7 @@ void Client::decode_response_read(EventPtr &event, const void **buffer,
 
 
 // PREAD
+[[deprecated("pread(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::pread(int32_t fd, size_t len, uint64_t offset,
 	bool verify_checksum, DispatchHandler *handler) {
@@ -1417,6 +1467,7 @@ Client::pread(int32_t fd, size_t len, uint64_t offset,
 	}
 }
 
+[[deprecated("pread(Filesystem::SmartFdPtr fd_obj,..)")]]
 size_t
 Client::pread(int32_t fd, void *dst, size_t len, uint64_t offset, 
 							bool verify_checksum) {
@@ -1456,6 +1507,7 @@ void Client::decode_response_pread(EventPtr &event, const void **buffer,
 
 
 // APPEND
+[[deprecated("append(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::append(int32_t fd, StaticBuffer &buffer, Flags flags,
 	DispatchHandler *handler) {
@@ -1483,7 +1535,9 @@ Client::append(int32_t fd, StaticBuffer &buffer, Flags flags,
 	}
 }
 
-size_t Client::append(int32_t fd, StaticBuffer &buffer, Flags flags) {
+[[deprecated("append(Filesystem::SmartFdPtr fd_obj,..)")]]
+size_t 
+Client::append(int32_t fd, StaticBuffer &buffer, Flags flags) {
 	DispatchHandlerSynchronizer sync_handler;
 	EventPtr event;
 
@@ -1540,6 +1594,7 @@ void Client::decode_response_append(EventPtr &event, uint64_t *offset,
 
 
 // SEEK
+[[deprecated("seek(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::seek(int32_t fd, uint64_t offset, DispatchHandler *handler) {
 	CommHeader header(Request::Handler::Factory::FUNCTION_SEEK);
@@ -1555,6 +1610,7 @@ Client::seek(int32_t fd, uint64_t offset, DispatchHandler *handler) {
 	}
 }
 
+[[deprecated("seek(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::seek(int32_t fd, uint64_t offset) {
 	DispatchHandlerSynchronizer sync_handler;
@@ -1580,6 +1636,7 @@ Client::seek(int32_t fd, uint64_t offset) {
 
 
 // FLUSH/SYNC
+[[deprecated("flush(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::flush(int32_t fd, DispatchHandler *handler) {
 	CommHeader header(Request::Handler::Factory::FUNCTION_FLUSH);
@@ -1594,6 +1651,7 @@ Client::flush(int32_t fd, DispatchHandler *handler) {
 	}
 }
 
+[[deprecated("flush(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::flush(int32_t fd) {
 	DispatchHandlerSynchronizer sync_handler;
@@ -1616,6 +1674,7 @@ Client::flush(int32_t fd) {
 	}
 }
 
+[[deprecated("sync(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::sync(int32_t fd) {
 	DispatchHandlerSynchronizer sync_handler;
@@ -1639,6 +1698,7 @@ Client::sync(int32_t fd) {
 }
 
 
+[[deprecated("close(Filesystem::SmartFdPtr fd_obj,..)")]]
 // CLOSE
 void
 Client::close(int32_t fd, DispatchHandler *handler) {
@@ -1666,6 +1726,7 @@ Client::close(int32_t fd, DispatchHandler *handler) {
 	}
 }
 
+[[deprecated("close(Filesystem::SmartFdPtr fd_obj,..)")]]
 void
 Client::close(int32_t fd) {
 	DispatchHandlerSynchronizer sync_handler;
