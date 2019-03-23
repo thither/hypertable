@@ -248,13 +248,14 @@ bool Client::wait_for_connection(int e_code, const String &e_desc) {
 		 e_code == Error::COMM_BROKEN_CONNECTION){
 		bool is_active = m_conn_mgr->is_connection_state(
 			m_addr, ConnectionManager::State::READY);
-		/*
-		if(!is_active && !m_conn_active){
+		
+		if(!is_active && 
+		   m_conn_mgr->is_connection_state(m_addr, ConnectionManager::State::DECOMMISSIONED)){
 			m_conn_mgr->remove(m_addr);
 			m_conn_mgr->add(m_addr, m_timeout_ms, "FS Broker");
 			m_conn_active = true;
 		}
-		*/
+
 		if (!is_active && !m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms)){
 			m_conn_active = false;
 			m_conn_retries++;
