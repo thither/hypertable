@@ -68,7 +68,7 @@ Session::Session(Comm *comm, PropertiesPtr &props)
   m_reconnect = props->get_bool("Hyperspace.Session.Reconnect");
 
   if (m_reconnect)
-    HT_INFO("Hyperspace session setup to reconnect");
+    HT_DEBUG("Hyperspace session setup to reconnect");
 
   // m_timeout_ms = m_lease_interval->get() * 2;
 
