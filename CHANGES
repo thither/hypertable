@@ -13,18 +13,22 @@ Version 0.9.8.16:
    added lib HyperThriftExtentions includes the SerializedCells related and ThriftHelper
    added SmartFd to Hypertable::Filesystem
    added new methods based on SmartFd to Hypertable::Filesystem
-   added support of SmartFd to FsBroker::Lib::Client
+   added support of SmartFd to FsBroker::Lib::Client and dependencies
+   added bool retry_write_ok to FsBroker::Lib::Client
    set FsBroker::Lib::Client methods based on int fd to warn-deprecated
+   added bool ConnectionManager::is_connection_state 
    changed Metalog, Commitlog, AccessGroupHintsFile to work with smartfd
    changed CellStore to work with smartfd, except CellStoreV0-6
+   added a try again loops for processes relay on FsBrokerClient append
+   changed additionally to RollLimit, logs-rolling is done as a new file required 
+           including log-fragments as skippable sym-ref (only header)
    added dyn config option FsBroker.WriteRetryLimit, zero to skip
    added dyn config option FsBroker.RetryLimit, zero to skip
-   added bool retry_write_ok to FsBroker::Lib::Client
-   added a try again loops for processes relay on FsBrokerClient append
-   major improvment on Failure Tolerence of FsClient use and connection to FsBroker
+   major improvement on Failure Tolerence of FsClient use and connection to FsBroker
    changed repr of fd/filename in logging of FsBroker::Lib::Client to a SmartFd 
    changed RangeServerConnectionManager maps RemoteAddr as nonunique 
-   TODO: 
+   changed Hyperspace.Session.Reconnect config default value set to True
+   TODO: Validate CellStoreV7 integrity to a Zero checksums/length
 
 Version 0.9.8.15:
 (2018-12-19)

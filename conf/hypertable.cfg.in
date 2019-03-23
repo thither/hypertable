@@ -46,3 +46,4 @@ Hypertable.RangeServer.Location.AutoReInitiate=True
 
 
 
+Hyperspace.Session.Reconnect=true
