@@ -90,7 +90,7 @@ CommitLog::initialize(const string &log_dir, PropertiesPtr &props,
   m_compressor.reset(CompressorFactory::create_block_codec(compressor));
 
   boost::trim_right_if(m_log_dir, boost::is_any_of("/"));
-
+ 
   m_range_reference_required = props->get_bool("Hypertable.RangeServer.CommitLog.FragmentRemoval.RangeReferenceRequired");
 
   if (init_log) {
@@ -118,30 +118,36 @@ CommitLog::initialize(const string &log_dir, PropertiesPtr &props,
   else
     HT_INFOF("Range reference for '%s' is NOT required", m_log_dir.c_str());
 
-  m_cur_fragment_fname = m_log_dir + "/" + m_cur_fragment_num;
-
-  
-
   m_fs->mkdirs(m_log_dir);
+  create_next_log();
+
+}
+
+int CommitLog::create_next_log() {
+
+  m_cur_fragment_fname = m_log_dir + "/" + m_cur_fragment_num;
   m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
       m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE);
 
   int32_t write_tries = 0;
   try_write_again:
+
   try {
     m_fs->create(m_smartfd_ptr, -1, m_replication, -1);
     CommitLogBlockStream::write_header(m_fs, m_smartfd_ptr);
     m_cur_fragment_length = CommitLogBlockStream::header_size();
   }
-  catch (Hypertable::Exception &e) {
+  catch (Exception &e) {
     HT_ERRORF("Problem initializing commit log '%s', try: %d  - %s (%s)",
               m_log_dir.c_str(), write_tries, e.what(), Error::get_text(e.code()));
               
     if(m_fs->retry_write_ok(m_smartfd_ptr, e.code(), &write_tries))
       goto try_write_again;
       
-    throw;
+    return e.code();
   }
+
+  return Error::OK;
 }
 
 
@@ -228,6 +234,19 @@ CommitLog::write(uint64_t cluster_id, DynamicBuffer &buffer, int64_t revision,
 
 int CommitLog::link_log(uint64_t cluster_id, CommitLogBase *log_base) {
   lock_guard<mutex> lock(m_mutex);
+
+  string &log_dir = log_base->get_log_dir();
+
+  if (m_linked_log_hashes.count(md5_hash(log_dir.c_str())) > 0) {
+    HT_WARNF("Skipping log %s because it is already linked in", log_dir.c_str());
+    return Error::OK;
+  }
+
+  int64_t link_revision = log_base->get_latest_revision();
+  HT_ASSERT(link_revision > 0);
+  if (link_revision > m_latest_revision)
+    m_latest_revision = link_revision;
+
   
   int32_t write_tries = 0;
   try_link_log_again:
@@ -240,26 +259,12 @@ int CommitLog::link_log(uint64_t cluster_id, CommitLogBase *log_base) {
     if ((error = roll()) != Error::OK)
       return error;
   }
-
-  string &log_dir = log_base->get_log_dir();
-
-  if (m_linked_log_hashes.count(md5_hash(log_dir.c_str())) > 0) {
-    HT_WARNF("Skipping log %s because it is already linked in", log_dir.c_str());
-    return Error::OK;
-  }
-
-  int64_t link_revision = log_base->get_latest_revision();
-  BlockHeaderCommitLog header(MAGIC_LINK, link_revision, cluster_id);
-
   HT_INFOF("clgc Linking log %s into fragment %d; link_rev=%lld latest_rev=%lld",
            log_dir.c_str(), m_cur_fragment_num, (Lld)link_revision, (Lld)m_latest_revision);
 
-  HT_ASSERT(link_revision > 0);
-
-  if (link_revision > m_latest_revision)
-    m_latest_revision = link_revision;
 
   DynamicBuffer input;
+  BlockHeaderCommitLog header(MAGIC_LINK, link_revision, cluster_id);
   input.ensure(header.encoded_length());
 
   header.set_revision(link_revision);
@@ -274,11 +279,11 @@ int CommitLog::link_log(uint64_t cluster_id, CommitLogBase *log_base) {
   try {
     size_t amount = input.fill();
     StaticBuffer send_buf(input);
-    CommitLogFileInfo *file_info = 0;
 
     m_fs->append(m_smartfd_ptr, send_buf);
     m_cur_fragment_length += amount;
 
+    CommitLogFileInfo *file_info = 0;
     if ((error = roll(&file_info)) != Error::OK)
       return error;
 
@@ -443,25 +448,28 @@ int CommitLog::roll(CommitLogFileInfo **clfip) {
       //return e.code();
     }
   }
-  
-  CommitLogFileInfo *file_info;
   m_needs_roll = true;
+  //if (clfip)
+  //  *clfip = 0;
 
-  if (clfip)
-    *clfip = 0;
-  
-  file_info = new CommitLogFileInfo();
-  if (clfip)
+  CommitLogFileInfo *file_info = new CommitLogFileInfo();
+  if (clfip != nullptr)
     *clfip = file_info;
+
   file_info->log_dir = m_log_dir;
   file_info->log_dir_hash = md5_hash(m_log_dir.c_str());
   file_info->num = m_cur_fragment_num;
   file_info->size = m_cur_fragment_length;
-  assert(m_latest_revision != TIMESTAMP_MIN);
-  file_info->revision = m_latest_revision;
 
-  if (m_fragment_queue.empty() || m_fragment_queue.back()->revision
-      < file_info->revision)
+  if(m_cur_fragment_length > (int64_t)CommitLogBlockStream::header_size()){
+    assert(m_latest_revision != TIMESTAMP_MIN); // only if cur_log not empty
+    file_info->revision = m_latest_revision;
+  } else 
+    file_info->revision = TIMESTAMP_MIN; // a sym-ref log-fragment (skippable)
+  m_latest_revision = TIMESTAMP_MIN;
+
+  if (m_fragment_queue.empty()
+     || m_fragment_queue.back()->revision < file_info->revision)
     m_fragment_queue.push_back(file_info);
   else {
     m_fragment_queue.push_back(file_info);
@@ -469,34 +477,13 @@ int CommitLog::roll(CommitLogFileInfo **clfip) {
     sort(m_fragment_queue.begin(), m_fragment_queue.end(), swo);
   }
 
-  m_latest_revision = TIMESTAMP_MIN;
-
   m_cur_fragment_num++;
-  m_cur_fragment_fname = m_log_dir + "/" + m_cur_fragment_num;
 
+  int error = create_next_log();
+  if(error == Error::OK)
+    m_needs_roll = false;
 
-  m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
-    m_cur_fragment_fname, Filesystem::OPEN_FLAG_OVERWRITE);
-
-  int32_t write_tries = 0;
-  try_write_again:
-  try {
-    m_fs->create(m_smartfd_ptr, -1, m_replication, -1);
-    CommitLogBlockStream::write_header(m_fs, m_smartfd_ptr);
-    m_cur_fragment_length = CommitLogBlockStream::header_size();
-  }
-  catch (Exception &e) {
-    HT_ERRORF("Problem rolling commit log: %s, try: %d , %s",
-              m_smartfd_ptr->to_str().c_str(), write_tries, e.what());
-              
-    if(m_fs->retry_write_ok(m_smartfd_ptr, e.code(), &write_tries))
-      goto try_write_again;
-    return e.code();
-  }
-
-  m_needs_roll = false;
-
-  return Error::OK;
+  return error;
 }
 
 
@@ -504,15 +491,15 @@ int
 CommitLog::compress_and_write(DynamicBuffer &input, BlockHeader *header,
                               int64_t revision, Filesystem::Flags flags) {
   lock_guard<mutex> lock(m_mutex);
+
+  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
+    return Error::CLOSED;
+
   int error = Error::OK;
   DynamicBuffer zblock;
 
   // Compress block and kick off log write (protected by lock)
   try {
-
-    if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
-      return Error::CLOSED;
-
     m_compressor->deflate(input, zblock, *header);
 
     size_t amount = zblock.fill();
@@ -540,9 +527,10 @@ void CommitLog::load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map)
   uint32_t distance = 0;
   CumulativeFragmentData frag_data;
 
-  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
+  /* current log fragment not in m_fragment_queue for m_smartfd_ptr condition
+  if (!m_smartfd_ptr || !m_smartfd_ptr->valid()) //opt, wait  OR roll
     HT_THROWF(Error::CLOSED, "Commit log '%s' has been closed", m_log_dir.c_str());
-
+  */
   memset(&frag_data, 0, sizeof(frag_data));
 
   if (m_latest_revision != TIMESTAMP_MIN) {
@@ -571,8 +559,10 @@ void CommitLog::load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map)
 void CommitLog::get_stats(const string &prefix, string &result) {
   lock_guard<mutex> lock(m_mutex);
 
+  /* current log fragment not in m_fragment_queue for m_smartfd_ptr condition
   if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
     HT_THROWF(Error::CLOSED, "Commit log '%s' has been closed", m_log_dir.c_str());
+  */
 
   try {
     for (const auto frag : m_fragment_queue) {

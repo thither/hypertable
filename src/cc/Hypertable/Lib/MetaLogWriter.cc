@@ -164,15 +164,39 @@ void Writer::purge_old_log_files() {
 }
 
 void Writer::roll() {
-
+  
   // Close descriptors
   if (m_smartfd_ptr && m_smartfd_ptr->valid()) {
     try{m_fs->close(m_smartfd_ptr);}catch(...){}
     ::close(m_backup_fd);
     m_backup_fd = -1;
-  } // double lock at using Writer::close();
-
+  }
   int32_t next_id = m_file_ids.front() + 1;
+
+  int32_t write_tries = 0;
+  try_again:
+  try{
+    try_roll(next_id);
+  }
+  catch (Exception &e) {
+    HT_ERRORF("MetaLog try_roll, try: %d - %s (%s), %s",
+      write_tries, e.what(), Error::get_text(e.code()), 
+      m_smartfd_ptr->to_str().c_str());
+    
+    if(m_fs->retry_write_ok(m_smartfd_ptr, e.code(), &write_tries)){
+      goto try_again;
+    }
+    HT_THROWF(e.code(), "MetaLog::roll Error: %s - %s",
+             Error::get_text(e.code()), m_smartfd_ptr->to_str().c_str());
+  }
+
+  m_file_ids.push_front(next_id);
+  purge_old_log_files();
+}
+
+void Writer::try_roll(int32_t next_id) {
+
+
 
   // Open next brokered FS file
   m_smartfd_ptr = Filesystem::SmartFd::make_ptr(m_path + "/" + next_id, 0);
@@ -181,10 +205,6 @@ void Writer::roll() {
   // Open next backup file
   m_backup_filename = m_backup_path + "/" + next_id;
   m_backup_fd = ::open(m_backup_filename.c_str(), O_CREAT|O_TRUNC|O_WRONLY, 0644);
-
-  m_file_ids.push_front(next_id);
-
-  purge_old_log_files();
 
   m_offset = 0;
 
@@ -215,32 +235,13 @@ void Writer::roll() {
   
 }
 
-void Writer::try_service_write_queue() {
-  int32_t write_tries = 0;
-
-  try_again:
-  try{
-    service_write_queue();
-  }
-  catch (Exception &e) {
-    HT_INFOF("Exception caught, %s - MetaLog::service_write_queue, MetaLog %s",
-             m_smartfd_ptr->to_str().c_str(), Error::get_text(e.code()));
-    
-    if(m_fs->retry_write_ok(m_smartfd_ptr, e.code(), &write_tries)){
-      roll();
-      goto try_again;
-    }
-  }
-}
-
 void Writer::service_write_queue() {
-
-  if (!m_write_ready)
+  if (!m_write_ready || m_write_queue.empty())
     return;
 
-  m_write_ready = false;
-
-  if (!m_write_queue.empty()) {
+  int32_t write_tries = 0;
+  try_again:
+  try{
     size_t total {};
     for (auto & sb : m_write_queue)
       total += sb->size;
@@ -258,13 +259,21 @@ void Writer::service_write_queue() {
 
     FileUtils::write(m_backup_fd, buf.base, buf.size);
     m_fs->append(m_smartfd_ptr, buf, m_flush_method);
-
-    m_write_queue.clear();
-
-    if (m_offset > m_max_file_size)
+  }
+  catch (Exception &e) {
+    HT_INFOF("Exception caught, %s - MetaLog::service_write_queue, MetaLog %s",
+             m_smartfd_ptr->to_str().c_str(), Error::get_text(e.code()));
+    
+    if(m_fs->retry_write_ok(m_smartfd_ptr, e.code(), &write_tries)){
       roll();
+      goto try_again;
+    }
   }
 
+  m_write_queue.clear();
+  m_write_ready = false;
+  if (m_offset > m_max_file_size)
+    roll();
 }
 
 
@@ -338,8 +347,8 @@ void Writer::record_state(EntityPtr entity) {
   size_t length;
   StaticBufferPtr buf;
 
-  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
-    HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
+  //if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
+  //  HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
 
   {
     lock_guard<Entity> lock(*entity);
@@ -371,7 +380,7 @@ void Writer::record_state(EntityPtr entity) {
 
   m_cond.wait(lock);
 
-  try_service_write_queue();
+  service_write_queue();
 }
 
 void Writer::record_state(std::vector<EntityPtr> &entities) {
@@ -384,8 +393,8 @@ void Writer::record_state(std::vector<EntityPtr> &entities) {
   if (entities.empty())
     return;
 
-  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
-    HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
+  //if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
+  //  HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
 
   size_t i=0;
   for (auto & entity : entities) {
@@ -426,7 +435,7 @@ void Writer::record_state(std::vector<EntityPtr> &entities) {
 
   m_cond.wait(lock);
 
-  try_service_write_queue();
+  service_write_queue();
 
 }
 
@@ -435,8 +444,8 @@ void Writer::record_removal(EntityPtr entity) {
   StaticBufferPtr buf = make_shared<StaticBuffer>(EntityHeader::LENGTH);
   uint8_t *ptr = buf->base;
 
-  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
-    HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
+  //if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
+  //  HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
 
   entity->header.flags |= EntityHeader::FLAG_REMOVE;
   entity->header.length = 0;
@@ -455,7 +464,7 @@ void Writer::record_removal(EntityPtr entity) {
 
   m_cond.wait(lock);
 
-  try_service_write_queue();
+  service_write_queue();
 }
 
 
@@ -465,8 +474,8 @@ void Writer::record_removal(std::vector<EntityPtr> &entities) {
   if (entities.empty())
     return;
 
-  if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
-    HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
+  //if (!m_smartfd_ptr || !m_smartfd_ptr->valid())
+  //  HT_THROWF(Error::CLOSED, "MetaLog '%s' has been closed", m_path.c_str());
 
   size_t length = entities.size() * EntityHeader::LENGTH;
   StaticBufferPtr buf = make_shared<StaticBuffer>(length);
@@ -489,7 +498,7 @@ void Writer::record_removal(std::vector<EntityPtr> &entities) {
 
   m_cond.wait(lock);
 
-  try_service_write_queue();
+  service_write_queue();
 
 }
 

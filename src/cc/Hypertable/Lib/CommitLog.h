@@ -203,6 +203,7 @@ namespace Hypertable {
     void initialize(const std::string &log_dir,
                     PropertiesPtr &, CommitLogBase *init_log, bool is_meta);
     int roll(CommitLogFileInfo **clfip=0);
+    int create_next_log();
     int compress_and_write(DynamicBuffer &input, BlockHeader *header,
                            int64_t revision, Filesystem::Flags flags);
     void remove_file_info(CommitLogFileInfo *fi, StringSet &removed_logs);

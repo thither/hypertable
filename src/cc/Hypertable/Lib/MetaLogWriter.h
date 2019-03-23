@@ -209,7 +209,7 @@ namespace Hypertable {
 
       void roll();
 
-      void try_service_write_queue();
+      void try_roll(int32_t nextt_id);
 
       void service_write_queue();
 
