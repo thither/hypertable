@@ -98,48 +98,93 @@ ClientBufferedReaderHandler::~ClientBufferedReaderHandler() {
  */
 void ClientBufferedReaderHandler::handle(EventPtr &event) {
   lock_guard<mutex> lock(m_mutex);
-
   m_outstanding--;
 
-  if (event->type == Event::MESSAGE) {
-    if ((m_error = (int)Protocol::response_code(event)) != Error::OK) {
-      m_error_msg = Protocol::string_format_message(event);
-      HT_ERRORF("FS read error (amount=%u, fd=%s) : %s",
-        m_read_size, m_smartfd_ptr->to_str().c_str(), m_error_msg.c_str());
-      m_eof = true;
-      m_cond.notify_all();
-      return;
-    }
-    m_queue.push(event);
+  uint32_t amount;
+  uint64_t offset;
+  const void *data;
 
-    {
-      uint32_t amount;
-      uint64_t offset;
-      const void *data;
+  int e_code;
+	String e_desc;
+
+  if (event->type == Event::MESSAGE 
+      && Protocol::response_code(event.get()) == Error::OK){
+    try{
       m_client->decode_response_read(
         m_smartfd_ptr, event, &data, &offset, &amount);
       m_actual_offset += amount;
       if (amount < m_read_size)
         m_eof = true;
+      
+      m_queue.push(event);
+      m_cond.notify_all();
+      return;
+    }
+	  catch (Exception &e) {
+      e_code = e.code();
+	    e_desc = format("Error reading %u bytes from FS: %s",
+		    (unsigned)m_read_size, m_smartfd_ptr->to_str().c_str());
     }
   }
+  else if (event->type == Event::MESSAGE) {
+    e_code = Protocol::response_code(event.get());
+    e_desc = Protocol::string_format_message(event);
+  }
   else if (event->type == Event::ERROR) {
-    m_error_msg = event->to_str();
-    HT_ERRORF("%s", m_error_msg.c_str());
-    m_error = event->error;
-    m_eof = true;
+    e_code = event->error;
+    e_desc = event->to_str();
   }
   else {
-    m_error_msg = event->to_str();
-    HT_ERRORF("%s", m_error_msg.c_str());
-    m_error = Error::FAILED_EXPECTATION;
-    m_eof = true;
+    e_code = Error::FAILED_EXPECTATION;
+    e_desc = event->to_str();
   }
 
+
+  int64_t pos = m_smartfd_ptr->pos();
+  
+	HT_WARNF("FsClient sync-fallback for readahead-buffer to Error %d - %s, %s", 
+           e_code, e_desc.c_str(), m_smartfd_ptr->to_str().c_str());
+  try_again:
+	DispatchHandlerSynchronizer sync_handler;
+	EventPtr event_sync;
+  if(m_client->wait_for_connection(e_code, e_desc)) {
+    try{
+      m_client->open(m_smartfd_ptr);
+		  if(pos > 0)
+				m_client->seek(m_smartfd_ptr, pos);
+
+		  m_client->read(m_smartfd_ptr, m_read_size, &sync_handler);
+		  if (!sync_handler.wait_for_reply(event_sync))
+			  HT_THROW(Protocol::response_code(event_sync.get()), 
+				  Protocol::string_format_message(event_sync));
+      
+      m_client->decode_response_read(
+        m_smartfd_ptr, event_sync, &data, &offset, &amount);
+      m_actual_offset += amount;
+      if (amount < m_read_size)
+        m_eof = true;
+      
+      m_queue.push(event_sync);
+      m_cond.notify_all();
+      return;
+	  }
+	  catch (Exception &e) {
+      e_code = e.code();
+      e_desc = format("Error readahead-buffer, sync-fallback read "
+        "%u bytes from FS: %s", 
+        (unsigned)m_read_size, m_smartfd_ptr->to_str().c_str());
+		  goto try_again;
+    }
+  }
+
+  m_error_msg = e_desc;
+  HT_ERRORF("%s", m_error_msg.c_str());
+  m_eof = true;
   m_cond.notify_all();
 }
 
 
+     
 
 size_t
 ClientBufferedReaderHandler::read(void *buf, size_t len) {
