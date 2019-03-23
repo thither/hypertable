@@ -244,8 +244,8 @@ bool Client::wait_for_connection(int e_code, const String &e_desc) {
 			format("Timed out waiting for connection to FS Broker, tried %d times - %s", 
 							m_conn_retries, e_desc.c_str()));
 
-	if(e_code == Error::COMM_NOT_CONNECTED || 
-		 e_code == Error::COMM_BROKEN_CONNECTION){
+	//if(e_code == Error::COMM_NOT_CONNECTED || 
+	//	 e_code == Error::COMM_BROKEN_CONNECTION){
 		bool is_active = m_conn_mgr->is_connection_state(
 			m_addr, ConnectionManager::State::READY);
 		
@@ -253,6 +253,7 @@ bool Client::wait_for_connection(int e_code, const String &e_desc) {
 			m_conn_mgr->remove(m_addr); // sanity
 			m_conn_mgr->add(m_addr, m_timeout_ms, "FS Broker");
 			m_conn_active = true;
+			HT_INFO("FsClient, new connection handler created");
 		}
 
 		if (!is_active && !m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms)){
@@ -266,7 +267,7 @@ bool Client::wait_for_connection(int e_code, const String &e_desc) {
 			m_conn_retries = 0;
 			m_conn_active = true;
 		}
-	}
+	//}
 	return true;
 }
 
