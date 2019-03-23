@@ -249,9 +249,8 @@ bool Client::wait_for_connection(int e_code, const String &e_desc) {
 		bool is_active = m_conn_mgr->is_connection_state(
 			m_addr, ConnectionManager::State::READY);
 		
-		if(!is_active && 
-		   m_conn_mgr->is_connection_state(m_addr, ConnectionManager::State::DECOMMISSIONED)){
-			m_conn_mgr->remove(m_addr);
+		if(!is_active && !m_conn_mgr->is_addr_exists(m_addr)){
+			m_conn_mgr->remove(m_addr); // sanity
 			m_conn_mgr->add(m_addr, m_timeout_ms, "FS Broker");
 			m_conn_active = true;
 		}

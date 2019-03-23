@@ -17,6 +17,7 @@ Version 0.9.8.16:
    added bool retry_write_ok to FsBroker::Lib::Client
    set FsBroker::Lib::Client methods based on int fd to warn-deprecated
    added bool ConnectionManager::is_connection_state 
+   added bool ConnectionManager::is_addr_exists
    changed Metalog, Commitlog, AccessGroupHintsFile to work with smartfd
    changed CellStore to work with smartfd, except CellStoreV0-6
    added a try again loops for processes relay on FsBrokerClient append

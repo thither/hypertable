@@ -294,10 +294,17 @@ namespace Hypertable {
     int remove(const CommAddress &addr);
 
     /** Check if connection is the State
+     * @param addr  address of connection to check
      * @param state enum State
      * @return true if equal, false otherwise
      */
     bool is_connection_state(const CommAddress &addr, State state);
+
+    /** Check if address of connection is managed
+     * @param addr address of connection to check
+     * @return true if found, false otherwise
+     */
+    bool is_addr_exists(const CommAddress &addr);
 
     /** Blocks until the connection to the given address is
      * established.  The given address must have been previously added with a
