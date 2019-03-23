@@ -59,6 +59,7 @@ namespace Hypertable {
    */
   class ConnectionManager : public DispatchHandler {
 
+  public:
     enum class State {
       DISCONNECTED = 0,
       CONNECTED,
@@ -66,6 +67,7 @@ namespace Hypertable {
       DECOMMISSIONED
     };
 
+  private:
     /** Per-connection state.
      */
     class ConnectionState {
@@ -290,6 +292,12 @@ namespace Hypertable {
      * @return Error code (Error::OK on success)
      */
     int remove(const CommAddress &addr);
+
+    /** Check if connection is the State
+     * @param state enum State
+     * @return true if equal, false otherwise
+     */
+    bool is_connection_state(const CommAddress &addr, State state);
 
     /** Blocks until the connection to the given address is
      * established.  The given address must have been previously added with a

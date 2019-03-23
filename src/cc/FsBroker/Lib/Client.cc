@@ -223,7 +223,8 @@ bool is_error_handlable(int e_code){
 		 e_code == Error::COMM_CONNECT_ERROR ||
 		 e_code == Error::COMM_SEND_ERROR ||
 		 e_code == Error::FSBROKER_BAD_FILE_HANDLE ||
-		 e_code == Error::FSBROKER_IO_ERROR);
+		 e_code == Error::FSBROKER_IO_ERROR ||
+		 e_code == Error::CLOSED);
 }
 }
 
@@ -243,23 +244,28 @@ bool Client::wait_for_connection(int e_code, const String &e_desc) {
 			format("Timed out waiting for connection to FS Broker, tried %d times - %s", 
 							m_conn_retries, e_desc.c_str()));
 
-	if(!m_conn_active && (
-				e_code == Error::COMM_NOT_CONNECTED || 
-				e_code == Error::COMM_BROKEN_CONNECTION)){
-		m_conn_mgr->remove(m_addr);
-		m_conn_mgr->add(m_addr, m_timeout_ms, "FS Broker");
-		m_conn_active = true;
-	}
-	if (!m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms)){
-		m_conn_active = false;
-		m_conn_retries++;
-		HT_INFOF("FsClient conn-retry: %d failed, to error: %s",  
+	if(e_code == Error::COMM_NOT_CONNECTED || 
+		 e_code == Error::COMM_BROKEN_CONNECTION){
+		bool is_active = m_conn_mgr->is_connection_state(
+			m_addr, ConnectionManager::State::READY);
+		/*
+		if(!is_active && !m_conn_active){
+			m_conn_mgr->remove(m_addr);
+			m_conn_mgr->add(m_addr, m_timeout_ms, "FS Broker");
+			m_conn_active = true;
+		}
+		*/
+		if (!is_active && !m_conn_mgr->wait_for_connection(m_addr, m_timeout_ms)){
+			m_conn_active = false;
+			m_conn_retries++;
+			HT_INFOF("FsClient conn-retry: %d failed, to error: %s",  
 							m_conn_retries, e_desc.c_str());
-	} else {
-		HT_INFOF("FsClient conn-established after %d tries to error: %s", 
-						 m_conn_retries, e_desc.c_str());
-		m_conn_retries = 0;
-		m_conn_active = true;
+		} else {
+			HT_INFOF("FsClient conn-established after %d tries to error: %s", 
+						 		m_conn_retries, e_desc.c_str());
+			m_conn_retries = 0;
+			m_conn_active = true;
+		}
 	}
 	return true;
 }
