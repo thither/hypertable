@@ -242,11 +242,13 @@ ClientBufferedReaderHandler::read(void *buf, size_t len) {
     
   } while(!m_eof || m_outstanding > 0);
 
+  /*
   {
     lock_guard<mutex> lock(m_mutex);
     HT_INFOF("read, return nleft: %ld m_queue: %lu nread: %ld, available: %ld, fill: %ld, m_eof: %d, %s", 
               nleft, m_queue.size(), nread, available, fill, m_eof, m_smartfd_ptr->to_str().c_str());
   }
+  */
   return nread;
 }
 
