@@ -576,6 +576,44 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
   MergeScannerAccessGroupPtr mscanner;
   ScanContextPtr scan_ctx;
 
+  {
+    lock_guard<mutex> lock(m_mutex);
+    /**
+    * Check for garbage and if threshold reached, change minor to major
+    * compaction.  If GC compaction was requested and garbage threshold
+    * is not reached, skip compaction.
+    */
+    now = time(0);
+    if (gc || (minor && m_garbage_tracker.check_needed(now))) {
+      double total, garbage;
+      measure_garbage(&total, &garbage);
+      m_garbage_tracker.adjust_targets(now, total, garbage);
+      if (m_garbage_tracker.collection_needed(total, garbage)) {
+        if (minor || merging)
+          HT_INFOF("Switching to major compaction to collect %.2f%% garbage",
+                    (garbage/total)*100.00);
+        major = true;
+        minor = false;
+        merging = false;
+      }
+      else if (gc) {
+        HT_INFOF("Aborting GC compaction because measured garbage of %.2f%% "
+                  "is below threshold", (garbage/total)*100.00);
+        merge_caches();
+        hints->latest_stored_revision = m_latest_stored_revision;
+        hints->disk_usage = m_disk_usage;
+        return;
+      }
+    }
+
+    cs_file = format("%s/tables/%s/%s/%s/cs%d",
+                      Global::toplevel_dir.c_str(),
+                      m_identifier.id, m_name.c_str(),
+                      m_range_dir.c_str(),
+                      m_next_cs_id++);
+    scan_ctx = make_shared<ScanContext>(m_schema);
+  }
+
   int32_t write_tries = 0;
   try_create_cellstore_again:
   try {
@@ -584,42 +622,6 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
 
     {
       lock_guard<mutex> lock(m_mutex);
-      scan_ctx = make_shared<ScanContext>(m_schema);
-
-      cs_file = format("%s/tables/%s/%s/%s/cs%d",
-                       Global::toplevel_dir.c_str(),
-                       m_identifier.id, m_name.c_str(),
-                       m_range_dir.c_str(),
-                       m_next_cs_id++);
-
-      /**
-       * Check for garbage and if threshold reached, change minor to major
-       * compaction.  If GC compaction was requested and garbage threshold
-       * is not reached, skip compaction.
-       */
-      if (gc || (minor && m_garbage_tracker.check_needed(now))) {
-        double total, garbage;
-        measure_garbage(&total, &garbage);
-        m_garbage_tracker.adjust_targets(now, total, garbage);
-        if (m_garbage_tracker.collection_needed(total, garbage)) {
-          if (minor || merging)
-            HT_INFOF("Switching to major compaction to collect %.2f%% garbage",
-                     (garbage/total)*100.00);
-          major = true;
-          minor = false;
-          merging = false;
-        }
-        else if (gc) {
-          HT_INFOF("Aborting GC compaction because measured garbage of %.2f%% "
-                   "is below threshold", (garbage/total)*100.00);
-          merge_caches();
-          hints->latest_stored_revision = m_latest_stored_revision;
-          hints->disk_usage = m_disk_usage;
-          return;
-        }
-      }
-
-      cellstore = make_shared<CellStoreV7>(Global::dfs.get(), m_schema);
 
       max_num_entries = m_cell_cache_manager->immutable_items();
 
@@ -667,12 +669,15 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
         HT_ASSERT(scanner);
       }
     }
- 
+  
+    //uint64_t chk_count = 0;
+    cellstore = make_shared<CellStoreV7>(Global::dfs.get(), m_schema);
     cellstore->create(cs_file.c_str(), max_num_entries, cellstore_props, &m_identifier);
 
     if (mscanner) {
       while (mscanner->get(key, value)) {
         cellstore->add(key, value);
+        //chk_count++;
         if (m_in_memory)
           filtered_cache->add(key, value);
         mscanner->forward();
@@ -681,12 +686,16 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
     else {
       while (scanner->get(key, value)) {
         cellstore->add(key, value);
+        //chk_count++;
         if (m_in_memory)
           filtered_cache->add(key, value);
         scanner->forward();
       }
     }
-
+    
+   /* HT_INFOF("Scanner chk_count %ld, try %lu, %s", 
+            chk_count, (uint64_t)write_tries, cellstore->get_smartfd_ptr()->to_str().c_str());
+    */
     CellStoreTrailerV7 *trailer = dynamic_cast<CellStoreTrailerV7 *>(cellstore->get_trailer());
 
     if (major)
@@ -713,8 +722,8 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
     if (mscanner)
       m_garbage_tracker.adjust_targets(now, mscanner.get());
   }
+
   catch (Exception &e) {
-    
     if(Global::dfs->retry_write_ok(cellstore->get_smartfd_ptr(), 
                                    e.code(), &write_tries))
       goto try_create_cellstore_again;
