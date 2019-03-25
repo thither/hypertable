@@ -478,10 +478,10 @@ void CellStoreV7::add(const Key &key, const ByteString value) {
       if (!m_sync_handler.wait_for_reply(event_ptr)) {
         if (event_ptr->type == Event::MESSAGE)
           HT_THROWF(Hypertable::Protocol::response_code(event_ptr),
-             "Problem writing to FS file '%s' : %s", m_filename.c_str(),
+             "Problem writing to FS %s : %s", m_smartfd_ptr->to_str().c_str(),
              Hypertable::Protocol::string_format_message(event_ptr).c_str());
         HT_THROWF(event_ptr->error,
-                  "Problem writing to FS file '%s'", m_filename.c_str());
+                  "Problem writing to FS %s", m_smartfd_ptr->to_str().c_str());
       }
       m_outstanding_appends--;
     }
