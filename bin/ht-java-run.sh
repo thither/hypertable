@@ -82,8 +82,10 @@ RUN_CP_GROUP=""
 # Parse and remove ht-java-run.sh specific arguments
 DEBUG_ARGS=
 
+# Setup JAVALIBPATH 
+JAVALIBPATH="$HYPERTABLE_HOME/lib"
 # Setup CLASSPATH
-CLASSPATH="$HYPERTABLE_HOME/lib"
+CLASSPATH=""
 
 while [ $# -gt 1 ] ; do
   if [ "--pidfile" == "$1" ] ; then
@@ -168,7 +170,7 @@ fi
 #
 # run it
 #
-echo $JAVA_HOME/bin/java -Dht_home=$HYPERTABLE_HOME $DEBUG_ARGS -cp "$CLASSPATH" "$@"
+echo $JAVA_HOME/bin/java -Dht_home=$HYPERTABLE_HOME $DEBUG_ARGS -Djava.library.path=$JAVALIBPATH -cp "$CLASSPATH" "$@"
 if [ "$JAVA_HOME" != "" ] ; then
   exec $JAVA_HOME/bin/java -Dht_home=$HYPERTABLE_HOME $DEBUG_ARGS -cp "$CLASSPATH" "$@"
 else
