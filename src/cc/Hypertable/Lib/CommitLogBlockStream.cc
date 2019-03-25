@@ -229,10 +229,10 @@ uint64_t CommitLogBlockStream::header_size() {
 
 
 int CommitLogBlockStream::load_next_valid_header(BlockHeaderCommitLog *header) {
-  size_t remaining = header->encoded_length();
   try {
+    size_t remaining = header->encoded_length();
+    size_t toread = remaining;
     size_t nread = 0;
-    size_t toread = header->encoded_length();
 
     m_block_buffer.ptr = m_block_buffer.base;
 
@@ -250,7 +250,7 @@ int CommitLogBlockStream::load_next_valid_header(BlockHeaderCommitLog *header) {
     m_cur_offset += header->encoded_length();
   }
   catch (Exception &e) {
-    HT_WARN_OUT << e << HT_END;
+    HT_WARN_OUT << e << " " << m_smartfd_ptr->to_str().c_str() << HT_END;
     if (e.code() == Error::FSBROKER_EOF ||
         e.code() == Error::RANGESERVER_TRUNCATED_COMMIT_LOG ||
         e.code() == Error::BLOCK_COMPRESSOR_TRUNCATED ||
@@ -259,8 +259,8 @@ int CommitLogBlockStream::load_next_valid_header(BlockHeaderCommitLog *header) {
       archive_bad_fragment(m_fname, archive_fname);
       string text;
       if (e.code() == Error::BLOCK_COMPRESSOR_BAD_HEADER)
-        text = format("Corruption detected in commit log file %s at offset %lld",
-                      m_smartfd_ptr->to_str().c_str(), (Lld)m_cur_offset);
+        text = format("Corruption detected in commit log file %s len %lld at offset %lld",
+                      m_smartfd_ptr->to_str().c_str(), (Lld)header->encoded_length(), (Lld)m_cur_offset);
       else
         text = format("Truncated block header in commit log file %s",
                       m_smartfd_ptr->to_str().c_str());
@@ -269,6 +269,7 @@ int CommitLogBlockStream::load_next_valid_header(BlockHeaderCommitLog *header) {
                            { Error::get_text(e.code()),
                              e.what(),
                              format("File archived to %s", archive_fname.c_str()) });
+      HT_WARN(text.c_str());
     }
     else if (ms_assert_on_error)
       HT_ABORT;
