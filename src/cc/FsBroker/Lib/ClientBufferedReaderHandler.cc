@@ -85,8 +85,11 @@ void ClientBufferedReaderHandler::handle(EventPtr &event) {
 
 
 uint32_t ClientBufferedReaderHandler::read_response(){
-  EventPtr &event = m_queue.front();
-
+  EventPtr event;
+  {
+    lock_guard<mutex> lock(m_mutex);
+    event = m_queue.front();
+  }
   uint32_t amount;
   uint64_t offset;
   int e_code;
@@ -119,25 +122,30 @@ uint32_t ClientBufferedReaderHandler::read_response(){
   }
 
 
-	HT_WARNF("FsClient sync-fallback for readahead-buffer to Error %d - %s, %s", 
-           e_code, e_desc.c_str(), m_smartfd_ptr->to_str().c_str());
 
-  // expel queue and expected outstanding
-  unique_lock<mutex> lock(m_mutex);
-  do{
-    while(!m_queue.empty()){
-      m_queue.pop();
-      m_outstanding--;
-    }
-    if(m_outstanding > 0)
-      m_cond.wait(lock, [this](){ return !m_queue.empty(); });
-    else
-      break;
-  } while(true);
-  // add back current event
-  m_queue.push(event);
-
-	HT_WARNF("FsClient expel queue and expected outstanding, %s", 
+  // Synchronize readaheads, expel queue and expected outstanding
+  {
+    unique_lock<mutex> lock(m_mutex);
+	  
+    HT_WARNF("FsClient sync-fallback for readahead-buffer to Error %d - %s, "
+             "at outstanding: %lu in queue: %lu, %s", 
+             e_code, e_desc.c_str(), 
+             (uint64_t)m_outstanding, m_queue.size(), 
+             m_smartfd_ptr->to_str().c_str());
+    do{
+      while(!m_queue.empty()){
+        m_queue.pop();
+        m_outstanding--;
+      }
+      if(m_outstanding > 0)
+        m_cond.wait(lock, [this](){ return !m_queue.empty(); });
+      else
+        break;
+    } while(true);
+    // add back current event
+    m_queue.push(event);
+  }
+	HT_WARNF("FsClient sync-fallback expel queue and expected outstanding, %s", 
              m_smartfd_ptr->to_str().c_str());
 
 
@@ -180,7 +188,6 @@ uint32_t ClientBufferedReaderHandler::read_response(){
 
 size_t
 ClientBufferedReaderHandler::read(void *buf, size_t len) {
-  unique_lock<mutex> lock(m_mutex);
 
   uint8_t *ptr = (uint8_t *)buf;
   long nleft = len;
@@ -189,9 +196,12 @@ ClientBufferedReaderHandler::read(void *buf, size_t len) {
   uint32_t amount;
 
   do {
-    m_cond.wait(lock, [this](){ return !m_queue.empty() || (m_eof && m_ptr); });
-    if (m_ptr == 0 && m_queue.empty())
-      HT_THROW(Error::FSBROKER_EOF, "short read (empty queue)");
+    {
+      unique_lock<mutex> lock(m_mutex);
+      m_cond.wait(lock, [this](){ return !m_queue.empty() || (m_eof && m_ptr); });
+      if (m_ptr == 0 && m_queue.empty())
+        HT_THROW(Error::FSBROKER_EOF, "short read (empty queue)");
+    }
 
     read_more:
     if (m_ptr == 0) {
@@ -214,6 +224,7 @@ ClientBufferedReaderHandler::read(void *buf, size_t len) {
         ptr += fill;
     }
     if ((m_end_ptr - m_ptr) == 0) {
+      lock_guard<mutex> lock(m_mutex);
       m_queue.pop();
       m_ptr = 0;
     }
@@ -223,13 +234,19 @@ ClientBufferedReaderHandler::read(void *buf, size_t len) {
     if(nleft == 0)
       break;
 
-    if (m_ptr || !m_queue.empty())
-      goto read_more;
+    {
+      lock_guard<mutex> lock(m_mutex);
+      if (m_ptr || !m_queue.empty())
+        goto read_more;
+    }
     
   } while(!m_eof || m_outstanding > 0);
 
-  // HT_INFOF("read, return nleft: %ld m_queue: %lu nread: %ld, available: %ld, fill: %ld, m_eof: %d, %s", 
-  //          nleft, m_queue.size(), nread, available, fill, m_eof, m_smartfd_ptr->to_str().c_str());
+  {
+    lock_guard<mutex> lock(m_mutex);
+    HT_INFOF("read, return nleft: %ld m_queue: %lu nread: %ld, available: %ld, fill: %ld, m_eof: %d, %s", 
+              nleft, m_queue.size(), nread, available, fill, m_eof, m_smartfd_ptr->to_str().c_str());
+  }
   return nread;
 }
 
