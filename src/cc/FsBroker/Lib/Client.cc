@@ -308,7 +308,10 @@ bool Client::retry_write_ok(Filesystem::SmartFdPtr smartfd_ptr,
   }
 	
   if(*tries_count < m_write_retry_limit->get()
-     && is_error_handlable(e_code)){
+     && (is_error_handlable(e_code) 
+		 		 || e_code == Error::METADATA_NOT_FOUND 
+				 || e_code == Error::FILE_NOT_FOUND 
+				 || e_code == Error::FSBROKER_FILE_NOT_FOUND)){
     *tries_count = *tries_count+1; 
 		HT_INFOF("FsClient retry_write_ok, try %d to error: %d %s", 
 						 *tries_count, e_code, smartfd_ptr->to_str().c_str());
