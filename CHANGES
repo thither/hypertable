@@ -27,7 +27,6 @@ Version 0.9.8.16:
    added dyn config option FsBroker.RetryLimit, zero to skip
    major improvement on Failure Tolerence of FsClient use and connection to FsBroker
    changed repr of fd/filename in logging of FsBroker::Lib::Client to a SmartFd 
-   changed RangeServerConnectionManager maps RemoteAddr as nonunique 
    changed Hyperspace.Session.Reconnect config default value set to True
    TODO: Validate CellStoreV7 integrity to a Zero checksums/length
 

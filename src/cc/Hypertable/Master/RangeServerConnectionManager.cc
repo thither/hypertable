@@ -46,12 +46,14 @@ void RangeServerConnectionManager::add_server(RangeServerConnectionPtr &rsc) {
                 rsc->to_str().c_str(), tmp_rsc->to_str().c_str());
   }
 
+  /*
+    to a different location remoteAddr can be not unique 
+    (the same RS came back online with different run/location)
+  */
   auto result = m_connections.push_back( RangeServerConnectionEntry(rsc) );
-  if (!result.second) // non_unique rs location 
+  if (!result.second)
     HT_FATALF("Attempt to add %s which conflicts with previously added entry",
               rsc->to_str().c_str());
-  
-  // instead of HT_FATALF, better event to disconnect/remove both rangeservers
 }
 
 bool

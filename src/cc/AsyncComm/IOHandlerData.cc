@@ -632,7 +632,8 @@ void IOHandlerData::handle_message_body() {
       m_event->set_proxy(m_proxy);
     }
     //HT_INFOF("Just received messaage of size %d", m_event->header.total_len);
-    deliver_event(m_event, dh);
+    // dh ( dh->handle(event) is a virtual pure , Not Implemented)
+    deliver_event(m_event, dh);  
   }
 
   reset_incoming_message_state();
