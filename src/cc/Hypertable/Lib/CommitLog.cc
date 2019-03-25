@@ -210,6 +210,7 @@ CommitLog::write(uint64_t cluster_id, DynamicBuffer &buffer, int64_t revision,
    * Compress and write the commit block
    */
   BlockHeaderCommitLog header(MAGIC_DATA, revision, cluster_id);
+  buffer.own=false;
   if ((error = compress_and_write(buffer, &header, revision, flags)) != Error::OK){
     if(m_fs->retry_write_ok(m_smartfd_ptr, error, &write_tries)){
       m_needs_roll=true;
@@ -510,6 +511,8 @@ CommitLog::compress_and_write(DynamicBuffer &input, BlockHeader *header,
     if (revision > m_latest_revision)
       m_latest_revision = revision;
     m_cur_fragment_length += amount;
+
+    input.own=true;
   }
   catch (Exception &e) {
     HT_ERRORF("Problem writing commit log: %s: %s",
@@ -527,10 +530,9 @@ void CommitLog::load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map)
   uint32_t distance = 0;
   CumulativeFragmentData frag_data;
 
-  /* current log fragment not in m_fragment_queue for m_smartfd_ptr condition
   if (!m_smartfd_ptr || !m_smartfd_ptr->valid()) //opt, wait  OR roll
     HT_THROWF(Error::CLOSED, "Commit log '%s' has been closed", m_log_dir.c_str());
-  */
+
   memset(&frag_data, 0, sizeof(frag_data));
 
   if (m_latest_revision != TIMESTAMP_MIN) {
