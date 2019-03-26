@@ -83,8 +83,15 @@ CellStoreV7::~CellStoreV7() {
     delete m_compressor;
     delete m_bloom_filter;
     delete m_bloom_filter_items;
-    if (m_smartfd_ptr && m_smartfd_ptr->valid())
-      m_filesys->close(m_smartfd_ptr);
+    if (m_smartfd_ptr && m_smartfd_ptr->valid()){
+      try{m_filesys->close(m_smartfd_ptr);}catch(...){}
+      /* 
+       a pre close preffered 
+       a chase condition to a bad handler 
+       (once append/read, second distructor's)
+       */
+
+    }
     delete [] m_column_ttl;
   }
   catch (Exception &e) {
