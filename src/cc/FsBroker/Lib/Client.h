@@ -53,7 +53,7 @@ namespace Hypertable {
                 : Filesystem::SmartFd(name, flag_s){}
 
         ClientFd(const String &name, uint32_t flag_s, int32_t fileno, 
-                int64_t position)
+                uint64_t position)
                 : Filesystem::SmartFd(name, flag_s, fileno, position){}
 
         virtual ~ClientFd(){}

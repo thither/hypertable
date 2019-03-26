@@ -70,8 +70,9 @@ namespace Lib {
 
     uint32_t   m_read_size;
     uint32_t   m_max_outstanding;
-    uint64_t   m_outstanding_offset;
+    uint64_t   m_actual_offset;
     uint64_t   m_end_offset;
+    uint64_t   m_outstanding_offset;
     uint32_t   m_outstanding;
     bool       m_eof;
     

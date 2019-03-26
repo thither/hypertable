@@ -82,7 +82,7 @@ namespace Hypertable {
           return std::make_shared<SmartFd>(filepath, flags);
         }
         static SmartFdPtr make_ptr(const String &filepath, uint32_t flags, 
-                            int32_t fd, int64_t pos){
+                            int32_t fd, uint64_t pos){
           return std::make_shared<SmartFd>(filepath, flags, fd, pos);
         }
 
@@ -90,7 +90,7 @@ namespace Hypertable {
           m_filepath(filepath), m_flags(flags) {
         }
 
-        SmartFd(const String &filepath, uint32_t flags, int32_t fd, int64_t pos): 
+        SmartFd(const String &filepath, uint32_t flags, int32_t fd, uint64_t pos): 
            m_filepath(filepath), m_flags(flags) , m_fd(fd), m_pos(pos) {
         }
 

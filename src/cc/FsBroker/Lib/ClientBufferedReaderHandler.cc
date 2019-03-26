@@ -36,8 +36,8 @@ ClientBufferedReaderHandler::ClientBufferedReaderHandler(
     uint32_t outstanding, uint64_t start_offset, uint64_t end_offset) :
     m_client(client), m_smartfd_ptr(smartfd_ptr), 
     m_read_size(buf_size), m_max_outstanding(outstanding), 
-    m_outstanding_offset(start_offset), m_end_offset(end_offset), 
-    m_outstanding(0), m_eof(false) {
+    m_actual_offset(start_offset), m_end_offset(end_offset), 
+    m_outstanding_offset(start_offset), m_outstanding(0), m_eof(false) {
  
   /**
    * Seek to initial offset
@@ -158,7 +158,7 @@ uint32_t ClientBufferedReaderHandler::read_response(){
              m_smartfd_ptr->to_str().c_str());
 
 
-  int64_t pos = m_smartfd_ptr->pos();
+  uint64_t pos = m_smartfd_ptr->pos();
   try_again:
 
   if(m_client->wait_for_connection(e_code, e_desc)) {
@@ -166,6 +166,7 @@ uint32_t ClientBufferedReaderHandler::read_response(){
       m_client->open(m_smartfd_ptr);
 		  if(pos > 0)
 				m_client->seek(m_smartfd_ptr, pos);
+      HT_ASSERT(m_actual_offset == pos == m_smartfd_ptr->pos());
 	    
       DispatchHandlerSynchronizer sync_handler;
 		  m_client->read(m_smartfd_ptr, m_read_size, &sync_handler);
@@ -218,6 +219,7 @@ ClientBufferedReaderHandler::read(void *buf, size_t len) {
       if (amount < m_read_size)
         m_eof = true;
       m_end_ptr = m_ptr + amount;
+      m_actual_offset += amount;
       m_outstanding--;
     }
 
