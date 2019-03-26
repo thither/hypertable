@@ -210,7 +210,6 @@ CommitLog::write(uint64_t cluster_id, DynamicBuffer &buffer, int64_t revision,
    * Compress and write the commit block
    */
   BlockHeaderCommitLog header(MAGIC_DATA, revision, cluster_id);
-  buffer.own=false;
   if ((error = compress_and_write(buffer, &header, revision, flags)) != Error::OK){
     if(m_fs->retry_write_ok(m_smartfd_ptr, error, &write_tries)){
       m_needs_roll=true;
@@ -450,13 +449,12 @@ int CommitLog::roll(CommitLogFileInfo **clfip) {
     }
   }
   m_needs_roll = true;
-  //if (clfip)
-  //  *clfip = 0;
 
   CommitLogFileInfo *file_info = new CommitLogFileInfo();
-  if (clfip != nullptr)
+  if (clfip){
+    *clfip = 0;
     *clfip = file_info;
-
+  }
   file_info->log_dir = m_log_dir;
   file_info->log_dir_hash = md5_hash(m_log_dir.c_str());
   file_info->num = m_cur_fragment_num;
@@ -498,6 +496,9 @@ CommitLog::compress_and_write(DynamicBuffer &input, BlockHeader *header,
 
   int error = Error::OK;
   DynamicBuffer zblock;
+  
+  bool ownership=input.own;
+  input.own=false;
 
   // Compress block and kick off log write (protected by lock)
   try {
@@ -512,13 +513,13 @@ CommitLog::compress_and_write(DynamicBuffer &input, BlockHeader *header,
       m_latest_revision = revision;
     m_cur_fragment_length += amount;
 
-    input.own=true;
   }
   catch (Exception &e) {
     HT_ERRORF("Problem writing commit log: %s: %s",
               m_smartfd_ptr->to_str().c_str(), e.what());
     error = e.code();
   }
+  input.own=ownership;
 
   return error;
 }
