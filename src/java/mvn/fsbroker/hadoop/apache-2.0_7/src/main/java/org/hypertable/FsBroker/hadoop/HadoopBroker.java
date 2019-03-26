@@ -805,9 +805,13 @@ public class HadoopBroker implements Broker {
             if (mVerbose)
                 log.info("Removing file '" + fileName);
 
-            if (!mFilesystem.delete(new Path(fileName), false))
+            if (!mFilesystem.delete(new Path(fileName), false)){
+                if (!mFilesystem.exists(new Path(fileName)))
+                    throw new FileNotFoundException("Problem deleting file '"
+                                                    + fileName + "'");
                 throw new IOException("Problem deleting file '" + fileName
                                       + "'");
+            }
 
             error = cb.response_ok();
 
