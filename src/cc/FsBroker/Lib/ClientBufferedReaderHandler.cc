@@ -131,7 +131,7 @@ uint32_t ClientBufferedReaderHandler::read_response(){
 
   // Synchronize readaheads, expel queue and expected outstanding
   {
-    unique_lock<mutex> lock(m_mutex);
+    
 	  
     HT_WARNF("FsClient sync-fallback for readahead-buffer to Error %d - %s, "
              "at outstanding: %lu in queue: %lu, %s", 
@@ -139,6 +139,8 @@ uint32_t ClientBufferedReaderHandler::read_response(){
              (uint64_t)m_outstanding, m_queue.size(), 
              m_smartfd_ptr->to_str().c_str());
     do{
+      {
+      unique_lock<mutex> lock(m_mutex);
       while(!m_queue.empty()){
         m_queue.pop();
         m_outstanding--;
@@ -147,6 +149,7 @@ uint32_t ClientBufferedReaderHandler::read_response(){
         m_cond.wait(lock, [this](){ return !m_queue.empty(); });
       else
         break;
+      }
     } while(true);
     // add back current event
     m_queue.push(event);
