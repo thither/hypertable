@@ -179,6 +179,7 @@ uint32_t ClientBufferedReaderHandler::read_response(){
       m_client->decode_response_read(
         m_smartfd_ptr, event_sync, (const void **)&m_ptr, &offset, &amount);
       m_outstanding_offset = m_smartfd_ptr->pos();
+      m_outstanding = 1;
       return amount;
 	  }
 	  catch (Exception &e) {
