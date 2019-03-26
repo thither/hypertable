@@ -570,7 +570,7 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
     cellstore_props = m_cellstore_props;
   }
 
-  time_t now;
+  time_t now = time(0);
   int64_t max_num_entries;
   CellListScannerPtr scanner;
   MergeScannerAccessGroupPtr mscanner;
@@ -583,7 +583,6 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
     * compaction.  If GC compaction was requested and garbage threshold
     * is not reached, skip compaction.
     */
-    now = time(0);
     if (gc || (minor && m_garbage_tracker.check_needed(now))) {
       double total, garbage;
       measure_garbage(&total, &garbage);
@@ -617,7 +616,6 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
   int32_t write_tries = 0;
   try_create_cellstore_again:
   try {
-    now = time(0);
     max_num_entries = {};
 
     {
@@ -670,14 +668,14 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
       }
     }
   
-    //uint64_t chk_count = 0;
+    uint64_t chk_count = 0;
     cellstore = make_shared<CellStoreV7>(Global::dfs.get(), m_schema);
     cellstore->create(cs_file.c_str(), max_num_entries, cellstore_props, &m_identifier);
 
     if (mscanner) {
       while (mscanner->get(key, value)) {
         cellstore->add(key, value);
-        //chk_count++;
+        chk_count++;
         if (m_in_memory)
           filtered_cache->add(key, value);
         mscanner->forward();
@@ -686,16 +684,17 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
     else {
       while (scanner->get(key, value)) {
         cellstore->add(key, value);
-        //chk_count++;
+        chk_count++;
         if (m_in_memory)
           filtered_cache->add(key, value);
         scanner->forward();
       }
     }
     
-   /* HT_INFOF("Scanner chk_count %ld, try %lu, %s", 
+    /**/
+    HT_INFOF("Scanner chk_count %ld, try %lu, %s", 
             chk_count, (uint64_t)write_tries, cellstore->get_smartfd_ptr()->to_str().c_str());
-    */
+   
     CellStoreTrailerV7 *trailer = dynamic_cast<CellStoreTrailerV7 *>(cellstore->get_trailer());
 
     if (major)
