@@ -59,19 +59,25 @@ ClientBufferedReaderHandler::ClientBufferedReaderHandler(
 
 ClientBufferedReaderHandler::~ClientBufferedReaderHandler() {
   /*
-  Nothing is waiting for an outgoing, 
-  It is a deadlock in-case, more readaheads follow an eof on prior read
-  to the case use without "m_end_offset"
+  // wait and keep the handler method
+  // for outstanding events coming in the AsyncComm
+  HT_INFOF("~ClientBufferedReaderHandler %s", m_smartfd_ptr->to_str().c_str());
   try {
     unique_lock<mutex> lock(m_mutex);
-    HT_INFOF("~ClientBufferedReaderHandler, m_outstanding: %lu m_eof: %d", 
-            (uint64_t)m_outstanding, m_eof);
-    m_eof = true;
-    m_cond.wait(lock, [this](){ return m_outstanding == 0; });
-  }
+    do{
+      while(!m_queue.empty()){
+        m_queue.pop();
+        m_outstanding--;
+      }
+      if(m_outstanding > 0)
+        m_cond.wait(lock, [this](){ return !m_queue.empty(); });
+      else
+        break;
+    } while(true);
   catch (...) {
     HT_ERROR("synchronization error");
   }
+  HT_INFOF("~ClientBufferedReaderHandler finsih %s ", m_smartfd_ptr->to_str().c_str());
   */
 }
 
