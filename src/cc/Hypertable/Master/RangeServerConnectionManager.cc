@@ -52,7 +52,7 @@ void RangeServerConnectionManager::add_server(RangeServerConnectionPtr &rsc) {
   */
   auto result = m_connections.push_back( RangeServerConnectionEntry(rsc) );
   if (!result.second)
-    HT_FATALF("Attempt to add %s which conflicts with previously added entry",
+    HT_WARNF("Attempt to add %s which conflicts with previously added entry",
               rsc->to_str().c_str());
 }
 
