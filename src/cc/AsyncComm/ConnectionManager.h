@@ -60,92 +60,13 @@ namespace Hypertable {
   class ConnectionManager : public DispatchHandler {
 
   public:
+
     enum class State {
       DISCONNECTED = 0,
       CONNECTED,
       READY,
       DECOMMISSIONED
     };
-
-  private:
-    /** Per-connection state.
-     */
-    class ConnectionState {
-    public:
-      /// Connection address supplied to the #add methods
-      CommAddress addr;
-      /// Local address to bind to
-      CommAddress local_addr;
-      /// Address initialized from Event object
-      InetAddr inet_addr;
-      /// Retry connection attempt after this many milliseconds
-      uint32_t timeout_ms;
-      /// Registered connection handler
-      DispatchHandlerPtr handler;
-      /// Connection initializer
-      ConnectionInitializerPtr initializer;
-      /// Connection state
-      State state {};
-      /// Mutex to serialize concurrent access
-      std::mutex mutex;
-      /// Condition variable used to signal connection state change
-      std::condition_variable cond;
-      /// Absolute time of next connect attempt
-      std::chrono::steady_clock::time_point next_retry;
-      /// Service name of connection for log messages
-      std::string service_name;
-    };
-    /// Smart pointer to ConnectionState
-    typedef std::shared_ptr<ConnectionState> ConnectionStatePtr;
-
-    /** StringWeakOrdering for connection retry heap
-     */
-    struct LtConnectionState {
-      bool operator()(const ConnectionStatePtr &cs1,
-                      const ConnectionStatePtr &cs2) const {
-        return std::chrono::operator>(cs1->next_retry, cs2->next_retry);
-      }
-    };
-
-    /** Connection manager state shared between Connection manager objects.
-     */
-    class SharedImpl {
-    public:
-
-      /** Destructor.
-       */
-      ~SharedImpl() {
-        shutdown = true;
-        retry_cond.notify_one();
-        if (thread.joinable())
-          thread.join();
-      }
-
-      /// Pointer to Comm layer
-      Comm *comm;
-      /// Mutex to serialize concurrent access
-      std::mutex mutex;
-      /// Condition variable to signal if anything is on the retry heap
-      std::condition_variable retry_cond;
-      /// Pointer to connection manager thread object
-      std::thread thread;
-      /// InetAddr-to-ConnectionState map
-      SockAddrMap<ConnectionStatePtr> conn_map;
-      /// Proxy-to-ConnectionState map
-      std::unordered_map<String, ConnectionStatePtr> conn_map_proxy;
-      /// Connect retry heap
-      std::priority_queue<ConnectionStatePtr, std::vector<ConnectionStatePtr>,
-          LtConnectionState> retry_queue;
-      /// Set to <i>true</i> to prevent connect failure log message
-      bool quiet_mode;
-      /// Set to <i>true</i> to signal shutdown in progress
-      bool shutdown;
-    };
-
-    /// Smart pointer to SharedImpl object
-    typedef std::shared_ptr<SharedImpl> SharedImplPtr;
-
-  public:
 
     /**
      * Constructor.  Creates a thread to do connection retry attempts.
@@ -359,6 +280,83 @@ namespace Hypertable {
     void connect_retry_loop();
 
   private:
+
+    /** Per-connection state.
+     */
+    class ConnectionState {
+    public:
+      /// Connection address supplied to the #add methods
+      CommAddress addr;
+      /// Local address to bind to
+      CommAddress local_addr;
+      /// Address initialized from Event object
+      InetAddr inet_addr;
+      /// Retry connection attempt after this many milliseconds
+      uint32_t timeout_ms;
+      /// Registered connection handler
+      DispatchHandlerPtr handler;
+      /// Connection initializer
+      ConnectionInitializerPtr initializer;
+      /// Connection state
+      State state {};
+      /// Mutex to serialize concurrent access
+      std::mutex mutex;
+      /// Condition variable used to signal connection state change
+      std::condition_variable cond;
+      /// Absolute time of next connect attempt
+      std::chrono::steady_clock::time_point next_retry;
+      /// Service name of connection for log messages
+      std::string service_name;
+    };
+    /// Smart pointer to ConnectionState
+    typedef std::shared_ptr<ConnectionState> ConnectionStatePtr;
+
+    /** StringWeakOrdering for connection retry heap
+     */
+    struct LtConnectionState {
+      bool operator()(const ConnectionStatePtr &cs1,
+                      const ConnectionStatePtr &cs2) const {
+        return std::chrono::operator>(cs1->next_retry, cs2->next_retry);
+      }
+    };
+
+    /** Connection manager state shared between Connection manager objects.
+     */
+    class SharedImpl {
+    public:
+
+      /** Destructor.
+       */
+      ~SharedImpl() {
+        shutdown = true;
+        retry_cond.notify_one();
+        if (thread.joinable())
+          thread.join();
+      }
+
+      /// Pointer to Comm layer
+      Comm *comm;
+      /// Mutex to serialize concurrent access
+      std::mutex mutex;
+      /// Condition variable to signal if anything is on the retry heap
+      std::condition_variable retry_cond;
+      /// Pointer to connection manager thread object
+      std::thread thread;
+      /// InetAddr-to-ConnectionState map
+      SockAddrMap<ConnectionStatePtr> conn_map;
+      /// Proxy-to-ConnectionState map
+      std::unordered_map<String, ConnectionStatePtr> conn_map_proxy;
+      /// Connect retry heap
+      std::priority_queue<ConnectionStatePtr, std::vector<ConnectionStatePtr>,
+          LtConnectionState> retry_queue;
+      /// Set to <i>true</i> to prevent connect failure log message
+      bool quiet_mode;
+      /// Set to <i>true</i> to signal shutdown in progress
+      bool shutdown;
+    };
+
+    /// Smart pointer to SharedImpl object
+    typedef std::shared_ptr<SharedImpl> SharedImplPtr;
 
     /** Called by the #add methods to add a connection.  This method creates
      * and initializes a ConnectionState object for the connnection, adds
