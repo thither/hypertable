@@ -166,7 +166,7 @@ uint32_t ClientBufferedReaderHandler::read_response(){
       m_client->open(m_smartfd_ptr);
 		  if(pos > 0)
 				m_client->seek(m_smartfd_ptr, pos);
-      HT_ASSERT(m_actual_offset == pos == m_smartfd_ptr->pos());
+      HT_ASSERT(m_actual_offset == pos && pos == m_smartfd_ptr->pos());
 	    
       DispatchHandlerSynchronizer sync_handler;
 		  m_client->read(m_smartfd_ptr, m_read_size, &sync_handler);
@@ -209,7 +209,7 @@ ClientBufferedReaderHandler::read(void *buf, size_t len) {
   do {
     {
       unique_lock<mutex> lock(m_mutex);
-      m_cond.wait(lock, [this](){ return !m_queue.empty() || (m_eof && m_ptr); });
+      m_cond.wait(lock, [this](){ return !m_queue.empty() || (m_eof && m_ptr == 0); });
       if (m_ptr == 0 && m_queue.empty())
         HT_THROW(Error::FSBROKER_EOF, "short read (empty queue)");
     }
@@ -248,7 +248,7 @@ ClientBufferedReaderHandler::read(void *buf, size_t len) {
 
     {
       lock_guard<mutex> lock(m_mutex);
-      if (m_ptr || !m_queue.empty())
+      if (m_ptr != 0 || !m_queue.empty())
         goto read_more;
     }
     
