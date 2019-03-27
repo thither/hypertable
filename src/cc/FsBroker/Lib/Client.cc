@@ -378,8 +378,8 @@ Client::commit_temp(Filesystem::SmartFdPtr &smartfd_ptr,
 				0, replication);
 
   if(FileUtils::length(smartfd_ptr->filepath()) != length(to_smartfd_ptr->filepath())
-		&& retry_write_ok(to_smartfd_ptr, Error::FSBROKER_FILE_NOT_FOUND, &write_tries))
-		goto try_write_again;
+    && retry_write_ok(to_smartfd_ptr, Error::FSBROKER_FILE_NOT_FOUND, &write_tries))
+    goto try_write_again;
 	else
   	FileUtils::unlink(smartfd_ptr->filepath());
 	smartfd_ptr = to_smartfd_ptr;
