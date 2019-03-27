@@ -66,6 +66,16 @@
 #include <Common/Logger.h>
 #include <Common/Serialization.h>
 
+#include <Common/FileUtils.h>
+#include <FsBroker/Lib/Utility.h>
+
+extern "C" {
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+}
+
+
 using namespace Hypertable;
 using namespace Serialization;
 using namespace Hypertable::FsBroker;
@@ -73,6 +83,24 @@ using namespace Hypertable::FsBroker::Lib;
 using namespace std;
 
 
+//local namespace
+namespace{
+bool is_error_handlable(int e_code){
+	return (e_code == Error::COMM_NOT_CONNECTED ||
+		 e_code == Error::COMM_BROKEN_CONNECTION ||
+		 e_code == Error::COMM_CONNECT_ERROR ||
+		 e_code == Error::COMM_SEND_ERROR ||
+		 e_code == Error::FSBROKER_BAD_FILE_HANDLE ||
+		 e_code == Error::FSBROKER_IO_ERROR ||
+		 e_code == Error::CLOSED);
+}
+String get_local_temp_path(){
+	String temp_path = Config::properties->get_str("Hypertable.DataDirectory") + "/run/temp";
+  if (!FileUtils::exists(temp_path))
+    FileUtils::mkdirs(temp_path);
+  return temp_path;
+}
+}
 
 // Client Initializers
 Client::Client(ConnectionManagerPtr &conn_mgr, const sockaddr_in &addr,
@@ -83,6 +111,7 @@ Client::Client(ConnectionManagerPtr &conn_mgr, const sockaddr_in &addr,
 	
   m_write_retry_limit = Config::get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
   m_retry_limit = Config::get_ptr<gInt32t>("FsBroker.RetryLimit");
+	m_temp_path = get_local_temp_path();
 }
 
 Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &props)
@@ -96,6 +125,7 @@ Client::Client(ConnectionManagerPtr &conn_mgr, PropertiesPtr &props)
 			{"FsBroker.Timeout", "Hypertable.Request.Timeout"});
   m_write_retry_limit = props->get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
   m_retry_limit =  props->get_ptr<gInt32t>("FsBroker.RetryLimit");
+	m_temp_path = get_local_temp_path();
 	
 	InetAddr::initialize(&m_addr, host.c_str(), port);
 
@@ -107,6 +137,7 @@ Client::Client(Comm *comm, const sockaddr_in &addr, uint32_t timeout_ms)
 	: m_comm(comm), m_conn_mgr(0), m_addr(addr), m_timeout_ms(timeout_ms) {
   m_write_retry_limit = Config::get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
   m_retry_limit = Config::get_ptr<gInt32t>("FsBroker.RetryLimit");
+	m_temp_path = get_local_temp_path();
 }
 
 Client::Client(const String &host, int port, uint32_t timeout_ms)
@@ -121,7 +152,9 @@ Client::Client(const String &host, int port, uint32_t timeout_ms)
 	
   m_write_retry_limit = Config::get_ptr<gInt32t>("FsBroker.WriteRetryLimit");
   m_retry_limit = Config::get_ptr<gInt32t>("FsBroker.RetryLimit");
+	m_temp_path = get_local_temp_path();
 }
+
 
 Client::~Client() {
 	/** this causes deadlock in RangeServer shutdown
@@ -215,18 +248,6 @@ void Client::decode_response_status(EventPtr &event, Status &status) {
 	status = params.status();
 }
 
-//local namespace
-namespace{
-bool is_error_handlable(int e_code){
-	return (e_code == Error::COMM_NOT_CONNECTED ||
-		 e_code == Error::COMM_BROKEN_CONNECTION ||
-		 e_code == Error::COMM_CONNECT_ERROR ||
-		 e_code == Error::COMM_SEND_ERROR ||
-		 e_code == Error::FSBROKER_BAD_FILE_HANDLE ||
-		 e_code == Error::FSBROKER_IO_ERROR ||
-		 e_code == Error::CLOSED);
-}
-}
 
 bool Client::wait_for_connection(int e_code, const String &e_desc) {
 
@@ -320,6 +341,48 @@ bool Client::retry_write_ok(Filesystem::SmartFdPtr smartfd_ptr,
 	HT_WARNF("FsClient retry_write_ok, FALSE to error: %d %s", 
 						 e_code, smartfd_ptr->to_str().c_str());
 	return false;
+}
+
+// CREATE/WRITE WITH LOCAL FS SUPPORT
+Filesystem::SmartFdPtr Client::create_local_temp(const String &for_filename){
+
+  String tmp_file = "/";
+  for (auto it=for_filename.begin(); it!=for_filename.end(); ++it){
+    if(*it=='/')
+      tmp_file.append("_");
+    else
+      tmp_file.push_back(*it);
+  }
+	
+  Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(
+		m_temp_path+tmp_file, 0
+	);
+  smartfd_ptr->fd(::open(smartfd_ptr->filepath().c_str(), O_CREAT|O_TRUNC|O_WRONLY, 0644));
+
+	return smartfd_ptr;
+}
+
+void
+Client::append_to_temp(Filesystem::SmartFdPtr smartfd_ptr, StaticBuffer &buffer){
+  FileUtils::write(smartfd_ptr->fd(), buffer.base, buffer.size);
+}
+
+void 
+Client::commit_temp(Filesystem::SmartFdPtr &smartfd_ptr, 
+									  Filesystem::SmartFdPtr to_smartfd_ptr, 
+										int32_t replication){
+	int32_t write_tries = 0;
+	try_write_again:
+  FsBroker::Lib::copy_from_local(this,
+        smartfd_ptr->filepath(), to_smartfd_ptr, 
+				0, replication);
+
+  if(FileUtils::length(smartfd_ptr->filepath()) != length(to_smartfd_ptr->filepath())
+		&& retry_write_ok(to_smartfd_ptr, Error::FSBROKER_FILE_NOT_FOUND, &write_tries))
+		goto try_write_again;
+	else
+  	FileUtils::unlink(smartfd_ptr->filepath());
+	smartfd_ptr = to_smartfd_ptr;
 }
 
 // OPEN

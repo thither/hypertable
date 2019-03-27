@@ -108,17 +108,32 @@ void FsBroker::Lib::copy(ClientPtr &client, const std::string &from,
 
 }
 
+void FsBroker::Lib::copy_from_local(ClientPtr &client, 
+  const string &from, const string &to, int64_t offset, int32_t replication) {
+
+  Filesystem::SmartFdPtr to_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+    to, Filesystem::OPEN_FLAG_OVERWRITE);
+
+  FsBroker::Lib::copy_from_local(client, from, to_smartfd_ptr, offset, replication);
+}
 
 void FsBroker::Lib::copy_from_local(ClientPtr &client, 
-  const string &from, const string &to, int64_t offset) {
+  const string &from, Filesystem::SmartFdPtr to_smartfd_ptr, 
+  int64_t offset, int32_t replication) {
+  FsBroker::Lib::copy_from_local(client.get(), from, to_smartfd_ptr, offset, replication);
+}
+
+void FsBroker::Lib::copy_from_local(Client* client, 
+  const string &from, Filesystem::SmartFdPtr to_smartfd_ptr, 
+  int64_t offset, int32_t replication) {
+
+	//HT_INFOF("copying from %s to %s", from.c_str(), to_smartfd_ptr->to_str().c_str());
+
   DispatchHandlerSynchronizer sync_handler;
   FILE *fp = 0;
   size_t nread;
   uint8_t *buf;
   StaticBuffer send_buf;
-
-  Filesystem::SmartFdPtr to_smartfd_ptr = Filesystem::SmartFd::make_ptr(
-    to, Filesystem::OPEN_FLAG_OVERWRITE);
 
   int32_t write_tries = 0;
   try_write_again: 
@@ -133,7 +148,7 @@ void FsBroker::Lib::copy_from_local(ClientPtr &client,
     }
 
 
-    client->create(to_smartfd_ptr, -1, -1, -1);
+    client->create(to_smartfd_ptr, -1, replication, -1);
 
     // send 3 appends
     for (int i=0; i<3; i++) {

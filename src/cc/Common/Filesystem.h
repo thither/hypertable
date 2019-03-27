@@ -670,7 +670,12 @@ namespace Hypertable {
 
     virtual	void sync(SmartFdPtr fd_obj) = 0;
 
-    
+  
+    virtual	Filesystem::SmartFdPtr create_local_temp(const String &for_filename) = 0;
+    virtual	void append_to_temp(Filesystem::SmartFdPtr smartfd_ptr, 
+      StaticBuffer &buffer) = 0;
+    virtual	void commit_temp(Filesystem::SmartFdPtr &smartfd_ptr, 
+      Filesystem::SmartFdPtr to_smartfd_ptr, int32_t replication)  = 0;
 
     /** Determines if it is OK to retry write.
      *

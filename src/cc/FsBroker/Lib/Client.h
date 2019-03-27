@@ -220,6 +220,9 @@ namespace Hypertable {
 
         void sync(Filesystem::SmartFdPtr fd_obj) override;
 
+        Filesystem::SmartFdPtr create_local_temp(const String &for_filename) override;
+        void append_to_temp(Filesystem::SmartFdPtr smartfd_ptr, StaticBuffer &buffer) override;
+        void commit_temp(Filesystem::SmartFdPtr &smartfd_ptr, Filesystem::SmartFdPtr to_smartfd_ptr, int32_t replication) override;
 
 
         // Methods based on int-fd, Depreciated FsBroker-Client methods 
@@ -344,6 +347,7 @@ namespace Hypertable {
         uint32_t m_timeout_ms;
         gInt32tPtr m_write_retry_limit {};
         gInt32tPtr m_retry_limit {};
+        String m_temp_path;
         std::unordered_map<uint32_t, Filesystem::SmartFdPtr> m_buffered_reader_map;
         
         int32_t m_conn_retries = 0;
