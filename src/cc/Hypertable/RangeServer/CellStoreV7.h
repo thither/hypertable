@@ -182,6 +182,7 @@ namespace Hypertable {
     uint32_t m_outstanding_appends {};
     int64_t m_offset {};
     int64_t m_file_length {};
+    int32_t m_replication {};
     int64_t m_disk_usage {};
     int m_file_id {};
     float m_uncompressed_data {};

@@ -613,8 +613,8 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
     scan_ctx = make_shared<ScanContext>(m_schema);
   }
 
-  int32_t write_tries = 0;
-  try_create_cellstore_again:
+  //int32_t write_tries = 0;
+  //try_create_cellstore_again:
   try {
     max_num_entries = {};
 
@@ -668,14 +668,12 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
       }
     }
   
-    uint64_t chk_count = 0;
     cellstore = make_shared<CellStoreV7>(Global::dfs.get(), m_schema);
     cellstore->create(cs_file.c_str(), max_num_entries, cellstore_props, &m_identifier);
 
     if (mscanner) {
       while (mscanner->get(key, value)) {
         cellstore->add(key, value);
-        chk_count++;
         if (m_in_memory)
           filtered_cache->add(key, value);
         mscanner->forward();
@@ -684,17 +682,12 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
     else {
       while (scanner->get(key, value)) {
         cellstore->add(key, value);
-        chk_count++;
         if (m_in_memory)
           filtered_cache->add(key, value);
         scanner->forward();
       }
     }
-    
-    /**/
-    HT_INFOF("Scanner chk_count %ld, try %lu, %s", 
-            chk_count, (uint64_t)write_tries, cellstore->get_smartfd_ptr()->to_str().c_str());
-   
+
     CellStoreTrailerV7 *trailer = dynamic_cast<CellStoreTrailerV7 *>(cellstore->get_trailer());
 
     if (major)
@@ -723,9 +716,9 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
   }
 
   catch (Exception &e) {
-    if(Global::dfs->retry_write_ok(cellstore->get_smartfd_ptr(), 
-                                   e.code(), &write_tries))
-      goto try_create_cellstore_again;
+    //if(Global::dfs->retry_write_ok(cellstore->get_smartfd_ptr(), 
+    //                               e.code(), &write_tries))
+    //  goto try_create_cellstore_again;
     
     HT_ERROR_OUT << m_full_name << " " << e << HT_END;
     throw;

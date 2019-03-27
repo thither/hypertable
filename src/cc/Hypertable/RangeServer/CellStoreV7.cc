@@ -191,7 +191,7 @@ CellStoreV7::create(const char *fname, size_t max_entries,
   m_key_compressor = make_shared<KeyCompressorPrefix>();
 
   assert(Config::properties); // requires Config::init* first
-  int32_t replication = get_replication(props, table_id);
+  m_replication = get_replication(props, table_id);
 
   if (blocksize == 0)
     blocksize = Config::get_i32("Hypertable.RangeServer.CellStore"
@@ -245,11 +245,12 @@ CellStoreV7::create(const char *fname, size_t max_entries,
   m_compressor = CompressorFactory::create_block_codec(
       (BlockCompressionCodec::Type)m_trailer.compression_type,
       m_compressor_args);
-
-  m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
-    m_filename, Filesystem::OPEN_FLAG_DIRECTIO|Filesystem::OPEN_FLAG_OVERWRITE);
-  m_filesys->create(m_smartfd_ptr, -1, replication, -1);
-
+  
+  //m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+  //  m_filename, Filesystem::OPEN_FLAG_DIRECTIO|Filesystem::OPEN_FLAG_OVERWRITE);
+  //m_filesys->create(m_smartfd_ptr, -1, replication, -1);
+  m_smartfd_ptr = m_filesys->create_local_temp(m_filename);
+  
   m_bloom_filter_mode = props->get<BloomFilterMode>("bloom-filter-mode");
   m_max_approx_items = props->get_i32("max-approx-items");
 
@@ -481,6 +482,7 @@ void CellStoreV7::add(const Key &key, const ByteString value) {
         * (uint64_t)m_uncompressed_data) / (uint64_t)m_compressed_data;
     m_uncompressed_blocksize = (int64_t)llval;
 
+    /*
     if (m_outstanding_appends >= MAX_APPENDS_OUTSTANDING) {
       if (!m_sync_handler.wait_for_reply(event_ptr)) {
         if (event_ptr->type == Event::MESSAGE)
@@ -492,6 +494,7 @@ void CellStoreV7::add(const Key &key, const ByteString value) {
       }
       m_outstanding_appends--;
     }
+    */
 
     if (!HT_IO_ALIGNED(zbuf.fill())) {
       memset(zbuf.ptr, 0, HT_IO_ALIGNMENT_PADDING(zbuf.fill()));
@@ -502,13 +505,15 @@ void CellStoreV7::add(const Key &key, const ByteString value) {
     StaticBuffer send_buf(zbuf);
 
     try { 
-      m_filesys->append(m_smartfd_ptr, send_buf, 
-                        Filesystem::Flags::NONE, &m_sync_handler); }
+      //m_filesys->append(m_smartfd_ptr, send_buf, 
+      //                  Filesystem::Flags::NONE, &m_sync_handler); 
+      m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
+    }
     catch (Exception &e) {
       HT_THROW2F(e.code(), e, "Problem writing to FS %s",
                  m_smartfd_ptr->to_str().c_str());
     }
-    m_outstanding_appends++;
+    //m_outstanding_appends++;
     m_offset += zlen;
     m_key_compressor->reset();
   }
@@ -590,6 +595,7 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
     zlen = zbuf.fill();
     send_buf = zbuf;
 
+    /*
     if (m_outstanding_appends >= MAX_APPENDS_OUTSTANDING) {
       if (!m_sync_handler.wait_for_reply(event_ptr))
         HT_THROWF(Protocol::response_code(event_ptr),
@@ -602,6 +608,10 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
     m_filesys->append(m_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
 
     m_outstanding_appends++;
+    */
+
+    m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
+
     m_offset += zlen;
   }
 
@@ -637,9 +647,9 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
   zlen = zbuf.fill();
   send_buf = zbuf;
 
-  m_filesys->append(m_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
-
-  m_outstanding_appends++;
+  //m_filesys->append(m_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
+  //m_outstanding_appends++;
+  m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
   m_offset += zlen;
 
   /**
@@ -661,9 +671,9 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
   zlen = zbuf.fill();
   send_buf = zbuf;
 
-  m_filesys->append(m_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
-
-  m_outstanding_appends++;
+  //m_filesys->append(m_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
+  //m_outstanding_appends++;
+  m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
   m_offset += zlen;
 
   // write filter_offset
@@ -684,8 +694,9 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
       m_trailer.bloom_filter_mode = m_bloom_filter_mode;
       m_trailer.bloom_filter_hash_count = m_bloom_filter->get_num_hashes();
       m_bloom_filter->serialize(send_buf);
-      m_filesys->append(m_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
-      m_outstanding_appends++;
+      //m_filesys->append(m_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
+      //m_outstanding_appends++;
+      m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
       m_offset += m_bloom_filter->total_size();
     }
   }
@@ -725,8 +736,9 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
       zbuf.ptr += HT_IO_ALIGNMENT_PADDING(zbuf.fill());
     }
     send_buf = zbuf;
-    m_filesys->append(m_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
-    m_outstanding_appends++;
+    //m_filesys->append(m_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
+    //m_outstanding_appends++;
+    m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
     zlen = zbuf.fill();
     m_offset += zlen;
   }
@@ -786,14 +798,20 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
   zlen = zbuf.fill();
   send_buf = zbuf;
 
-  m_filesys->append(m_smartfd_ptr, send_buf);
-
-  m_outstanding_appends++;
+  //m_filesys->append(m_smartfd_ptr, send_buf);
+  //m_outstanding_appends++;
+  m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
   m_offset += zlen;
 
   /** close file for writing **/
-  m_filesys->close(m_smartfd_ptr);
-
+  //m_filesys->close(m_smartfd_ptr);
+  
+  m_filesys->commit_temp(
+    m_smartfd_ptr,
+    Filesystem::SmartFd::make_ptr(
+      m_filename, Filesystem::OPEN_FLAG_DIRECTIO|Filesystem::OPEN_FLAG_OVERWRITE),
+      m_replication);
+  
   /** Set file length **/
   m_file_length = m_offset;
 
@@ -802,6 +820,7 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
 
   /** Re-open file for reading **/
   m_smartfd_ptr->flags(Filesystem::OPEN_FLAG_DIRECTIO);
+  //HT_INFOF("Re-open file for reading, %d %s", m_filesys, m_smartfd_ptr->to_str().c_str());
   m_filesys->open(m_smartfd_ptr);
 
   m_index_stats.block_index_memory = index_memory;
