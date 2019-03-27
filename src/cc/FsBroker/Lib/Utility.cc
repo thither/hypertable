@@ -101,7 +101,9 @@ void FsBroker::Lib::copy(ClientPtr &client, const std::string &from,
       client->close(from_smartfd_ptr);
     if (to_smartfd_ptr->valid())
       client->close(to_smartfd_ptr);
-    throw;
+
+		HT_THROWF(e.code(), "copy from %s to %s", 
+      from_smartfd_ptr->to_str().c_str(), to_smartfd_ptr->to_str().c_str());
   }
 
 }
@@ -160,7 +162,8 @@ void FsBroker::Lib::copy_from_local(ClientPtr &client,
     if(client->retry_write_ok(to_smartfd_ptr, e.code(), &write_tries))
       goto try_write_again;
 
-    throw;
+		HT_THROWF(e.code(), "copy from %s to %s", 
+      from.c_str(), to_smartfd_ptr->to_str().c_str());
   }
 }
 
@@ -170,13 +173,14 @@ void FsBroker::Lib::copy_to_local(ClientPtr &client,
   DispatchHandlerSynchronizer sync_handler;
   FILE *fp = 0;
 
+  Filesystem::SmartFdPtr from_smartfd_ptr = Filesystem::SmartFd::make_ptr(from, 0);
+  
   try {
 
     if ((fp = fopen(to.c_str(), "w+")) == 0)
       HT_THROW(Error::EXTERNAL, strerror(errno));
 
 
-    Filesystem::SmartFdPtr from_smartfd_ptr = Filesystem::SmartFd::make_ptr(from, 0);
     client->open(from_smartfd_ptr);
 
     if (offset > 0)
@@ -216,7 +220,9 @@ void FsBroker::Lib::copy_to_local(ClientPtr &client,
   catch (Exception &e) {
     if (fp)
       fclose(fp);
-    throw;
+
+		HT_THROWF(e.code(), "copy from %s to %s", 
+      from_smartfd_ptr->to_str().c_str(), to.c_str());
   }
   
 }
