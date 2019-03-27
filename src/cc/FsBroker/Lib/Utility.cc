@@ -48,9 +48,11 @@ void FsBroker::Lib::copy(ClientPtr &client, const std::string &from,
   Filesystem::SmartFdPtr from_smartfd_ptr = Filesystem::SmartFd::make_ptr(from, 0);
   Filesystem::SmartFdPtr to_smartfd_ptr = Filesystem::SmartFd::make_ptr(
     to, Filesystem::OPEN_FLAG_OVERWRITE);
-
+  
+  int32_t write_tries = 0;
+  try_write_again:
   try {
-
+    
     client->open(from_smartfd_ptr);
     if (offset > 0)
       client->seek(from_smartfd_ptr, offset);
@@ -84,11 +86,17 @@ void FsBroker::Lib::copy(ClientPtr &client, const std::string &from,
       client->read(from_smartfd_ptr, BUFFER_SIZE, &sync_handler);
     }
 
-    client->close(from_smartfd_ptr);
     client->close(to_smartfd_ptr);
+    client->close(from_smartfd_ptr);
 
   }
   catch (Exception &e) {
+    if(from_smartfd_ptr->valid()
+       && client->retry_write_ok(to_smartfd_ptr, e.code(), &write_tries)){
+      try{client->close(from_smartfd_ptr);}catch(...){}
+      goto try_write_again;
+    }
+    
     if (from_smartfd_ptr->valid())
       client->close(from_smartfd_ptr);
     if (to_smartfd_ptr->valid())
@@ -107,6 +115,11 @@ void FsBroker::Lib::copy_from_local(ClientPtr &client,
   uint8_t *buf;
   StaticBuffer send_buf;
 
+  Filesystem::SmartFdPtr to_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+    to, Filesystem::OPEN_FLAG_OVERWRITE);
+
+  int32_t write_tries = 0;
+  try_write_again: 
   try {
 
     if ((fp = fopen(from.c_str(), "r")) == 0)
@@ -117,8 +130,6 @@ void FsBroker::Lib::copy_from_local(ClientPtr &client,
         HT_THROW(Error::EXTERNAL, strerror(errno));
     }
 
-    Filesystem::SmartFdPtr to_smartfd_ptr = Filesystem::SmartFd::make_ptr(
-      to, Filesystem::OPEN_FLAG_OVERWRITE);
 
     client->create(to_smartfd_ptr, -1, -1, -1);
 
@@ -146,6 +157,9 @@ void FsBroker::Lib::copy_from_local(ClientPtr &client,
   catch (Exception &e) {
     if (fp)
       fclose(fp);
+    if(client->retry_write_ok(to_smartfd_ptr, e.code(), &write_tries))
+      goto try_write_again;
+
     throw;
   }
 }
