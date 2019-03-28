@@ -370,17 +370,21 @@ Client::append_to_temp(Filesystem::SmartFdPtr smartfd_ptr, StaticBuffer &buffer)
 void 
 Client::commit_temp(Filesystem::SmartFdPtr &smartfd_ptr, 
   Filesystem::SmartFdPtr to_smartfd_ptr, int32_t replication){
+
   int32_t write_tries = 0;
+  String final_temp_name = smartfd_ptr->filepath()+".final";
+  FileUtils::rename(smartfd_ptr->filepath(), final_temp_name);
+
   try_write_again:
   FsBroker::Lib::copy_from_local(this,
-        smartfd_ptr->filepath(), to_smartfd_ptr, 
+        final_temp_name, to_smartfd_ptr, 
         0, replication);
-
-  if(FileUtils::length(smartfd_ptr->filepath()) != length(to_smartfd_ptr->filepath())
+        
+  if(FileUtils::length(final_temp_name) != length(to_smartfd_ptr->filepath())
     && retry_write_ok(to_smartfd_ptr, Error::FSBROKER_FILE_NOT_FOUND, &write_tries))
     goto try_write_again;
   else
-    FileUtils::unlink(smartfd_ptr->filepath());
+    FileUtils::unlink(final_temp_name);
     
   smartfd_ptr = to_smartfd_ptr;
 }
@@ -873,6 +877,8 @@ Client::seek(Filesystem::SmartFdPtr smartfd_ptr, uint64_t offset) {
     if (!sync_handler.wait_for_reply(event))
       HT_THROW(Protocol::response_code(event.get()), 
         Protocol::string_format_message(event));
+    
+    smartfd_ptr->pos(offset);
   }
   catch (Exception &e) {
     String e_desc = format("Error seek to %llu on FS: %s", 
