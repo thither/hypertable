@@ -12,16 +12,26 @@ with open(README_RST) as readme:
 ht_home = '/opt/hypertable/@VERSION@'
 include_dirs = [ht_home+'/include',
                 sysconfig.get_python_inc(plat_specific=True),
-                '/usr/local/include', '/usr/include'] + '@THRIFT_INCLUDE_PATHS@'.split(';') + '@PYBIND11_INCLUDE_PATHS@'.split(';')
+                '/usr/local/include', '/usr/include'] + \
+                '@THRIFT_INCLUDE_PATHS@'.split(';') + \
+                '@PYBIND11_INCLUDE_PATHS@'.split(';') + \
+                '@MALLOC_INCLUDE_PATHS@'.split(';')
+include_dirs = list(set(include_dirs))
 
-extra_compile_args = [a for a in set([a.strip() for a in "@CMAKE_CXX_FLAGS@ @CMAKE_C_FLAGS@".split(' ')]) if a]
+extra_compile_args = [a for a in set([a.strip() 
+                      for a in "@CMAKE_CXX_FLAGS@ @CMAKE_C_FLAGS@".split(' ')]) if a]
+
+libraries=[l.split('/')[-1].split('.')[0][3:] 
+           for l in '@MALLOC_LIBRARIES_SHARED@'.split(';') 
+           if '/' in l]
 
 extensions = [
     Extension('hypertable.thrift_client.serialized_cells',
               sources=['hypertable/thrift_client/serialized_cells.cc'],
               include_dirs=include_dirs,
-              libraries=[],
-              extra_objects=[ht_home+'/lib/'+l for l in ['libHyperCommon.a', 'libHyperThriftExtentions.a', 'libHyperThrift.a']],
+              libraries=libraries,
+              extra_objects=[ht_home+'/lib/'+l 
+                             for l in ['libHyperCommon.a', 'libHyperThriftExtentions.a', 'libHyperThrift.a']],
               library_dirs=[ht_home+'/lib'],
               extra_compile_args=extra_compile_args,
               # language='c++17',
@@ -31,9 +41,11 @@ extensions = [
     Extension('hypertable.thrift_client.write_dispatcher',
               sources=['hypertable/thrift_client/write_dispatcher.cc'],
               include_dirs=include_dirs,
-              libraries=['z'],  # ['HyperCommon', 'HyperThriftExtentions', 'HyperThrift', 'expat'],
-              extra_objects=[ht_home+'/lib/'+l for l in ['libHyperCommon.a', 'libHyperThriftExtentions.a', 'libHyperThrift.a']]
-                            + '@THRIFT_LIBRARIES_STATIC@'.split(';'),
+              libraries=libraries+['z'],  
+              # ['HyperCommon', 'HyperThriftExtentions', 'HyperThrift', 'expat'],
+              extra_objects=[ht_home+'/lib/'+l 
+                             for l in ['libHyperCommon.a', 'libHyperThriftExtentions.a', 'libHyperThrift.a']] + \
+                            '@THRIFT_LIBRARIES_STATIC@'.split(';'),
               library_dirs=[ht_home+'/lib'],
               runtime_library_dirs=[ht_home+'/lib'],
               extra_compile_args=extra_compile_args,
@@ -44,7 +56,7 @@ extensions = [
     Extension('hypertable.hypertable_client',
               sources=['hypertable/hypertable_client.cc'],
               include_dirs=include_dirs,
-              libraries=[
+              libraries=libraries+[
                   'HyperCommon', 'HyperComm',
                   'Hypertable', 'HyperTools', 'HyperAppHelper', 'HyperThirdParty',
                   'Hyperspace', 'HyperMaster', 'HyperRanger',
