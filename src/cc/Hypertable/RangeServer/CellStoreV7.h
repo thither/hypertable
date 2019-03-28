@@ -172,6 +172,7 @@ namespace Hypertable {
     Filesystem *m_filesys;
     SchemaPtr m_schema;
     Filesystem::SmartFdPtr m_smartfd_ptr;
+    bool m_create_cs_with_tmp;
     std::string m_filename;
     bool m_64bit_index {};
     CellStoreTrailerV7 m_trailer;

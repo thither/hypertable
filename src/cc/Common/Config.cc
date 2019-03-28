@@ -502,6 +502,8 @@ void DefaultPolicy::init_options() {
         str("snappy"), "Default compressor for cell stores")
     ("Hypertable.RangeServer.CellStore.DefaultBloomFilter",
         str("rows"), "Default bloom filter for cell stores")
+    ("Hypertable.RangeServer.CellStore.CreateWithTemp",
+        g_boo(true), "Create CellStore with a temp on local, possible for write tries")
     ("Hypertable.RangeServer.CellStore.SkipBad",
         boo(false), "Skip over cell stores that are corrupt")
     ("Hypertable.RangeServer.CellStore.SkipNotFound",
