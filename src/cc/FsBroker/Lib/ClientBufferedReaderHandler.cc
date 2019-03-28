@@ -168,7 +168,7 @@ uint32_t ClientBufferedReaderHandler::read_response(){
 				m_client->seek(m_smartfd_ptr, pos);
 
       if(m_actual_offset != pos || pos != m_smartfd_ptr->pos())
-        HT_ERRORF("FsClient actual_offset: %lu pos: %lu fd->pos: %lu , %s", 
+        HT_ERRORF("FsClient sync-fallback, actual_offset: %lu pos: %lu fd->pos: %lu , %s", 
           m_actual_offset, pos, m_smartfd_ptr->pos(), m_smartfd_ptr->to_str().c_str());
 	    
       DispatchHandlerSynchronizer sync_handler;
