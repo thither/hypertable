@@ -260,7 +260,7 @@ bool Client::wait_for_connection(int e_code, const String &e_desc) {
 
   lock_guard<mutex> lock(m_mutex);
 
-  if (m_conn_retries == m_retry_limit->get())
+  if (m_retry_limit->get() != -1 && m_conn_retries == m_retry_limit->get())
     HT_THROW(e_code,
       format("Timed out waiting for connection to FS Broker, tried %d times - %s", 
               m_conn_retries, e_desc.c_str()));
@@ -328,7 +328,8 @@ bool Client::retry_write_ok(Filesystem::SmartFdPtr smartfd_ptr,
     catch(...){}
   }
   
-  if(*tries_count < m_write_retry_limit->get()
+  if((m_write_retry_limit->get() == -1 
+      || *tries_count < m_write_retry_limit->get())
      && (is_error_handlable(e_code) 
         || e_code == Error::METADATA_NOT_FOUND 
         || e_code == Error::FILE_NOT_FOUND 
