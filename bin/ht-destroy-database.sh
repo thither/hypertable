@@ -86,7 +86,7 @@ clear_local() {
     /bin/rm -rf $RUNTIME_ROOT/hyperspace/* $RUNTIME_ROOT/run/log_backup/rsml/* \
         $RUNTIME_ROOT/run/log_backup/mml/* $RUNTIME_ROOT/run/location \
         $RUNTIME_ROOT/run/last-fs $RUNTIME_ROOT/run/STATUS.* \
-        $RUNTIME_ROOT/fs/*
+        $RUNTIME_ROOT/run/temp $RUNTIME_ROOT/fs/*
     echo "Cleared $RUNTIME_ROOT/hyperspace"
     echo "Cleared $RUNTIME_ROOT/run"
     echo "Cleared $RUNTIME_ROOT/fs"
