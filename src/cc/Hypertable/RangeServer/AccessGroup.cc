@@ -612,7 +612,7 @@ void AccessGroup::run_compaction(int maintenance_flags, Hints *hints) {
                       m_next_cs_id++);
     scan_ctx = make_shared<ScanContext>(m_schema);
   }
-
+  // on error, there is a retry by Maintenance queue
   //int32_t write_tries = 0;
   //try_create_cellstore_again:
   try {
