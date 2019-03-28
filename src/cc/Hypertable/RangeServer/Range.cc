@@ -1661,8 +1661,10 @@ void Range::replay_transfer_log(CommitLogReader *commit_log_reader) {
 
       if (strcmp(m_table.id, table_id.id))
         HT_THROWF(Error::RANGESERVER_CORRUPT_COMMIT_LOG,
-                  "Table name mis-match in split log replay \"%s\" != \"%s\"",
-                  m_table.id, table_id.id);
+                  "Table name mis-match in split log replay \"%s\" != \"%s\" log: %s - %s",
+                  m_table.id, table_id.id,
+                   commit_log_reader->get_log_dir().c_str(), 
+                   commit_log_reader->last_fragment_fname());
 
       while (ptr < end) {
         key.ptr = (uint8_t *)ptr;
