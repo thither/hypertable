@@ -166,7 +166,10 @@ uint32_t ClientBufferedReaderHandler::read_response(){
       m_client->open(m_smartfd_ptr);
 		  if(pos > 0)
 				m_client->seek(m_smartfd_ptr, pos);
-      HT_ASSERT(m_actual_offset == pos && pos == m_smartfd_ptr->pos());
+
+      if(m_actual_offset != pos || pos != m_smartfd_ptr->pos())
+        HT_ERRORF("FsClient actual_offset: %lu pos: %lu fd->pos: %lu , %s", 
+          m_actual_offset, pos, m_smartfd_ptr->pos(), m_smartfd_ptr->to_str().c_str());
 	    
       DispatchHandlerSynchronizer sync_handler;
 		  m_client->read(m_smartfd_ptr, m_read_size, &sync_handler);
