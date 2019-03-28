@@ -14,7 +14,9 @@ Version 0.9.8.16:
    added SmartFd to Hypertable::Filesystem
    added new methods based on SmartFd to Hypertable::Filesystem
    added support of SmartFd to FsBroker::Lib::Client and dependencies
-   added bool retry_write_ok to FsBroker::Lib::Client
+   added to FsBroker::Lib::Client:
+         a bool retry_write_ok, true if applicable to retry
+         methods for temp file: create_local_temp, append_to_temp, commit_temp
    set FsBroker::Lib::Client methods based on int fd to warn-deprecated
    added bool ConnectionManager::is_connection_state 
    added bool ConnectionManager::is_addr_exists
@@ -23,12 +25,14 @@ Version 0.9.8.16:
    added a try again loops for processes relay on FsBrokerClient append
    changed additionally to RollLimit, logs-rolling is done as a new file required 
            including log-fragments as skippable sym-ref (only header)
-   added dyn config option FsBroker.WriteRetryLimit, zero to skip
-   added dyn config option FsBroker.RetryLimit, zero to skip
+   added dyn config options:
+         FsBroker.WriteRetryLimit, zero to skip, -1 unlimited
+         FsBroker.RetryLimit, zero to skip, -1 unlimited
+         Hypertable.RangeServer.CellStore.CreateWithTemp=bool, default false
    major improvement on Failure Tolerence of FsClient use and connection to FsBroker
    changed repr of fd/filename in logging of FsBroker::Lib::Client to a SmartFd 
    changed Hyperspace.Session.Reconnect config default value set to True
-   TODO: Validate CellStoreV7 integrity to a Zero checksums/length
+   TODO: 
 
 Version 0.9.8.15:
 (2018-12-19)
