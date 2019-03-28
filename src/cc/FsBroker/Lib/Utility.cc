@@ -28,6 +28,7 @@
 
 #include "Utility.h"
 
+#include <AsyncComm/Protocol.h>
 #include <AsyncComm/DispatchHandlerSynchronizer.h>
 
 #include <Common/Error.h>
@@ -127,16 +128,20 @@ void FsBroker::Lib::copy_from_local(Client* client,
   const string &from, Filesystem::SmartFdPtr to_smartfd_ptr, 
   int64_t offset, int32_t replication) {
 
-	//HT_INFOF("copying from %s to %s", from.c_str(), to_smartfd_ptr->to_str().c_str());
+	HT_INFOF("copying from %s to %s", from.c_str(), to_smartfd_ptr->to_str().c_str());
 
   DispatchHandlerSynchronizer sync_handler;
   FILE *fp = 0;
   size_t nread;
   uint8_t *buf;
   StaticBuffer send_buf;
+  uint32_t outstanding;
+  uint32_t max_outstanding = 5;
 
   int32_t write_tries = 0;
   try_write_again: 
+
+  outstanding = 0;
   try {
 
     if ((fp = fopen(from.c_str(), "r")) == 0)
@@ -147,27 +152,30 @@ void FsBroker::Lib::copy_from_local(Client* client,
         HT_THROW(Error::EXTERNAL, strerror(errno));
     }
 
-
     client->create(to_smartfd_ptr, -1, replication, -1);
 
-    // send 3 appends
-    for (int i=0; i<3; i++) {
-      buf = new uint8_t [BUFFER_SIZE];
-      if ((nread = fread(buf, 1, BUFFER_SIZE, fp)) == 0)
-        goto done;
-      send_buf.set(buf, nread, true);
-      client->append(to_smartfd_ptr, send_buf);
-    }
+    while (max_outstanding>0) {
 
-    while (true) {
       buf = new uint8_t [BUFFER_SIZE];
-      if ((nread = fread(buf, 1, BUFFER_SIZE, fp)) == 0)
-        break;
-      send_buf.set(buf, nread, true);
-      client->append(to_smartfd_ptr, send_buf);
-    }
+      if ((nread = fread(buf, 1, BUFFER_SIZE, fp)) == 0){
+        max_outstanding = 0;
+      } else {
+        send_buf.set(buf, nread, true);
+        client->append(to_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &sync_handler);
+        outstanding++;
+      }
 
-  done:
+      while (outstanding > max_outstanding) {
+        EventPtr event_ptr;
+        if (!sync_handler.wait_for_reply(event_ptr))
+         HT_THROWF(Protocol::response_code(event_ptr),
+                  "Problem appending, %s : %s",
+                    to_smartfd_ptr->to_str().c_str(),
+                    Protocol::string_format_message(event_ptr).c_str());
+        outstanding--;
+      }
+    }
+    
     client->close(to_smartfd_ptr);
 
   }
