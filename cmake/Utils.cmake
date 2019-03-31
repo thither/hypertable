@@ -628,12 +628,12 @@ endfunction()
 	#	TARGETS  	targets
   #	STATIC 		static linking
   # SHARED		shared linking
-  # ONLY_SHARED link only shared
+  # ONLY_DYN  link only shared
 	# )
 # -------------------------------
 
 function(ADD_EXEC_TARGET)
-  cmake_parse_arguments(OPT "" "NAME" "SRCS;TARGETS;STATIC;SHARED;ONLY_SHARED" ${ARGN})
+  cmake_parse_arguments(OPT "" "NAME" "SRCS;TARGETS;STATIC;SHARED;ONLY_DYN" ${ARGN})
 
 
   set(STATIC_LINKING ${OPT_STATIC})
@@ -642,11 +642,11 @@ function(ADD_EXEC_TARGET)
   set(SHARED_TARGETS )
   GET_TARGET_LINKS(TARGETS ${OPT_TARGETS} STATIC ${STATIC_LINKING} SHARED ${SHARED_LINKING})
 
-  if(NOT OPT_ONLY_SHARED AND BUILD_LINKING 	STREQUAL "STATIC")
+  if(NOT OPT_ONLY_DYN AND BUILD_LINKING 	STREQUAL "STATIC")
     set(TARGETS_LINKED  ${STATIC_TARGETS})
     set(LINKED_LIBS     ${STATIC_LINKING})
 
-  elseif(OPT_ONLY_SHARED OR BUILD_LINKING  STREQUAL "SHARED")
+  elseif(OPT_ONLY_DYN OR BUILD_LINKING  STREQUAL "SHARED")
     set(TARGETS_LINKED  ${SHARED_TARGETS})
     set(LINKED_LIBS     ${SHARED_LINKING})
   endif()

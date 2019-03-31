@@ -24,6 +24,6 @@ ADD_EXEC_TARGET(
 	SRCS  main.cc MaprBroker.cc 
   TARGETS HyperFsBroker
   SHARED ${MAPR_LIBRARIES_SHARED}
-  ONLY_SHARED TRUE   # static Java libs required 
   STATIC ${MAPR_LIBRARIES_STATIC}
+  ONLY_DYN TRUE   # static Java libs required 
 )
