@@ -211,7 +211,7 @@ CommitLog::write(uint64_t cluster_id, DynamicBuffer &buffer, int64_t revision,
    */
   BlockHeaderCommitLog header(MAGIC_DATA, revision, cluster_id);
   if ((error = compress_and_write(buffer, &header, revision, flags)) != Error::OK){
-    if(m_fs->retry_write_ok(m_smartfd_ptr, error, &write_tries)){
+    if(m_fs->retry_write_ok(m_smartfd_ptr, error, &write_tries, false)){
       m_needs_roll=true;
       goto try_write_again;
     }
@@ -305,7 +305,7 @@ int CommitLog::link_log(uint64_t cluster_id, CommitLogBase *log_base) {
   }
   catch (Hypertable::Exception &e) {
     HT_ERRORF("Problem linking external log into commit log - %s", e.what());
-    if(m_fs->retry_write_ok(m_smartfd_ptr, e.code(), &write_tries)){
+    if(m_fs->retry_write_ok(m_smartfd_ptr, e.code(), &write_tries, false)){
       m_needs_roll=true;
       goto try_link_log_again;
     }
