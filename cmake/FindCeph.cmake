@@ -26,6 +26,7 @@
 SET_DEPS(
 	NAME "CEPH" 
 	SHARED cephfs 
+	# STATIC libcephfs.a
 	INCLUDE cephfs/libcephfs.h
 )
 
