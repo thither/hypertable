@@ -82,6 +82,6 @@ if [ $? != 0 ] ; then
 fi
 rm -f dump.output dump.golden
 
-$HT_HOME/bin/ht destroy-database.sh
+$HT_HOME/bin/ht-destroy-database.sh
 
 exit 0
