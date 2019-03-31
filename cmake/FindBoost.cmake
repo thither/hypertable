@@ -115,7 +115,7 @@ endif ()
 SET(BOOST_STATIC_NAMES "")
 SET(BOOST_SHARED_NAMES "")
 foreach(libname ${BOOST_LIBNAMES})
-	if(NOT HT_NOT_STATIC_CORE)
+  if(BUILD_LINKING_CORE STREQUAL "STATIC")
 		set(BOOST_STATIC_NAMES ${BOOST_STATIC_NAMES}
 			"libboost_${libname}.a"
 			"libboost_${libname}-mt.a"
