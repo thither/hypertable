@@ -62,7 +62,7 @@ if (NOT CMAKE_BUILD_TYPE)
       "Options: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif ()
 
-
+message(STATUS "Optimization Level: " ${HT_O_LEVEL})
 if(NOT HT_O_LEVEL)
   SET (CMAKE_CXX_FLAGS_RELEASE        "-O3 -DNDEBUG")
 
