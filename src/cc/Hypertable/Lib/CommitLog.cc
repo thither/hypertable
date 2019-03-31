@@ -525,15 +525,19 @@ CommitLog::compress_and_write(DynamicBuffer &input, BlockHeader *header,
 }
 
 
-void CommitLog::load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map) {
+bool CommitLog::load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map) {
   lock_guard<mutex> lock(m_mutex);
+
+  if (!m_smartfd_ptr || !m_smartfd_ptr->valid()){ //opt, wait  OR roll
+    HT_WARNF("Commit log '%s' has been closed, no active commitlog fragment.",
+             m_log_dir.c_str());
+    return false;
+  }
+
   int64_t cumulative_total = 0;
   uint32_t distance = 0;
   CumulativeFragmentData frag_data;
-
-  if (!m_smartfd_ptr || !m_smartfd_ptr->valid()) //opt, wait  OR roll
-    HT_THROWF(Error::CLOSED, "Commit log '%s' has been closed", m_log_dir.c_str());
-
+  
   memset(&frag_data, 0, sizeof(frag_data));
 
   if (m_latest_revision != TIMESTAMP_MIN) {
@@ -556,6 +560,7 @@ void CommitLog::load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map)
     (*riter).second.cumulative_size = cumulative_total;
   }
 
+  return true;
 }
 
 

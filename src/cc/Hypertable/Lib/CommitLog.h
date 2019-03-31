@@ -162,8 +162,9 @@ namespace Hypertable {
      * expensive it is to keep this fragment around.
      *
      * @param cumulative_size_map reference to map of log fragment priority data
+     * return False if there is no active fragment of commitlog, else True 
      */
-    void load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map);
+    bool load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map);
 
     /**
      * Returns the maximum size of each log fragment file
