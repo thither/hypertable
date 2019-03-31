@@ -329,7 +329,8 @@ namespace Hypertable {
         * @return true if OK, otherwise false
         */
         bool retry_write_ok(Filesystem::SmartFdPtr smartfd_ptr, 
-														int32_t e_code, int32_t *tries_count) override;
+														int32_t e_code, int32_t *tries_count,
+                            bool del_old=true) override;
 
       private:
 

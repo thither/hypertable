@@ -318,12 +318,13 @@ ClientFdPtr get_clientfd_ptr(Filesystem::SmartFdPtr smartfd_ptr){
 
 
 bool Client::retry_write_ok(Filesystem::SmartFdPtr smartfd_ptr, 
-                            int32_t e_code, int32_t *tries_count){
+                            int32_t e_code, int32_t *tries_count,
+                            bool del_old){
   if(smartfd_ptr->valid()) { 
     try{close(smartfd_ptr);}
     catch(...){}
   }
-  if(!smartfd_ptr->filepath().empty()) {
+  if(del_old && !smartfd_ptr->filepath().empty()) {
     try{remove(smartfd_ptr->filepath());}
     catch(...){}
   }

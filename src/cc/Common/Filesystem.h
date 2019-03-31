@@ -685,7 +685,7 @@ namespace Hypertable {
      * @return true if OK, otherwise false
      */
     virtual bool retry_write_ok(SmartFdPtr smartfd_ptr, 
-			int32_t e_code, int32_t *tries_count) = 0;
+			int32_t e_code, int32_t *tries_count, bool del_old=true) = 0;
 
     virtual	int32_t get_retry_write_limit() = 0;
 
