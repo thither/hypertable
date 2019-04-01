@@ -32,6 +32,7 @@ Version 0.9.8.16:
          Hypertable.RangeServer.CellStore.CreateWithTemp=bool, default false
    major improvement on Failure Tolerence of FsClient use and connection to FsBroker
    added integration test fsbroker-failure
+   changed RangeServerConnectionManager on Master maps RS public_addr non_unique
    changed repr of fd/filename in logging of FsBroker::Lib::Client to a SmartFd 
    changed Hyperspace.Session.Reconnect config default value set to True
    TODO: 

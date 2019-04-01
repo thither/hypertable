@@ -47,7 +47,7 @@ void RangeServerConnectionManager::add_server(RangeServerConnectionPtr &rsc) {
   }
 
   /*
-    to a different location remoteAddr can be not unique 
+    to a different location public_addr can be not unique 
     (the same RS came back online with different run/location)
   */
   auto result = m_connections.push_back( RangeServerConnectionEntry(rsc) );
