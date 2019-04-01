@@ -1522,6 +1522,13 @@ Apps::RangeServer::create_scanner(Response::Callback::CreateScanner *cb,
         if ((error = cb->response(id, 0, 0, false, profile_data, ext_buffer, ext_len))
                 != Error::OK)
           HT_ERRORF("Problem sending OK response - %s", Error::get_text(error));
+        /*
+         after rsp OK, 
+         * if scan_spec.select_once 
+           delete returned cells
+         * else if scan_spec.auto_inc && COUNTER
+           increment returned cells
+        */
         range->decrement_scan_counter();
         lock_guard<LoadStatistics> lock(*Global::load_statistics);
         Global::load_statistics->add_cached_scan_data(1, cell_count, ext_len);
@@ -1610,6 +1617,14 @@ Apps::RangeServer::create_scanner(Response::Callback::CreateScanner *cb,
         HT_ERRORF("Problem sending OK response - %s", Error::get_text(error));
       }
     }
+    
+    /*
+     after rsp OK, 
+     * if scan_spec.select_once 
+       delete returned cells
+     * else if scan_spec.auto_inc && COUNTER
+       increment returned cells
+    */
 
   }
   catch (Hypertable::Exception &e) {
