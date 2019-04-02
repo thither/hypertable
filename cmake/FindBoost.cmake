@@ -115,8 +115,8 @@ endif ()
 SET(BOOST_STATIC_NAMES "")
 SET(BOOST_SHARED_NAMES "")
 foreach(libname ${BOOST_LIBNAMES})
-  if(BUILD_LINKING_CORE STREQUAL "STATIC")
-		set(BOOST_STATIC_NAMES ${BOOST_STATIC_NAMES}
+
+	set(BOOST_STATIC_NAMES ${BOOST_STATIC_NAMES}
 			"libboost_${libname}.a"
 			"libboost_${libname}-mt.a"
 			"libboost_${libname}-gcc45-mt.a"
@@ -126,8 +126,8 @@ foreach(libname ${BOOST_LIBNAMES})
 			"libboost_${libname}-gcc41-mt.a"
 			"libboost_${libname}-gcc34-mt.a"
 			"libboost_${libname}-xgcc40-mt.a"
-		)	
-	endif ()
+	)	
+	
 	set(BOOST_SHARED_NAMES ${BOOST_SHARED_NAMES}
 		"boost_${libname}"
 		"boost_${libname}-mt"
