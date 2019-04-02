@@ -76,6 +76,10 @@ To configuration options of "languages" and "fsbrokers", follow apply:
      - INSTALL_TARGETS =       Install only these targets, default All(OFF)
 
 
+  Installing Python Modules:
+
+      PY-INTERPRETER -m pip install /opt/hypertable/VERSION/lib/py/hypertable-VERSION.tar.gz
+
 
         
 for more guidence you can follow with the Hypertable repository [https://github.com/hypertable/hypertable]
