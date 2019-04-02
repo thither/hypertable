@@ -1,5 +1,5 @@
 Version 0.9.8.16:
-(in-progress)
+(2019-04-02)
 
    updated for Thrift 0.12.0, gcc 8.3
    changed cmake build instructions, now builds with cmake/utils.cmake
@@ -34,9 +34,7 @@ Version 0.9.8.16:
    added integration test fsbroker-failure
    changed RangeServerConnectionManager on Master maps RS public_addr non_unique
    changed repr of fd/filename in logging of FsBroker::Lib::Client to a SmartFd 
-   changed Hyperspace.Session.Reconnect config default value set to True
-   TODO: 
-   
+   changed Hyperspace.Session.Reconnect config default value set to True   
 
 Version 0.9.8.15:
 (2018-12-19)
