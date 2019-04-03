@@ -92,3 +92,7 @@ if (SSL_FOUND)
   endif ()
 endif ()
 
+
+if(SSL_LIBRARIES_SHARED)
+  HT_INSTALL_LIBS(lib ${SSL_LIBRARIES_SHARED})
+endif()

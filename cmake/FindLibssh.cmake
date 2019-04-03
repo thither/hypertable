@@ -97,3 +97,7 @@ if (SSH_FOUND)
   endif ()
 endif ()
 
+
+if(SSH_LIBRARIES_SHARED)
+  HT_INSTALL_LIBS(lib ${SSH_LIBRARIES_SHARED})
+endif()
