@@ -164,13 +164,12 @@ int sigar_proc_list_procfs_get(sigar_t *sigar,
     }
 
 #if defined(HAVE_READDIR_R) && USE_READDIR_R
-    while (readdir_r(dirp, &dbuf, &ent) == 0) {
-        if (ent == NULL) {
-            break;
-        }
+    while (readdir_r(dirp, &dbuf, &ent) == 0) {       
 #else
     while ((ent = readdir(dirp))) {
 #endif
+        if (ent == NULL) 
+            break;
         if (!sigar_isdigit(*ent->d_name)) {
             continue;
         }
@@ -208,12 +207,11 @@ int sigar_proc_fd_count(sigar_t *sigar, sigar_pid_t pid,
 
 #if defined(HAVE_READDIR_R) && USE_READDIR_R
     while (readdir_r(dirp, &dbuf, &ent) == 0) {
-        if (ent == NULL) {
-            break;
-        }
 #else
     while ((ent = readdir(dirp))) {
 #endif
+        if (ent == NULL) 
+            break;
         if (!sigar_isdigit(*ent->d_name)) {
             continue;
         }
