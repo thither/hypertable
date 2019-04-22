@@ -64,9 +64,9 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
     DispatchHandler(Hypertable::Thrift::Transport ttp, 
                     Hypertable::String host, uint16_t port, Hypertable::String ns,
                     int32_t interval, int32_t size, uint32_t count,
-                    bool debug, bool use_mutator) :
+                    bool debug, bool use_mutator, bool do_log) :
                     m_interval(interval), m_size(size), m_count(count), m_debug(debug),
-                    m_use_mutator(use_mutator) {
+                    m_use_mutator(use_mutator), m_do_log(do_log) {
       m_ttp = ttp;
       m_host = host;
       m_port = port;
@@ -97,7 +97,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
         
       close_connection();  
       if(m_debug)
-        std::cout <<  "WriteDispatcher stopped" << std::endl;
+        log_error("WriteDispatcher stopped");
         
       m_stopped.store(true);
     }
@@ -123,8 +123,23 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
       table->cells->push_back(cell);
       table->ts = ts_ms_now();
        
-      if(m_debug)
-        std::cout <<  t_name << ": " << (table->cells->back())  << std::endl;
+      if(m_debug){
+        std::stringstream ss;
+        ss <<  "table_add_cell: " << t_name << ":" << (table->cells->back());
+        log_error(ss.str());
+      }
+    }
+
+    std::string get_log_msg() {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      
+      std::string msg;
+      if(m_errors_log.size() == 0)
+        return msg;
+      
+      msg = *(m_errors_log.front().get());
+      m_errors_log.pop();
+      return msg;
     }
 
     void shutdown(){
@@ -171,13 +186,14 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
                 || chk->cells->size()  >= m_count
                 || (int32_t)(ts-chk->ts) >= m_interval)
           {
-            if(m_debug)
-              std::cout <<  "WriteDispatcher get_next_table: " << m_table_it->first 
-                              << " buf_sz:"   << chk->buf_sz 
-                              << " cells:"    << chk->cells->size() 
-                              << " elapsed:"  << ts-chk->ts
-                              << std::endl;
-                              
+            if(m_debug){
+              std::stringstream ss;
+              ss <<  "get_next_table: " << m_table_it->first 
+                 << " buf_sz:"   << chk->buf_sz 
+                 << " cells:"    << chk->cells->size() 
+                 << " elapsed:"  << ts-chk->ts;              
+              log_error(ss.str());
+            }      
             cells.swap(chk->cells);
             chk->buf_sz = 0;
             chk->ts = ts;
@@ -204,13 +220,13 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
           return;
         
         } catch (Hypertable::ThriftGen::ClientException &e) {
-          std::cerr << e << std::endl;
+          log_error(e.what());
           if(e.code == Hypertable::Error::BAD_KEY || e.code == Hypertable::Error::BAD_VALUE)
             return;
           close_connection();  
 
         } catch(...){
-          std::cerr << "Unknown Error, commit table: " << table << std::endl;
+          log_error("Unknown Error, commit table: " + table);
           close_connection(); 
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(m_interval));
@@ -228,13 +244,13 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
           return;
         
         } catch (Hypertable::ThriftGen::ClientException &e) {
-          std::cerr << e << std::endl;
+          log_error(e.what());
           if(e.code == Hypertable::Error::BAD_KEY || e.code == Hypertable::Error::BAD_VALUE)
             return;
           close_connection();  
 
         } catch(...){
-          std::cerr << "Unknown Error, commit_mutator table: " << table << std::endl;
+          log_error("Unknown Error, commit_mutator table: " + table);
           close_connection(); 
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(m_interval));
@@ -245,18 +261,23 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
       if(m_mutators.count(t_name) > 0)
         return m_mutators.at(t_name);
 
-      if(m_debug)
-        std::cout << "Thrift::Client mutator_open " << m_host << ":" << m_port << " table: "
-                  << t_name << std::endl;
+      if(m_debug){
+        std::stringstream ss;
+        ss << "Thrift::Client mutator_open " << m_host << ":" << m_port << " table: " << t_name;
+        log_error(ss.str());
+      }
 
       return m_mutators.insert(
         MutatorPair(t_name, conn_client->mutator_open(conn_ns, t_name, 0, 0))).first->second;
     }
 
     void close_mutators(){
-      if(m_debug)
-        std::cout << "Thrift::Client close_mutators " << m_host << ":" << m_port << std::endl;
-      
+      if(m_debug){  
+        std::stringstream ss;
+        ss << "Thrift::Client close_mutators " << m_host << ":" << m_port;
+        log_error(ss.str());
+      }
+
       for (Mutators::const_iterator it = m_mutators.begin(); it != m_mutators.end(); it++){
         try {
           conn_client->mutator_close((*it).second);
@@ -267,17 +288,23 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
     }
   
     void set_ns_connection(){
-        if(m_debug)
-          std::cout <<  "Thrift::Client connecting " << m_host << ":" << m_port << std::endl;
+        if(m_debug){
+          std::stringstream ss;
+          ss << "Thrift::Client connecting " << m_host << ":" << m_port;
+          log_error(ss.str());
+        }
 
   	    conn_client = new Hypertable::Thrift::Client(m_ttp, m_host, m_port);
 		    conn_ns = conn_client->namespace_open(m_ns);
     }
 
    void close_connection(){
-        if(m_debug)
-          std::cout <<  "Thrift::Client disconnecting " << m_host << ":" << m_port << std::endl;
-
+        if(m_debug){
+          std::stringstream ss;
+          ss << "Thrift::Client disconnecting " << m_host << ":" << m_port;
+          log_error(ss.str());
+        }
+        
         if(conn_client == nullptr)return;
         
         if(m_use_mutator)
@@ -290,6 +317,27 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
         }
         conn_client = nullptr;
     }
+    
+
+    void log_error(std::string msg) {
+      
+      if(!m_do_log) {
+          std::cerr << msg << std::endl;
+          return;
+      }
+      if(msg.empty())
+        return;
+
+      {
+        std::lock_guard<std::mutex> lock(m_mutex);
+
+        while(m_errors_log.size()>1000) //keep up to N messages
+          m_errors_log.pop();
+
+        return m_errors_log.push(msg)
+      }
+    }
+
 
 
     std::atomic<bool> m_run=true;
@@ -306,6 +354,8 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
     typedef std::pair<Hypertable::String, Hypertable::ThriftGen::Mutator> MutatorPair;
     Mutators m_mutators;
 
+    std::queue<std::string> m_errors_log;
+
     Hypertable::String  m_ns;
     Hypertable::String  m_host;
     uint16_t            m_port;
@@ -316,7 +366,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
     uint32_t  m_count;
     bool      m_debug;
     bool      m_use_mutator;
-
+    bool      m_do_log;
     Hypertable::Thrift::Client      *conn_client = nullptr;
     Hypertable::ThriftGen::Namespace conn_ns;
 };
@@ -330,18 +380,23 @@ class WriteDispatcher {
     WriteDispatcher(Hypertable::String host, uint16_t port, Hypertable::String ns,
                     int32_t interval, int32_t size, uint32_t count, 
                     Hypertable::String ttp_n, 
-                    bool debug, bool use_mutator) {
+                    bool debug, bool use_mutator, bool do_log) {
 
       m_handler = std::make_shared<DispatchHandler>(
         ttp_n.compare("zlib")==0 ? Hypertable::Thrift::Transport::ZLIB : Hypertable::Thrift::Transport::FRAMED, 
         host, port, ns, 
         interval, size, count, debug, 
-        use_mutator
+        use_mutator,
+        do_log
       );
 
       run();
     }
   
+    std::string get_log_msg(){
+      return m_handler->get_log_msg();
+    }
+
     bool verify_runs(){
       if(m_handler->verify_runs())
         return true;
@@ -415,7 +470,7 @@ PYBIND11_MODULE(write_dispatcher, m) {
   m.doc() = "Python Write Dipatcher Module for Hypertable ThriftClient";
 
   py::class_<PyHelpers::WriteDispatcher, std::shared_ptr<PyHelpers::WriteDispatcher>>(m, "WriteDispatcher")
-    .def(py::init<char *, uint16_t, char *, int32_t, int32_t, uint32_t, char *, bool, bool>(), 
+    .def(py::init<char *, uint16_t, char *, int32_t, int32_t, uint32_t, char *, bool, bool, bool>(), 
           py::arg("host"),
           py::arg("port"),
           py::arg("namespace"),
@@ -426,7 +481,8 @@ PYBIND11_MODULE(write_dispatcher, m) {
           py::arg("trasport") = "framed",
           
           py::arg("debug") = false,
-          py::arg("use_mutator") = false
+          py::arg("use_mutator") = false,
+          py::arg("do_log") = false
         )
     .def("push", &PyHelpers::WriteDispatcher::push, 
            py::arg("table"), 
@@ -446,6 +502,10 @@ PYBIND11_MODULE(write_dispatcher, m) {
            py::arg("flag")=255
         )
 	  .def("verify_runs",  &PyHelpers::WriteDispatcher::verify_runs)
+       
+    .def("get_log_msg", [](PyHelpers::WriteDispatcher* hdlr) {
+      return py::bytes(hdlr->get_log_msg());
+      })
 	  .def("shutdown",  &PyHelpers::WriteDispatcher::shutdown)
   ;
 }
