@@ -100,14 +100,20 @@ namespace Hypertable {
 				}
 			}
 
-			virtual ~Client() {
+			void close() {
 				if (m_do_close) {
 					m_transport->close();
 					m_do_close = false;
 				}
 			}
+
+			virtual ~Client() {
+				close();
+			}
+
 		private:
 			bool m_do_close;
+			
 		};
 
 		/// Smart pointer to client
