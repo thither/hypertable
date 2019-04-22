@@ -131,7 +131,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
     }
 
     std::string get_log_msg() {
-      std::lock_guard<std::mutex> lock(m_mutex);
+      std::lock_guard<std::mutex> lock(m_mutex_log);
       
       std::string msg;
       if(m_errors_log.size() == 0)
@@ -329,7 +329,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
         return;
 
       {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex_log);
 
         while(m_errors_log.size()>1000) //keep up to N messages
           m_errors_log.pop();
@@ -343,6 +343,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
     std::atomic<bool> m_run=true;
     std::atomic<bool> m_stopped=false;
     std::mutex        m_mutex;
+    std::mutex        m_mutex_log;
 
     typedef std::map<Hypertable::String,  TableDataPtr> Tables;
     typedef std::pair<Hypertable::String, TableDataPtr> TablePair;
