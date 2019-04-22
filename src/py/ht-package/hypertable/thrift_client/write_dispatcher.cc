@@ -211,6 +211,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
 
         } catch(...){
           std::cerr << "Unknown Error, commit table: " << table << std::endl;
+          close_connection(); 
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(m_interval));
       }
@@ -234,6 +235,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
 
         } catch(...){
           std::cerr << "Unknown Error, commit_mutator table: " << table << std::endl;
+          close_connection(); 
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(m_interval));
       }
@@ -282,6 +284,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
           close_mutators();
         try {
           conn_client->namespace_close(conn_ns);
+          conn_client->close();
         } catch(...){
 
         }
