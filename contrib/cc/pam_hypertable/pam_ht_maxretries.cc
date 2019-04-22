@@ -258,6 +258,7 @@ bool ht_confirm_state(std::string ttp_n, std::string ns_str,
 		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", hql.c_str());
   	
 		client->namespace_close(ns);
+		client->close();
 
 	}
  	catch (ThriftGen::ClientException &e) {
@@ -295,6 +296,7 @@ void ht_reduce_attempt(std::string ttp_n, std::string ns_str,
 		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", hql.c_str());
 
 		client->namespace_close(ns);
+		client->close();
 
 	}
  	catch (ThriftGen::ClientException &e) {
