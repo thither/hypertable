@@ -83,7 +83,6 @@ else()
     
     if(HT_O_LEVEL MATCHES "[4-7]")
   	  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fuse-linker-plugin -ffat-lto-objects")
-	    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -floop-interchange")
       # SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsection-anchors")
     
       if(HT_O_LEVEL MATCHES "[5-7]")
