@@ -219,14 +219,18 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
           conn_client->set_cells(conn_ns, table, cells);
           table.clear();
           return;
-        
-        } catch (Hypertable::ThriftGen::ClientException &e) {
+        }
+        catch (Hypertable::ThriftGen::ClientException &e) {
           log_error(e.what());
           if(e.code == Hypertable::Error::BAD_KEY || e.code == Hypertable::Error::BAD_VALUE)
             return;
-          close_connection();  
-
-        } catch(...){
+          close_connection(); 
+        }
+        catch (const std::exception& e)  {
+          log_error(e.what());
+          close_connection(); 
+        }
+        catch(...){
           log_error("Unknown Error, commit table: " + table);
           close_connection(); 
         }
@@ -239,18 +243,21 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
         try {
           if(conn_client == nullptr) 
             set_ns_connection();
-          
           conn_client->mutator_set_cells(get_mutator(table), cells);
           table.clear();
           return;
-        
-        } catch (Hypertable::ThriftGen::ClientException &e) {
+        }
+        catch (Hypertable::ThriftGen::ClientException &e) {
           log_error(e.what());
           if(e.code == Hypertable::Error::BAD_KEY || e.code == Hypertable::Error::BAD_VALUE)
             return;
           close_connection();  
-
-        } catch(...){
+        }
+        catch (const std::exception& e)  {
+          log_error(e.what());
+          close_connection(); 
+        }
+        catch(...){
           log_error("Unknown Error, commit_mutator table: " + table);
           close_connection(); 
         }
