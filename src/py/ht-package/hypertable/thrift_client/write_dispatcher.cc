@@ -335,7 +335,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
         while(m_errors_log.size()>1000) //keep up to N messages
           m_errors_log.pop();
 
-        return m_errors_log.push(msg);
+        return m_errors_log.push(std::to_string(ts_ms_now())+": "+msg);
       }
     }
 
