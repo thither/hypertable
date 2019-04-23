@@ -138,7 +138,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
       if(m_errors_log.size() == 0)
         return msg;
       
-      msg = *(m_errors_log.front().get());
+      msg = *(m_errors_log.front());
       m_errors_log.pop();
       return msg;
     }
