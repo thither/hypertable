@@ -262,11 +262,14 @@ bool ht_confirm_state(std::string ttp_n, std::string ns_str,
 
 	}
  	catch (ThriftGen::ClientException &e) {
-    std::ostringstream out;
-    out << e;
-		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", out.str().c_str());
+		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", e.what());
 		allowed = true;
-	} catch (...) {
+	 }	
+ 	catch (const std::exception& e)  {
+		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", e.what());
+		allowed = true;
+	} 
+	catch (...) {
 		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", "Connection Error");
 		allowed = true;
 	}
@@ -300,10 +303,12 @@ void ht_reduce_attempt(std::string ttp_n, std::string ns_str,
 
 	}
  	catch (ThriftGen::ClientException &e) {
-    std::ostringstream out;
-    out << e;
-		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", out.str().c_str());
-	} catch (...) {
+		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", e.what());
+	 }	
+ 	catch (const std::exception& e)  {
+		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", e.what());
+	} 
+	catch (...) {
 		syslog(LOG_NOTICE|LOG_AUTH, "Hypertable: %s", "Connection Error");
 	}
 }
