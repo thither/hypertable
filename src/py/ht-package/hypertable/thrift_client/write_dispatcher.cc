@@ -126,7 +126,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
        
       if(m_debug){
         std::stringstream ss;
-        ss <<  "table_add_cell: " << t_name << ":" << (table->cells->back());
+        ss <<  "table_add_cell, " << t_name << ": " << (table->cells->back());
         log_error(ss.str());
       }
     }
