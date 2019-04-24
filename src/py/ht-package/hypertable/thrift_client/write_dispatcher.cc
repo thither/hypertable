@@ -98,7 +98,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
         
       close_connection();  
       if(m_debug)
-        log_error("WriteDispatcher stopped");
+        log_error("Info: WriteDispatcher stopped");
         
       m_stopped.store(true);
     }
@@ -127,7 +127,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
       if(m_debug){
         std::stringstream ss;
         ss <<  "table_add_cell, " << t_name << ": " << (table->cells->back());
-        log_error(ss.str());
+        log_error("Info: "+ss.str());
       }
     }
 
@@ -193,7 +193,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
                  << " buf_sz:"   << chk->buf_sz 
                  << " cells:"    << chk->cells->size() 
                  << " elapsed:"  << ts-chk->ts;              
-              log_error(ss.str());
+              log_error("Info: "+ss.str());
             }      
             cells.swap(chk->cells);
             chk->buf_sz = 0;
@@ -221,17 +221,17 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
           return;
         }
         catch (Hypertable::ThriftGen::ClientException &e) {
-          log_error(e.what());
+          log_error("Error: commit, " + std::string(e.what()));
           if(e.code == Hypertable::Error::BAD_KEY || e.code == Hypertable::Error::BAD_VALUE)
             return;
           close_connection(); 
         }
         catch (const std::exception& e)  {
-          log_error(e.what());
+          log_error("Error: commit, " + std::string(e.what()));
           close_connection(); 
         }
         catch(...){
-          log_error("Unknown Error, commit table: " + table);
+          log_error("Error: commit, Unknown Error " + table);
           close_connection(); 
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(m_interval));
@@ -248,17 +248,17 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
           return;
         }
         catch (Hypertable::ThriftGen::ClientException &e) {
-          log_error(e.what());
+          log_error("Error: commit_mutator, " + std::string(e.what()));
           if(e.code == Hypertable::Error::BAD_KEY || e.code == Hypertable::Error::BAD_VALUE)
             return;
           close_connection();  
         }
         catch (const std::exception& e)  {
-          log_error(e.what());
+          log_error("Error: commit_mutator, " + std::string(e.what()));
           close_connection(); 
         }
         catch(...){
-          log_error("Unknown Error, commit_mutator table: " + table);
+          log_error("Error: commit_mutator, Unknown Error " + table);
           close_connection(); 
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(m_interval));
@@ -272,7 +272,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
       if(m_debug){
         std::stringstream ss;
         ss << "Thrift::Client mutator_open " << m_host << ":" << m_port << " table: " << t_name;
-        log_error(ss.str());
+        log_error("Info: "+ss.str());
       }
 
       return m_mutators.insert(
@@ -283,7 +283,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
       if(m_debug){  
         std::stringstream ss;
         ss << "Thrift::Client close_mutators " << m_host << ":" << m_port;
-        log_error(ss.str());
+        log_error("Info: "+ss.str());
       }
 
       for (Mutators::const_iterator it = m_mutators.begin(); it != m_mutators.end(); it++){
@@ -296,22 +296,32 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
     }
   
     void set_ns_connection(){
-        if(m_debug){
-          std::stringstream ss;
-          ss << "Thrift::Client connecting " << m_host << ":" << m_port;
-          log_error(ss.str());
-        }
-
-  	    conn_client = new Hypertable::Thrift::Client(m_ttp, m_host, m_port);
-		    conn_ns = conn_client->namespace_open(m_ns);
+        std::stringstream ss;
+        ss << "Thrift::Client connecting " << m_host << ":" << m_port;
+        log_error("Info: "+ss.str());
+        do {
+          try {
+  	        conn_client = new Hypertable::Thrift::Client(m_ttp, m_host, m_port);
+		        conn_ns = conn_client->namespace_open(m_ns);
+            return;
+          }
+          catch (Hypertable::ThriftGen::ClientException &e) {
+            log_error("Error: set_ns_connection, " + std::string(e.what()));
+          }
+          catch (const std::exception& e)  {
+            log_error("Error: set_ns_connection, " + std::string(e.what()));
+          }
+          catch(...){
+            log_error("Error: set_ns_connection, " + m_host);
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        } while (true);
     }
 
    void close_connection(){
-        if(m_debug){
-          std::stringstream ss;
-          ss << "Thrift::Client disconnecting " << m_host << ":" << m_port;
-          log_error(ss.str());
-        }
+        std::stringstream ss;
+        ss << "Thrift::Client disconnecting " << m_host << ":" << m_port;
+        log_error("Info: " + ss.str());
         
         if(conn_client == nullptr)return;
         
