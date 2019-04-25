@@ -212,11 +212,34 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
     }
 
     void commit(Hypertable::String table, std::vector<Hypertable::ThriftGen::Cell> cells){
+      std::vector<Hypertable::ThriftGen::Cell>::iterator current = cells.begin();
+      std::vector<Hypertable::ThriftGen::Cell>::iterator latest = current;
+      uint32_t count;
+
       while (true){
         try {
           if(conn_client == nullptr) 
             set_ns_connection();
-          conn_client->set_cells(conn_ns, table, cells);
+          
+          // insure no oversized frame with mini_cells_batch
+          do{
+            count = 0;
+            std::vector<Hypertable::ThriftGen::Cell> mini_cells_batch; 
+            for(;current!=cells.end();current++){ 
+              count++;
+              if (count == m_count)
+                break;
+              mini_cells_batch.push_back(*current);
+            }
+            conn_client->set_cells(conn_ns, table, mini_cells_batch);
+            /*
+            for(auto it=cells.begin(); it!=current; it++)
+              cells.erase(it);
+            current = cells.begin();
+            */
+            latest = current;
+          } while(latest!=cells.end());
+
           table.clear();
           return;
         }
@@ -235,15 +258,39 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
           close_connection(); 
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(m_interval));
+        current = latest;
       }
     }
 
     void commit_mutator(Hypertable::String table, std::vector<Hypertable::ThriftGen::Cell> cells){
+      std::vector<Hypertable::ThriftGen::Cell>::iterator current = cells.begin();
+      std::vector<Hypertable::ThriftGen::Cell>::iterator latest = current;
+      uint32_t count;
+
       while (true){
         try {
           if(conn_client == nullptr) 
             set_ns_connection();
-          conn_client->mutator_set_cells(get_mutator(table), cells);
+          
+          // insure no oversized frame with mini_cells_batch
+          do{
+            count = 0;
+            std::vector<Hypertable::ThriftGen::Cell> mini_cells_batch; 
+            for(;current!=cells.end();current++){ 
+              count++;
+              if (count == m_count)
+                break;
+              mini_cells_batch.push_back(*current);
+            }
+            conn_client->mutator_set_cells(get_mutator(table), mini_cells_batch);
+            /*
+            for(auto it=cells.begin(); it!=current; it++)
+              cells.erase(it);
+            current = cells.begin();
+            */
+            latest = current;
+          } while(latest!=cells.end());
+
           table.clear();
           return;
         }
@@ -262,6 +309,7 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
           close_connection(); 
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(m_interval));
+        current = latest;
       }
     }
 
