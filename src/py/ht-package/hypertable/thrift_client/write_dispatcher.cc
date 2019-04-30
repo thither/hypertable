@@ -355,32 +355,34 @@ class DispatchHandler: std::enable_shared_from_this<DispatchHandler>{
           }
           catch (Hypertable::ThriftGen::ClientException &e) {
             log_error("Error: set_ns_connection, " + std::string(e.what()));
+            close_connection(); 
           }
           catch (const std::exception& e)  {
             log_error("Error: set_ns_connection, " + std::string(e.what()));
+            close_connection(); 
           }
           catch(...){
             log_error("Error: set_ns_connection, " + m_host);
+            close_connection(); 
           }
           std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         } while (true);
     }
 
    void close_connection(){
+        if(conn_client == nullptr)
+          return;
+          
         std::stringstream ss;
         ss << "Thrift::Client disconnecting " << m_host << ":" << m_port;
         log_error("Info: " + ss.str());
         
-        if(conn_client == nullptr)return;
-        
         if(m_use_mutator)
           close_mutators();
-        try {
-          conn_client->namespace_close(conn_ns);
-          conn_client->close();
-        } catch(...){
 
-        }
+        try { conn_client->namespace_close(conn_ns); } catch(...){}
+        try { conn_client->close(); } catch(...){}
+
         conn_client = nullptr;
     }
     
