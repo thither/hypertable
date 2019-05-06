@@ -64,18 +64,21 @@ namespace {
     client->mkdirs("/ldi_test");
 
     std::filebuf src_file;
+     
     if(!src_file.open(src, std::ios_base::in))
       return false;
     
-    int fd = client->create(dst, Filesystem::OPEN_FLAG_OVERWRITE, -1, -1, -1);
-    if(fd<0)
+    Filesystem::SmartFdPtr smartfd_ptr = 
+      Filesystem::SmartFd::make_ptr(dst, Filesystem::OPEN_FLAG_OVERWRITE);
+    client->create(smartfd_ptr, -1, -1, -1);
+    if(!smartfd_ptr->valid())
       return false;
 
     StaticBuffer buf(amount, HT_DIRECT_IO_ALIGNMENT);
     while((buf.size = src_file.sgetn(reinterpret_cast<char*>(buf.base), amount))) {
-      client->append(fd, buf);
+      client->append(smartfd_ptr, buf);
     }
-    client->close(fd);
+    client->close(smartfd_ptr);
 
     return true;
   }
@@ -83,8 +86,9 @@ namespace {
   bool copyFromDfs(FsBroker::Lib::Client *client, const char *src, const char *dst) {
     client->mkdirs("/ldi_test");
 
-    int fd=client->open(src,0);
-    if(fd<0)
+    Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(src, 0);
+    client->open(smartfd_ptr);
+    if(!smartfd_ptr->valid())
       return false;
 
     std::ofstream dst_file(dst);
@@ -93,10 +97,10 @@ namespace {
 
     int nread;
     StaticBuffer buf(amount, HT_DIRECT_IO_ALIGNMENT);
-    while((nread = client->read(fd, buf.base, amount)) > 0) {
+    while((nread = client->read(smartfd_ptr, buf.base, amount)) > 0) {
       dst_file << std::string(reinterpret_cast<const char*>(buf.base), nread);
     }
-    client->close(fd);
+    client->close(smartfd_ptr);
 
     return true;
   }

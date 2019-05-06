@@ -24,12 +24,16 @@
 #include <AsyncComm/DispatchHandler.h>
 
 #include <Common/String.h>
+#include <Common/Filesystem.h>
 
 #include <condition_variable>
 #include <mutex>
 #include <queue>
 
+
 namespace Hypertable {
+  
+
 namespace FsBroker {
 namespace Lib {
 
@@ -41,7 +45,8 @@ namespace Lib {
   class ClientBufferedReaderHandler : public DispatchHandler {
 
   public:
-    ClientBufferedReaderHandler(Client *client, uint32_t fd,
+    ClientBufferedReaderHandler(Client *client, 
+        Filesystem::SmartFdPtr smartfd_ptr,
         uint32_t buf_size, uint32_t outstanding, uint64_t start_offset,
         uint64_t end_offset);
 
@@ -54,25 +59,28 @@ namespace Lib {
   private:
 
     void read_ahead();
+    uint32_t read_response();
 
-    std::mutex m_mutex;
+    std::mutex              m_mutex;
     std::condition_variable m_cond;
-    std::queue<EventPtr> m_queue;
-    Client *m_client;
-    uint32_t             m_fd;
-    uint32_t             m_max_outstanding;
-    uint32_t             m_read_size;
-    uint32_t             m_outstanding;
-    bool                 m_eof;
-    int                  m_error;
-    std::string          m_error_msg;
-    const uint8_t             *m_ptr;
-    const uint8_t             *m_end_ptr;
-    uint64_t             m_end_offset;
-    uint64_t             m_outstanding_offset;
-    uint64_t             m_actual_offset;
+    std::queue<EventPtr>    m_queue;
+
+    Client                  *m_client;
+    Filesystem::SmartFdPtr  m_smartfd_ptr;
+
+    uint32_t   m_read_size;
+    uint32_t   m_max_outstanding;
+    uint64_t   m_actual_offset;
+    uint64_t   m_end_offset;
+    uint64_t   m_outstanding_offset;
+    uint32_t   m_outstanding;
+    bool       m_eof;
+    
+    const uint8_t       *m_ptr;
+    const uint8_t       *m_end_ptr;
   };
 
+  typedef std::shared_ptr<ClientBufferedReaderHandler> ClientBufferedReaderHandlerPtr;
   /// @}
 
 }}}

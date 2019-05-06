@@ -3,6 +3,10 @@
 HT_HOME=${INSTALL_DIR:-"$HOME/hypertable/current"}
 SCRIPT_DIR=`dirname $0`
 
+cp ${SCRIPT_DIR}/Test1-data.txt.gz $DST_DIR;gunzip -f $DST_DIR/Test1-data.txt.gz;
+cp ${SCRIPT_DIR}/Test2-data.txt.gz $DST_DIR;gunzip -f $DST_DIR/Test2-data.txt.gz;
+cp ${SCRIPT_DIR}/Test4-data.txt.gz $DST_DIR;gunzip -f $DST_DIR/Test4-data.txt.gz;
+
 $HT_HOME/bin/ht-start-test-servers.sh --clear
 
 echo "CREATE NAMESPACE test;" | $HT_HOME/bin/ht shell --test-mode

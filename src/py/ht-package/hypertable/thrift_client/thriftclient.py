@@ -8,13 +8,15 @@ from hypertable.thrift_client.hyperthrift.gen2 import HqlService
 
 class ThriftClient(HqlService.Client):
 
-    def __init__(self, host, port, timeout_ms=300000, do_open=1):
-        socket = TSocket.TSocket(host, port)
-        socket.setTimeout(timeout_ms)
-        self.transport = TTransport.TFramedTransport(socket)
-        protocol = TBinaryProtocol.TBinaryProtocol(self.transport)  # TBinaryProtocolAccelerated
-        HqlService.Client.__init__(self, protocol)
-        if do_open:
+    def __init__(self, host, port, timeout_ms=300000, do_open=1, socket=None):
+        s = TSocket.TSocket(host, port)
+        if socket:
+            s.setHandle(socket)
+        s.setTimeout(timeout_ms)
+        self.transport = TTransport.TFramedTransport(s)
+        HqlService.Client.__init__(self, TBinaryProtocol.TBinaryProtocol(self.transport)) # TBinaryProtocolAccelerated
+
+        if not socket and do_open:
             self.open(timeout_ms)
         #
 

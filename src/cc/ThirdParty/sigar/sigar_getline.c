@@ -1419,12 +1419,11 @@ sigar_getline_histadd(char *buf)
                /* if more than HIST_SIZE lines, safe last 60 command and delete rest */
                if (gl_savehist > HIST_SIZE) {
                   FILE *ftmp;
-                  char tname[L_tmpnam];
+                  char tname[6] = {"X"};
                   char line[BUFSIZ];
 
                   fp = fopen(gl_histfile, "r");
-                  tmpnam(tname);
-                  ftmp = fopen(tname, "w");
+                  ftmp = fdopen(mkstemp(tname), "w");
                   if (fp && ftmp) {
                      int nline = 0;
                      while (fgets(line, BUFSIZ, fp)) {
@@ -1499,17 +1498,11 @@ hist_save(char *p)
     int   len = strlen(p);
     char *nl = strchr(p, '\n');
 
-    if (nl) {
-        if ((s = (char *)malloc(len)) != 0) {
-            strncpy(s, p, len-1);
+    if ((s = (char *)malloc(len)) != 0) {
+        strcpy(s, p);
+        if (nl) 
             s[len-1] = 0;
-        }
-    } else {
-        if ((s = (char *)malloc(len+1)) != 0) {
-            strcpy(s, p);
-        }
-    }
-    if (s == 0)
+    } else
         gl_error("\n*** Error: hist_save() failed on malloc\n");
     return s;
 }

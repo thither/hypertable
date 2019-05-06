@@ -77,6 +77,21 @@ namespace Hypertable { namespace Config {
     return properties->get<T>(name);
   }
 
+  /** Retrieves a guarded value ptr
+   *
+   * This is a template function and usually not used directly. The file
+   * Properties.h provides global functions like get_bool(), get_string()
+   * that are usually used.
+   *
+   * @param name The name of the option
+   * @return The option's value
+   */
+  template <typename T>
+  T* get_ptr(const String &name) {
+    HT_ASSERT(properties);
+    return properties->get_ptr<T>(name);
+  }
+
   /** Retrieves a configuration value (or a default value, if the value
    * was not set)
    *

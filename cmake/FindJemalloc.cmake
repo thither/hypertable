@@ -19,27 +19,30 @@
 # - Find Jemalloc
 # Find the native Jemalloc includes and library
 #
-#  Jemalloc_INCLUDE_DIR - where to find Jemalloc.h, etc.
-#  Jemalloc_LIBRARIES   - List of libraries when using Jemalloc.
-#  Jemalloc_FOUND       - True if Jemalloc found.
+#  JEMALLOC_INCLUDE_PATHS - where to find Jemalloc.h, etc.
+#  JEMALLOC_LIBRARIES_SHARED     - List of libraries when using Jemalloc.
+#  JEMALLOC_LIBRARIES_STATIC     - List of libraries when using Jemalloc.
+#  JEMALLOC_FOUND         - True if Jemalloc found.
 
-HT_FASTLIB_SET(
+SET_DEPS(
 	NAME "JEMALLOC" 
 	REQUIRED FALSE 
 	LIB_PATHS 
 	INC_PATHS 
-	STATIC 
+	STATIC libjemalloc.a
 	SHARED jemalloc
 	INCLUDE jemalloc/jemalloc.h
 )
+
 if (JEMALLOC_FOUND)
   try_run(TC_CHECK TC_CHECK_BUILD
           ${HYPERTABLE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp
           ${HYPERTABLE_SOURCE_DIR}/cmake/CheckJemalloc.cc
           CMAKE_FLAGS 
-		  INCLUDE_DIRECTORIES ${JEMALLOC_INCLUDE_DIRS}
-          LINK_LIBRARIES ${JEMALLOC_LIBRARIES}
+		      INCLUDE_DIRECTORIES ${JEMALLOC_INCLUDE_PATHS}
+          LINK_LIBRARIES ${JEMALLOC_LIBRARIES_SHARED}
           OUTPUT_VARIABLE TC_TRY_OUT)
+
   #message("tc_check build: ${TC_CHECK_BUILD}")
   #message("tc_check: ${TC_CHECK}")
   #message("tc_version: ${TC_TRY_OUT}")
@@ -55,3 +58,8 @@ if (JEMALLOC_FOUND)
   endif ()
   message("       version: ${TC_VERSION}")
 endif ()
+
+
+if(JEMALLOC_LIBRARIES_SHARED)
+  HT_INSTALL_LIBS(lib ${JEMALLOC_LIBRARIES_SHARED})
+endif()

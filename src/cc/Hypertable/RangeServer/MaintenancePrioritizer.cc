@@ -229,12 +229,16 @@ MaintenancePrioritizer::schedule_necessary_compactions(std::vector<RangeData> &r
                  CommitLogPtr &log, int64_t prune_threshold, MemoryState &memory_state,
                  int32_t &priority, String *trace) {
   CommitLog::CumulativeSizeMap cumulative_size_map;
+
+  // First do log cleanup compactions,
+  // return if there is no active fragment of commitlog
+  if(!log->load_cumulative_size_map(cumulative_size_map)){
+    HT_WARN("MaintenancePrioritizer, skipping schedule, no active commitlog fragment");
+    return memory_state.need_more();
+  }
+
   CommitLog::CumulativeSizeMap::iterator iter;
   AccessGroup::MaintenanceData *ag_data;
-
-  // First do log cleanup compactions
-
-  log->load_cumulative_size_map(cumulative_size_map);
 
   for (size_t i=0; i<range_data.size(); i++) {
 

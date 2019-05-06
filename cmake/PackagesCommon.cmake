@@ -1,0 +1,56 @@
+
+
+
+
+
+SET_DEPS(NAME "EXPAT" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libexpat.a SHARED expat INCLUDE expat.h)
+HT_INSTALL_LIBS(lib ${EXPAT_LIBRARIES_SHARED})
+
+SET_DEPS(NAME "ZLIB"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libz.a SHARED z INCLUDE zlib.h)
+HT_INSTALL_LIBS(lib ${ZLIB_LIBRARIES_SHARED})
+
+SET_DEPS(NAME "BZIP2" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libbz2.a SHARED bz2 INCLUDE bzlib.h)
+HT_INSTALL_LIBS(lib ${BZIP2_LIBRARIES_SHARED})
+
+SET_DEPS(NAME "LZMA"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC liblzma.a SHARED lzma INCLUDE lzma.h)
+HT_INSTALL_LIBS(lib ${LZMA_LIBRARIES_SHARED})
+
+SET_DEPS(NAME "ZSTD"  REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libzstd.a SHARED zstd INCLUDE zstd.h)
+HT_INSTALL_LIBS(lib ${ZSTD_LIBRARIES_SHARED})
+
+SET_DEPS(NAME "EVENT" REQUIRED TRUE LIB_PATHS "" INC_PATHS "" STATIC libevent.a SHARED event INCLUDE event.h)
+HT_INSTALL_LIBS(lib  ${EVENT_LIBRARIES_SHARED})
+
+SET_DEPS(
+	NAME "SSP" 
+	REQUIRED FALSE 
+	LIB_PATHS /usr/local/lib/
+	INC_PATHS /usr/local/lib/gcc/x86_64-ubuntu-linux-gnu/8.3.0/include
+	STATIC libssp.a
+	SHARED ssp
+	INCLUDE ssp/ssp.h
+)
+HT_INSTALL_LIBS(lib ${SSP_LIBRARIES_SHARED})
+
+
+find_package(Snappy REQUIRED)
+
+find_package(RE2 REQUIRED)
+
+find_package(BerkeleyDB REQUIRED)
+
+find_package(Editline REQUIRED)
+
+find_package(Libssl REQUIRED)
+
+find_package(Libssh REQUIRED)
+
+find_package(Thrift REQUIRED)
+
+find_package(Pam)
+
+find_package(Cronolog REQUIRED)
+
+find_package(RRDtool REQUIRED)
+
+find_package(Doxygen)

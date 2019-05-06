@@ -236,8 +236,8 @@ Apps::RangeServer::RangeServer(PropertiesPtr &props, ConnectionManagerPtr &conn_
   int64_t block_cache_min = cfg.get_i64("BlockCache.MinMemory");
   int64_t block_cache_max = cfg.get_i64("BlockCache.MaxMemory");
   if (block_cache_max == -1) {
-    double physical_ram = mem_stat.ram * MiB;
-    block_cache_max = (int64_t)physical_ram;
+    //double physical_ram = mem_stat.ram * MiB;
+    block_cache_max = (int64_t)((double)Global::memory_limit * 0.9);
   }
   if (block_cache_min > block_cache_max)
     block_cache_min = block_cache_max;
@@ -586,14 +586,20 @@ namespace {
     long num = strtol(listing2.back().name.c_str(), &endptr, 10);
     String mark_filename = logdir + "/" + (int64_t)num + ".mark";
 
+    Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(
+      mark_filename, 0);
+    int32_t write_tries = 0;
+    try_create_mark_again:
     try {
-      int fd = Global::log_dfs->create(mark_filename, 0, -1, -1, -1);
+      Global::log_dfs->create(smartfd_ptr, -1, -1, -1);
       StaticBuffer buf(1);
       *buf.base = '0';
-      Global::log_dfs->append(fd, buf);
-      Global::log_dfs->close(fd);
+      Global::log_dfs->append(smartfd_ptr, buf);
+      Global::log_dfs->close(smartfd_ptr);
     }
-    catch (Hypertable::Exception &) {
+    catch (Exception &e) {
+      if(Global::log_dfs->retry_write_ok(smartfd_ptr, e.code(), &write_tries))
+        goto try_create_mark_again;
       HT_FATALF("Unable to create file '%s'", mark_filename.c_str());
     }
   }
@@ -1516,6 +1522,13 @@ Apps::RangeServer::create_scanner(Response::Callback::CreateScanner *cb,
         if ((error = cb->response(id, 0, 0, false, profile_data, ext_buffer, ext_len))
                 != Error::OK)
           HT_ERRORF("Problem sending OK response - %s", Error::get_text(error));
+        /*
+         after rsp OK, 
+         * if scan_spec.select_once 
+           delete returned cells
+         * else if scan_spec.auto_inc && COUNTER
+           increment returned cells
+        */
         range->decrement_scan_counter();
         lock_guard<LoadStatistics> lock(*Global::load_statistics);
         Global::load_statistics->add_cached_scan_data(1, cell_count, ext_len);
@@ -1604,6 +1617,14 @@ Apps::RangeServer::create_scanner(Response::Callback::CreateScanner *cb,
         HT_ERRORF("Problem sending OK response - %s", Error::get_text(error));
       }
     }
+    
+    /*
+     after rsp OK, 
+     * if scan_spec.select_once 
+       delete returned cells
+     * else if scan_spec.auto_inc && COUNTER
+       increment returned cells
+    */
 
   }
   catch (Hypertable::Exception &e) {

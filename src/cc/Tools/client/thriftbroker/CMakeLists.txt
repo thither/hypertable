@@ -18,17 +18,15 @@
 #
 
 set(thriftbroker_SRCS
-CommandInterpreter.cc
-thriftbroker.cc
+  CommandInterpreter.cc
+  thriftbroker.cc
 )
 
 # ht_thriftbroker - command interpreter
-add_executable(ht_thriftbroker ${thriftbroker_SRCS})
-target_link_libraries(ht_thriftbroker HyperCommon HyperThriftConfig HyperThrift ${EDITLINE_LIBRARIES})
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_thriftbroker
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_thriftbroker
+	SRCS ${thriftbroker_SRCS}
+  TARGETS HyperThriftConfig 
+  SHARED ${EDITLINE_LIBRARIES_SHARED}
+  STATIC ${EDITLINE_LIBRARIES_STATIC}
+)

@@ -54,13 +54,13 @@ bool CommitLogBlockStream::ms_assert_on_error = true;
 
 
 CommitLogBlockStream::CommitLogBlockStream(FilesystemPtr &fs)
-  : m_fs(fs), m_fd(-1), m_cur_offset(0), m_file_length(0) {
+  : m_fs(fs), m_cur_offset(0), m_file_length(0) {
 }
 
 
 CommitLogBlockStream::CommitLogBlockStream(FilesystemPtr &fs,
     const string &log_dir, const string &fragment)
-  : m_fs(fs), m_fd(-1), m_cur_offset(0), m_file_length(0) {
+  : m_fs(fs), m_cur_offset(0), m_file_length(0) {
   load(log_dir, fragment);
 }
 
@@ -71,20 +71,21 @@ CommitLogBlockStream::~CommitLogBlockStream() {
 
 
 void CommitLogBlockStream::load(const string &log_dir, const string &fragment) {
-  if (m_fd != -1)
-    close();
+  
+  close();
   m_fragment = fragment;
   m_fname = log_dir + "/" + fragment;
   m_log_dir = log_dir;
   m_file_length = m_fs->length(m_fname);
-  m_fd = m_fs->open_buffered(m_fname, Filesystem::OPEN_FLAG_DIRECTIO,
-          READAHEAD_BUFFER_SIZE, 2);
 
-  if (!read_header(m_fs, m_fd, &m_version, &m_cur_offset)) {
+  m_smartfd_ptr = 
+    Filesystem::SmartFd::make_ptr(m_fname, Filesystem::OPEN_FLAG_DIRECTIO);
+  m_fs->open_buffered(m_smartfd_ptr, READAHEAD_BUFFER_SIZE, 2);
+
+  if (!read_header(m_fs, m_smartfd_ptr, &m_version, &m_cur_offset)) {
     // If invalid header, assume file is in original format w/o header
-    m_fs->close(m_fd);
-    m_fd = m_fs->open_buffered(m_fname, Filesystem::OPEN_FLAG_DIRECTIO,
-                               READAHEAD_BUFFER_SIZE, 2);
+    m_fs->close(m_smartfd_ptr);
+    m_fs->open_buffered(m_smartfd_ptr, READAHEAD_BUFFER_SIZE, 2);
   }
 
   if (m_version > LatestVersion)
@@ -97,15 +98,16 @@ void CommitLogBlockStream::load(const string &log_dir, const string &fragment) {
 
 
 void CommitLogBlockStream::close() {
-  if (m_fd != -1) {
+  if (m_smartfd_ptr && m_smartfd_ptr->valid()) {
     try {
-      m_fs->close(m_fd);
+      m_fs->close(m_smartfd_ptr);
     }
     catch (Hypertable::Exception &e) {
       HT_ERRORF("Problem closing file %s - %s (%s)",
-                m_fname.c_str(), e.what(), Error::get_text(e.code()));
+                m_smartfd_ptr->to_str().c_str(), 
+                e.what(), Error::get_text(e.code()));
     }
-    m_fd = -1;
+    m_smartfd_ptr = nullptr;
   }
 }
 
@@ -115,7 +117,7 @@ CommitLogBlockStream::next(CommitLogBlockInfo *infop,
                            BlockHeaderCommitLog *header) {
   uint32_t nread;
 
-  assert(m_fd != -1);
+  assert(m_smartfd_ptr && m_smartfd_ptr->valid());
 
   if (m_cur_offset >= m_file_length)
     return false;
@@ -135,31 +137,35 @@ CommitLogBlockStream::next(CommitLogBlockInfo *infop,
   // check for truncation
   if ((m_file_length - m_cur_offset) < header->get_data_zlength()) {
     HT_WARNF("Commit log fragment '%s' truncated (block offset %llu)",
-             m_fname.c_str(), (Llu)(m_cur_offset-header->encoded_length()));
+             m_smartfd_ptr->to_str().c_str(), 
+             (Llu)(m_cur_offset-header->encoded_length()));
     infop->end_offset = m_file_length;
     infop->error = Error::RANGESERVER_TRUNCATED_COMMIT_LOG;
     string archive_fname;
     archive_bad_fragment(m_fname, archive_fname);
     Status status(Status::Code::WARNING,
-                  format("Truncated commit log file %s", m_fname.c_str()));
+                  format("Truncated commit log file %s", 
+                          m_smartfd_ptr->to_str().c_str()));
     StatusPersister::set(status,
-                         {format("File archived to %s",archive_fname.c_str())});
+                         {format("File archived to %s", archive_fname.c_str())});
     return false;
   }
 
   m_block_buffer.ensure(header->encoded_length() + header->get_data_zlength());
 
-  nread = m_fs->read(m_fd, m_block_buffer.ptr, header->get_data_zlength());
+  nread = m_fs->read(m_smartfd_ptr, m_block_buffer.ptr, header->get_data_zlength());
 
   if (nread != header->get_data_zlength()) {
     HT_WARNF("Commit log fragment '%s' truncated (entry start position %llu)",
-             m_fname.c_str(), (Llu)(m_cur_offset-header->encoded_length()));
+             m_smartfd_ptr->to_str().c_str(), 
+             (Llu)(m_cur_offset-header->encoded_length()));
     infop->end_offset = m_file_length;
     infop->error = Error::RANGESERVER_TRUNCATED_COMMIT_LOG;
     string archive_fname;
     archive_bad_fragment(m_fname, archive_fname);
     Status status(Status::Code::WARNING,
-                  format("Truncated commit log file %s", m_fname.c_str()));
+                  format("Truncated commit log file %s", 
+                          m_smartfd_ptr->to_str().c_str()));
     StatusPersister::set(status,
                          {format("File archived to %s",archive_fname.c_str())});
     return false;
@@ -180,11 +186,12 @@ namespace {
 
 
 bool
-CommitLogBlockStream::read_header(FilesystemPtr &fs, int32_t fd,
+CommitLogBlockStream::read_header(FilesystemPtr &fs, 
+                                  Filesystem::SmartFdPtr m_smartfd_ptr,
                                   uint32_t *versionp, uint64_t *next_offset) {
   char buf[HEADER_SIZE];
 
-  if (fs->read(fd, buf, HEADER_SIZE) != HEADER_SIZE) {
+  if (fs->read(m_smartfd_ptr, buf, HEADER_SIZE) != HEADER_SIZE) {
     *versionp = 0;
     return false;
   }
@@ -206,12 +213,13 @@ CommitLogBlockStream::read_header(FilesystemPtr &fs, int32_t fd,
 
 
 void
-CommitLogBlockStream::write_header(FilesystemPtr &fs, int32_t fd) {
+CommitLogBlockStream::write_header(FilesystemPtr &fs, 
+                                   Filesystem::SmartFdPtr m_smartfd_ptr) {
   string header_str = format("CL%04u\f\n", (unsigned)LatestVersion);
   StaticBuffer buf(HEADER_SIZE);
   HT_ASSERT(header_str.size() == HEADER_SIZE);
   memcpy(buf.base, header_str.c_str(), HEADER_SIZE);
-  fs->append(fd, buf, Filesystem::Flags::FLUSH);
+  fs->append(m_smartfd_ptr, buf, Filesystem::Flags::FLUSH);
 }
 
 uint64_t CommitLogBlockStream::header_size() {
@@ -221,16 +229,18 @@ uint64_t CommitLogBlockStream::header_size() {
 
 
 int CommitLogBlockStream::load_next_valid_header(BlockHeaderCommitLog *header) {
-  size_t remaining = header->encoded_length();
   try {
+    size_t remaining = header->encoded_length();
+    size_t toread = remaining;
     size_t nread = 0;
-    size_t toread = header->encoded_length();
 
     m_block_buffer.ptr = m_block_buffer.base;
 
-    while ((nread = m_fs->read(m_fd, m_block_buffer.ptr, toread)) < toread) {
+    while ((nread = m_fs->read(m_smartfd_ptr, m_block_buffer.ptr, toread))
+           < toread) {
       if (nread == 0)
-        HT_THROW(Error::RANGESERVER_TRUNCATED_COMMIT_LOG, "");
+        HT_THROWF(Error::RANGESERVER_TRUNCATED_COMMIT_LOG, 
+                 "File %s", m_smartfd_ptr->to_str().c_str());
       toread -= nread;
       m_block_buffer.ptr += nread;
     }
@@ -240,7 +250,7 @@ int CommitLogBlockStream::load_next_valid_header(BlockHeaderCommitLog *header) {
     m_cur_offset += header->encoded_length();
   }
   catch (Exception &e) {
-    HT_WARN_OUT << e << HT_END;
+    HT_WARN_OUT << e << " " << m_smartfd_ptr->to_str().c_str() << HT_END;
     if (e.code() == Error::FSBROKER_EOF ||
         e.code() == Error::RANGESERVER_TRUNCATED_COMMIT_LOG ||
         e.code() == Error::BLOCK_COMPRESSOR_TRUNCATED ||
@@ -249,16 +259,17 @@ int CommitLogBlockStream::load_next_valid_header(BlockHeaderCommitLog *header) {
       archive_bad_fragment(m_fname, archive_fname);
       string text;
       if (e.code() == Error::BLOCK_COMPRESSOR_BAD_HEADER)
-        text = format("Corruption detected in commit log file %s at offset %lld",
-                      m_fname.c_str(), (Lld)m_cur_offset);
+        text = format("Corruption detected in commit log file %s len %lld at offset %lld",
+                      m_smartfd_ptr->to_str().c_str(), (Lld)header->encoded_length(), (Lld)m_cur_offset);
       else
         text = format("Truncated block header in commit log file %s",
-                      m_fname.c_str());
+                      m_smartfd_ptr->to_str().c_str());
       Status status(Status::Code::WARNING, text);
       StatusPersister::set(status,
                            { Error::get_text(e.code()),
                              e.what(),
                              format("File archived to %s", archive_fname.c_str()) });
+      HT_WARN(text.c_str());
     }
     else if (ms_assert_on_error)
       HT_ABORT;
@@ -299,7 +310,8 @@ bool CommitLogBlockStream::archive_bad_fragment(const string &fname,
     return false;
   }
 
-  FsBroker::Lib::ClientPtr client = dynamic_pointer_cast<FsBroker::Lib::Client>(m_fs);
+  FsBroker::Lib::ClientPtr client = 
+    dynamic_pointer_cast<FsBroker::Lib::Client>(m_fs);
   HT_ASSERT(client);
 
   // Archive file

@@ -109,13 +109,15 @@ namespace {
     }
 
     if (*is_file || check_file) {
-      int fd = fs->open(path, Filesystem::OPEN_FLAG_VERIFY_CHECKSUM);
+      Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(
+        path, Filesystem::OPEN_FLAG_VERIFY_CHECKSUM);
+      fs->open(smartfd_ptr);
       MetaLog::Header header;
       uint8_t buf[MetaLog::Header::LENGTH];
       const uint8_t *ptr = buf;
       size_t remaining = MetaLog::Header::LENGTH;
 
-      size_t nread = fs->read(fd, buf, MetaLog::Header::LENGTH);
+      size_t nread = fs->read(smartfd_ptr, buf, MetaLog::Header::LENGTH);
 
       if (nread != MetaLog::Header::LENGTH)
         HT_THROWF(Error::METALOG_BAD_HEADER,
@@ -124,7 +126,7 @@ namespace {
 
       header.decode(&ptr, &remaining);
       name = header.name;
-      fs->close(fd);
+      fs->close(smartfd_ptr);
     }
     else
       name = String(base+1);

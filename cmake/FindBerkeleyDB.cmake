@@ -27,7 +27,7 @@
 #  also defined, but not for general use are
 #  BDB_LIBRARY, where to find the BerkeleyDB library.
 
-HT_FASTLIB_SET(
+SET_DEPS(
 	NAME "BDB" 
 	REQUIRED TRUE 
 	LIB_PATHS /usr/local/BerkeleyDB.5.2/lib 
@@ -46,12 +46,14 @@ HT_FASTLIB_SET(
 )
 
 
+if(LIBS_LINKING_CHECKING_SHARED)
+
 try_run(BDB_CHECK SHOULD_COMPILE
         ${HYPERTABLE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp
         ${HYPERTABLE_SOURCE_DIR}/cmake/CheckBdb.cc
         CMAKE_FLAGS 
-		INCLUDE_DIRECTORIES ${BDB_INCLUDE_DIR}
-        LINK_LIBRARIES ${BDB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+		    INCLUDE_DIRECTORIES ${BDB_INCLUDE_PATHS}
+        LINK_LIBRARIES ${BDB_LIBRARIES_SHARED} ${CMAKE_THREAD_LIBS_INIT}
         OUTPUT_VARIABLE BDB_TRY_OUT)
 string(REGEX REPLACE ".*\n([0-9.]+).*" "\\1" BDB_VERSION ${BDB_TRY_OUT})
 string(REGEX REPLACE ".*\n(BerkeleyDB .*)" "\\1" BDB_VERSION ${BDB_VERSION})
@@ -88,3 +90,10 @@ if (NOT BDB_COMPATIBLE)
           "Please fix the installation, remove CMakeCache.txt and try again.")
 endif()
 
+
+endif ()
+
+
+if(BDB_LIBRARIES_SHARED)
+  HT_INSTALL_LIBS(lib ${BDB_LIBRARIES_SHARED})
+endif()

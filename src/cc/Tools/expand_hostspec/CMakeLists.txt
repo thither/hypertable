@@ -18,9 +18,8 @@
 #
 
 # ht_expand_hostspec - Expands a host specification
-add_executable(ht_expand_hostspec ht_expand_hostspec.cc)
-target_link_libraries(ht_expand_hostspec HyperCommon)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_expand_hostspec RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_expand_hostspec
+	SRCS ht_expand_hostspec.cc
+  TARGETS HyperCommon
+)

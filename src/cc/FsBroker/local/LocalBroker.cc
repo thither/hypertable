@@ -379,7 +379,7 @@ void LocalBroker::remove(ResponseCallback *cb, const char *fname) {
 
   if (m_no_removal) {
     String deleted_file = abspath + ".deleted";
-    if (!FileUtils::rename(abspath, deleted_file)) {
+    if (std::rename(abspath.c_str(), deleted_file.c_str()) != 0) {
       report_error(cb);
       return;
     }

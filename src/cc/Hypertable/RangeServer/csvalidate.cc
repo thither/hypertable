@@ -123,16 +123,16 @@ namespace {
     uint8_t *base = new uint8_t[length];
     const uint8_t *ptr = base;
     uint8_t *end = base + length;
-    int fd;
     int64_t nleft = length;
     size_t nread, toread;
     uint16_t version;
     size_t remaining;
-
-    fd = Global::dfs->open_buffered(fname.c_str(), 0, 1024*1024, 5);
+    
+    Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(fname.c_str(), 0);
+    Global::dfs->open_buffered(smartfd_ptr, 1024*1024, 5);
     while (nleft > 0) {
       toread = (nleft > 1024*1024) ? 1024*1024 : nleft;
-      nread = Global::dfs->read(fd, (uint8_t *)ptr, toread);
+      nread = Global::dfs->read(smartfd_ptr, (uint8_t *)ptr, toread);
       nleft -= nread;
       ptr += nread;
     }

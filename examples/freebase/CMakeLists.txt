@@ -18,5 +18,8 @@
 #
 
 # freebase_load
-add_executable(freebase_load freebase_load.cc freebase_parser.cc)
-target_link_libraries(freebase_load Hypertable)
+ADD_TEST_EXEC(
+	NAME freebase_load 
+	SRCS freebase_load.cc freebase_parser.cc
+  TARGETS Hypertable
+)

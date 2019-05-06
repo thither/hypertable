@@ -27,7 +27,7 @@ if (THRIFT_FOUND)
   set(INSTALLED_SERVERS ${INSTALLED_SERVERS} ${INSTALL_DIR}/bin/htThriftBroker)
 endif ()
 
-if (Ceph_FOUND)
+if (CEPH_FOUND)
   set(INSTALLED_SERVERS ${INSTALLED_SERVERS} ${INSTALL_DIR}/bin/htFsBrokerCeph)
 endif ()
 
@@ -42,7 +42,7 @@ add_custom_command(
 )
 add_custom_target(runtestservers DEPENDS ${TEST_SERVERS_STARTED})
 
-macro(add_test_target target dir)
+macro(ht_add_test_target target dir)
   add_custom_target(${target})
   add_dependencies(${target} runtestservers)
   add_custom_command(TARGET ${target} POST_BUILD COMMAND ${INSTALL_DIR}/bin/ht $(MAKE) test
@@ -50,9 +50,9 @@ macro(add_test_target target dir)
 endmacro()
 
 # custom target must be globally unique to support IDEs like Xcode, VS etc.
-add_test_target(alltests ${HYPERTABLE_BINARY_DIR})
-add_test_target(coretests ${HYPERTABLE_BINARY_DIR}/src)
-add_test_target(moretests ${HYPERTABLE_BINARY_DIR}/tests/integration)
+ht_add_test_target(alltests ${HYPERTABLE_BINARY_DIR})
+ht_add_test_target(coretests ${HYPERTABLE_BINARY_DIR}/src)
+ht_add_test_target(moretests ${HYPERTABLE_BINARY_DIR}/tests/integration)
 
 add_custom_target(clear-test-env)
 add_custom_command(TARGET clear-test-env COMMAND ${INSTALL_DIR}/bin/ht-destroy-database.sh)

@@ -67,7 +67,8 @@ endif ()
   
 
 if(Hdfs_FOUND)
-  message(STATUS "Found Hadoop: ${HDFS_DIST} / ${HDFS_VERSION}")
+	message(STATUS "Found HDFS: ${HDFS_DIST} / ${HDFS_VERSION}")
+	find_package(SIGAR REQUIRED)
 endif ()
 
 

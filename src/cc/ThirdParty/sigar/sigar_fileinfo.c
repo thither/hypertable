@@ -731,12 +731,11 @@ static int dir_stat_get(sigar_t *sigar,
 
 #if defined(HAVE_READDIR_R) && USE_READDIR_R
     while (readdir_r(dirp, &dbuf, &ent) == 0) {
-        if (ent == NULL) {
-            break;
-        }
 #else
     while ((ent = readdir(dirp))) {
 #endif
+        if (ent == NULL) 
+            break;
         /* skip '.' and '..' */
         if (IS_DOTDIR(ent->d_name)) {
             continue;

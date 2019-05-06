@@ -83,8 +83,15 @@ CellStoreV7::~CellStoreV7() {
     delete m_compressor;
     delete m_bloom_filter;
     delete m_bloom_filter_items;
-    if (m_fd != -1)
-      m_filesys->close(m_fd);
+    if (m_smartfd_ptr && m_smartfd_ptr->valid()){
+      try{m_filesys->close(m_smartfd_ptr);}catch(...){}
+      /* 
+       a pre close preffered 
+       a chase condition to a bad handler 
+       (once append/read, second distructor's)
+       */
+
+    }
     delete [] m_column_ttl;
   }
   catch (Exception &e) {
@@ -184,8 +191,9 @@ CellStoreV7::create(const char *fname, size_t max_entries,
   m_key_compressor = make_shared<KeyCompressorPrefix>();
 
   assert(Config::properties); // requires Config::init* first
-  int32_t replication = get_replication(props, table_id);
-
+  m_replication = get_replication(props, table_id);
+  m_create_cs_with_tmp = Config::get<gBool>("Hypertable.RangeServer.CellStore"
+                                ".CreateWithTemp");
   if (blocksize == 0)
     blocksize = Config::get_i32("Hypertable.RangeServer.CellStore"
                                 ".DefaultBlockSize");
@@ -202,7 +210,6 @@ CellStoreV7::create(const char *fname, size_t max_entries,
 
   m_max_entries = max_entries;
 
-  m_fd = -1;
   m_offset = 0;
 
   m_index_builder.fixed_buf().reserve(4*4096);
@@ -239,9 +246,14 @@ CellStoreV7::create(const char *fname, size_t max_entries,
   m_compressor = CompressorFactory::create_block_codec(
       (BlockCompressionCodec::Type)m_trailer.compression_type,
       m_compressor_args);
-
-  uint32_t oflags = Filesystem::OPEN_FLAG_DIRECTIO|Filesystem::OPEN_FLAG_OVERWRITE;
-  m_fd = m_filesys->create(m_filename, oflags, -1, replication, -1);
+  
+  if(m_create_cs_with_tmp)
+    m_smartfd_ptr = m_filesys->create_local_temp(m_filename);
+  else {
+    m_smartfd_ptr = Filesystem::SmartFd::make_ptr(
+      m_filename, Filesystem::OPEN_FLAG_DIRECTIO|Filesystem::OPEN_FLAG_OVERWRITE);
+    m_filesys->create(m_smartfd_ptr, -1, m_replication, -1);
+  }
 
   m_bloom_filter_mode = props->get<BloomFilterMode>("bloom-filter-mode");
   m_max_approx_items = props->get_i32("max-approx-items");
@@ -299,7 +311,7 @@ void CellStoreV7::create_bloom_filter(bool is_approx) {
   m_bloom_filter_items = 0;
 
   HT_DEBUG_OUT << "Created new BloomFilter for CellStore '"
-    << m_filename <<"'"<< HT_END;
+               << m_filename <<"'"<< HT_END;
 }
 
 const std::vector<String> &CellStoreV7::get_replaced_files() {
@@ -320,12 +332,13 @@ void CellStoreV7::load_replaced_files() {
     DynamicBuffer buf(amount);
 
     /** Read index data **/
-    len = m_filesys->pread(m_fd, buf.ptr, amount, m_trailer.replaced_files_offset, second_try);
+    len = m_filesys->pread(m_smartfd_ptr, 
+            buf.ptr, amount, m_trailer.replaced_files_offset, second_try);
 
     if (len != amount)
       HT_THROWF(Error::FSBROKER_IO_ERROR, "Error loading replaced files for "
-                "CellStore '%s' : tried to read %lld but only got %lld",
-                m_filename.c_str(), (Lld)amount, (Lld)len);
+                "CellStore %s : tried to read %lld but only got %lld",
+                m_smartfd_ptr->to_str().c_str(), (Lld)amount, (Lld)len);
     /** inflate replaced files **/
 
     StringDecompressorPrefix decompressor;
@@ -334,10 +347,10 @@ void CellStoreV7::load_replaced_files() {
     for (uint32_t ii=0; ii < m_trailer.replaced_files_entries; ++ii) {
       if (ptr - buf.base >= (ptrdiff_t) m_trailer.replaced_files_length)
         HT_THROWF(Error::RANGESERVER_CORRUPT_CELLSTORE,
-            "Bad replaced_files_offset in CellStore trailer fd=%u replaced_files_offset=%lld, "
-            "length=%llu, entries=%u, file='%s'", (unsigned)m_fd,
+            "Bad replaced_files_offset in CellStore trailer replaced_files_offset=%lld, "
+            "length=%llu, entries=%u, file=%s", 
             (Lld)m_trailer.replaced_files_offset, (Lld)m_trailer.replaced_files_length,
-            (unsigned)m_trailer.replaced_files_entries, m_filename.c_str());
+            (unsigned)m_trailer.replaced_files_entries, m_smartfd_ptr->to_str().c_str());
       ptr = decompressor.add(ptr);
       decompressor.load(filename);
       m_replaced_files.push_back(filename);
@@ -345,8 +358,8 @@ void CellStoreV7::load_replaced_files() {
   }
   catch (Exception &e) {
     String msg;
-    HT_ERROR_OUT << "pread(fd=" << m_fd << ", len=" << len << ", amount="
-        << amount << ")\n" << HT_END;
+    HT_ERROR_OUT << "pread(" << m_smartfd_ptr->to_str() << ", len=" << len 
+                 << ", amount=" << amount << ")\n" << HT_END;
     HT_ERROR_OUT << m_trailer << HT_END;
     if (second_try)
       HT_THROW2(e.code(), e, msg);
@@ -382,24 +395,26 @@ void CellStoreV7::load_bloom_filter() {
 
     while (true) {
       try {
-	len = m_filesys->pread(m_fd, m_bloom_filter->base(), m_bloom_filter->total_size(),
-			       m_trailer.filter_offset, second_try);
+	      len = m_filesys->pread(m_smartfd_ptr, 
+            m_bloom_filter->base(), m_bloom_filter->total_size(),
+			      m_trailer.filter_offset, second_try);
       }
       catch (Exception &e) {
-	if (!second_try) {
-	  second_try=true;
-	  continue;
-	}
-	HT_THROW2(e.code(), e, format("Error loading BloomFilter for CellStore '%s'",
-				      m_filename.c_str()));
+	      if (!second_try) {
+	        second_try=true;
+	        continue;
+	      }
+	      HT_THROW2(e.code(), e, format("Error loading BloomFilter for CellStore %s",
+				      m_smartfd_ptr->to_str().c_str()));
       }
       break;
     }
 
     if (len != m_bloom_filter->total_size())
       HT_THROWF(Error::FSBROKER_IO_ERROR, "Problem loading bloomfilter for"
-                "CellStore '%s' : tried to read %lld but only got %lld",
-                m_filename.c_str(), (Lld)m_bloom_filter->total_size(), (Lld)len);
+                "CellStore %s : tried to read %lld but only got %lld",
+                m_smartfd_ptr->to_str().c_str(), 
+                (Lld)m_bloom_filter->total_size(), (Lld)len);
 
     m_bytes_read += len;
 
@@ -471,17 +486,19 @@ void CellStoreV7::add(const Key &key, const ByteString value) {
         * (uint64_t)m_uncompressed_data) / (uint64_t)m_compressed_data;
     m_uncompressed_blocksize = (int64_t)llval;
 
-    if (m_outstanding_appends >= MAX_APPENDS_OUTSTANDING) {
+    if(!m_create_cs_with_tmp
+       && m_outstanding_appends >= MAX_APPENDS_OUTSTANDING) {
       if (!m_sync_handler.wait_for_reply(event_ptr)) {
         if (event_ptr->type == Event::MESSAGE)
           HT_THROWF(Hypertable::Protocol::response_code(event_ptr),
-             "Problem writing to FS file '%s' : %s", m_filename.c_str(),
+             "Problem writing to FS %s : %s", m_smartfd_ptr->to_str().c_str(),
              Hypertable::Protocol::string_format_message(event_ptr).c_str());
         HT_THROWF(event_ptr->error,
-                  "Problem writing to FS file '%s'", m_filename.c_str());
+                  "Problem writing to FS %s", m_smartfd_ptr->to_str().c_str());
       }
       m_outstanding_appends--;
     }
+
 
     if (!HT_IO_ALIGNED(zbuf.fill())) {
       memset(zbuf.ptr, 0, HT_IO_ALIGNMENT_PADDING(zbuf.fill()));
@@ -491,12 +508,20 @@ void CellStoreV7::add(const Key &key, const ByteString value) {
     size_t zlen = zbuf.fill();
     StaticBuffer send_buf(zbuf);
 
-    try { m_filesys->append(m_fd, send_buf, Filesystem::Flags::NONE, &m_sync_handler); }
-    catch (Exception &e) {
-      HT_THROW2F(e.code(), e, "Problem writing to FS file '%s'",
-                 m_filename.c_str());
+    try { 
+      if(m_create_cs_with_tmp)
+        m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
+      else {
+        m_filesys->append(m_smartfd_ptr, send_buf, 
+                          Filesystem::Flags::NONE, &m_sync_handler); 
+        m_outstanding_appends++;
+      }
     }
-    m_outstanding_appends++;
+    catch (Exception &e) {
+      HT_THROW2F(e.code(), e, "Problem writing to FS %s",
+                 m_smartfd_ptr->to_str().c_str());
+    }
+    
     m_offset += zlen;
     m_key_compressor->reset();
   }
@@ -578,18 +603,24 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
     zlen = zbuf.fill();
     send_buf = zbuf;
 
-    if (m_outstanding_appends >= MAX_APPENDS_OUTSTANDING) {
-      if (!m_sync_handler.wait_for_reply(event_ptr))
-        HT_THROWF(Protocol::response_code(event_ptr),
-                  "Problem finalizing CellStore file '%s' : %s",
-                  m_filename.c_str(),
-                  Protocol::string_format_message(event_ptr).c_str());
-      m_outstanding_appends--;
+    if(m_create_cs_with_tmp)
+      m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
+    else {
+      if (m_outstanding_appends >= MAX_APPENDS_OUTSTANDING) {
+        if (!m_sync_handler.wait_for_reply(event_ptr))
+          HT_THROWF(Protocol::response_code(event_ptr),
+                    "Problem finalizing CellStore file %s : %s",
+                    m_smartfd_ptr->to_str().c_str(),
+                    Protocol::string_format_message(event_ptr).c_str());
+        m_outstanding_appends--;
+      }
+
+      m_filesys->append(m_smartfd_ptr, send_buf, 
+        Filesystem::Flags::NONE, &m_sync_handler);
+      m_outstanding_appends++;
     }
 
-    m_filesys->append(m_fd, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
 
-    m_outstanding_appends++;
     m_offset += zlen;
   }
 
@@ -625,9 +656,13 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
   zlen = zbuf.fill();
   send_buf = zbuf;
 
-  m_filesys->append(m_fd, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
-
-  m_outstanding_appends++;
+  if(m_create_cs_with_tmp)
+    m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
+  else {
+    m_filesys->append(m_smartfd_ptr, send_buf, 
+      Filesystem::Flags::NONE, &m_sync_handler);
+    m_outstanding_appends++;
+  }
   m_offset += zlen;
 
   /**
@@ -649,9 +684,13 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
   zlen = zbuf.fill();
   send_buf = zbuf;
 
-  m_filesys->append(m_fd, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
-
-  m_outstanding_appends++;
+  if(m_create_cs_with_tmp)
+    m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
+  else {
+    m_filesys->append(m_smartfd_ptr, send_buf, 
+      Filesystem::Flags::NONE, &m_sync_handler);
+    m_outstanding_appends++;
+  }
   m_offset += zlen;
 
   // write filter_offset
@@ -672,8 +711,14 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
       m_trailer.bloom_filter_mode = m_bloom_filter_mode;
       m_trailer.bloom_filter_hash_count = m_bloom_filter->get_num_hashes();
       m_bloom_filter->serialize(send_buf);
-      m_filesys->append(m_fd, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
-      m_outstanding_appends++;
+  
+      if(m_create_cs_with_tmp)
+        m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
+      else {
+        m_filesys->append(m_smartfd_ptr, send_buf, 
+          Filesystem::Flags::NONE, &m_sync_handler);
+        m_outstanding_appends++;
+      }
       m_offset += m_bloom_filter->total_size();
     }
   }
@@ -713,8 +758,13 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
       zbuf.ptr += HT_IO_ALIGNMENT_PADDING(zbuf.fill());
     }
     send_buf = zbuf;
-    m_filesys->append(m_fd, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
-    m_outstanding_appends++;
+    
+    if(m_create_cs_with_tmp)
+      m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
+    else {
+      m_filesys->append(m_smartfd_ptr, send_buf, Filesystem::Flags::NONE, &m_sync_handler);
+      m_outstanding_appends++;
+    }
     zlen = zbuf.fill();
     m_offset += zlen;
   }
@@ -774,22 +824,37 @@ void CellStoreV7::finalize(TableIdentifier *table_identifier) {
   zlen = zbuf.fill();
   send_buf = zbuf;
 
-  m_filesys->append(m_fd, send_buf);
-
-  m_outstanding_appends++;
+  if(m_create_cs_with_tmp)
+    m_filesys->append_to_temp(m_smartfd_ptr, send_buf);
+  else {
+    m_filesys->append(m_smartfd_ptr, send_buf); 
+    //last append, synchronous, acknowledge all outstanding
+  }
   m_offset += zlen;
 
-  /** close file for writing **/
-  m_filesys->close(m_fd);
-
+  if(m_create_cs_with_tmp) {
+    /** copy local temp to dfs - assuring length equal **/
+    m_filesys->commit_temp(
+      m_smartfd_ptr,
+      Filesystem::SmartFd::make_ptr(
+        m_filename, Filesystem::OPEN_FLAG_DIRECTIO|Filesystem::OPEN_FLAG_OVERWRITE),
+         m_replication);
+  }
+  else {
+    /** close file for writing **/
+    m_filesys->close(m_smartfd_ptr);
+  }
+  
   /** Set file length **/
   m_file_length = m_offset;
 
   m_disk_usage +=
     (int64_t)((double)(m_offset-m_trailer.fix_index_offset) * fraction_covered);
 
-  /** Re-open file for reading **/
-  m_fd = m_filesys->open(m_filename, Filesystem::OPEN_FLAG_DIRECTIO);
+  /** Re-open file for reading **/ 
+  m_smartfd_ptr->flags(Filesystem::OPEN_FLAG_DIRECTIO);
+  //HT_INFOF("Re-open file for reading, %d %s", m_filesys, m_smartfd_ptr->to_str().c_str());
+  m_filesys->open(m_smartfd_ptr);
 
   m_index_stats.block_index_memory = index_memory;
 
@@ -861,13 +926,13 @@ void CellStoreV7::IndexBuilder::chop() {
 
 
 void
-CellStoreV7::open(const String &fname, const String &start_row,
-                  const String &end_row, int32_t fd, int64_t file_length,
+CellStoreV7::open(Filesystem::SmartFdPtr smartfd_ptr, const String &start_row,
+                  const String &end_row, int64_t file_length,
                   CellStoreTrailer *trailer) {
-  m_filename = fname;
+  m_smartfd_ptr = smartfd_ptr;
+  m_filename = m_smartfd_ptr->filepath();
   m_start_row = start_row;
   m_end_row = end_row;
-  m_fd = fd;
   m_file_length = file_length;
 
   m_restricted_range = !(m_start_row == "" && m_end_row == Key::END_ROW_MARKER);
@@ -885,9 +950,10 @@ CellStoreV7::open(const String &fname, const String &start_row,
   if (!(m_trailer.fix_index_offset < m_trailer.var_index_offset &&
         m_trailer.var_index_offset < m_file_length))
     HT_THROWF(Error::RANGESERVER_CORRUPT_CELLSTORE,
-              "Bad index offsets in CellStore trailer fd=%u fix=%lld, var=%lld, "
-              "length=%llu, file='%s'", (unsigned)m_fd, (Lld)m_trailer.fix_index_offset,
-           (Lld)m_trailer.var_index_offset, (Llu)m_file_length, fname.c_str());
+              "Bad index offsets in CellStore trailer fix=%lld, var=%lld, "
+              "length=%llu, file=%s", (Lld)m_trailer.fix_index_offset,
+           (Lld)m_trailer.var_index_offset, (Llu)m_file_length, 
+           m_smartfd_ptr->to_str().c_str());
 
   // This is necessary to get m_disk_usage and m_block_count set properly
   load_block_index();
@@ -951,12 +1017,13 @@ void CellStoreV7::load_block_index() {
     DynamicBuffer buf(amount);
 
     /** Read index data **/
-    len = m_filesys->pread(m_fd, buf.ptr, amount, m_trailer.fix_index_offset, second_try);
+    len = m_filesys->pread(m_smartfd_ptr, 
+                buf.ptr, amount, m_trailer.fix_index_offset, second_try);
 
     if (len != amount)
       HT_THROWF(Error::FSBROKER_IO_ERROR, "Error loading index for "
-                "CellStore '%s' : tried to read %lld but only got %lld",
-                m_filename.c_str(), (Lld)amount, (Lld)len);
+                "CellStore %s : tried to read %lld but only got %lld",
+                m_smartfd_ptr->to_str().c_str(), (Lld)amount, (Lld)len);
     /** inflate fixed index **/
     buf.ptr += (m_trailer.var_index_offset - m_trailer.fix_index_offset);
     compressor->inflate(buf, m_index_builder.fixed_buf(), header);
@@ -984,16 +1051,17 @@ void CellStoreV7::load_block_index() {
   catch (Exception &e) {
     String msg;
     if (inflating_fixed) {
-      msg = String("Error inflating FIXED index for cellstore '")
-            + m_filename + "'";
+      msg = String("Error inflating FIXED index for cellstore '"
+                  + m_smartfd_ptr->filepath() + "'");
       HT_ERROR_OUT << msg << ": "<< e << HT_END;
     }
     else {
-      msg = "Error inflating VARIABLE index for cellstore '" + m_filename + "'";
+      msg = String("Error inflating VARIABLE index for cellstore '"
+                   + m_smartfd_ptr->filepath() + "'");
       HT_ERROR_OUT << msg << ": " <<  e << HT_END;
     }
-    HT_ERROR_OUT << "pread(fd=" << m_fd << ", len=" << len << ", amount="
-        << index_amount << ")\n" << HT_END;
+    HT_ERROR_OUT << "pread(" << m_smartfd_ptr->to_str() << ", len=" << len 
+                 << ", amount=" << index_amount << ")\n" << HT_END;
     HT_ERROR_OUT << m_trailer << HT_END;
     if (second_try)
       HT_THROW2(e.code(), e, msg);

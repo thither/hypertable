@@ -19,7 +19,6 @@
 # 02110-1301, USA.
 #
 
-add_subdirectory(tests)
 
 set(RangeServer_SRCS
 AccessGroup.cc
@@ -147,28 +146,42 @@ if (USE_TCMALLOC)
   add_definitions(-DCLEAN_SHUTDOWN)
 endif ()
 
-# RangeServer Lib
-HT_ADD_LIBS(
-	TARGET HyperRanger 
+# lib RangeServer
+ADD_LIB_TARGET(
+	NAME HyperRanger 
 	SRCS ${RangeServer_SRCS}
-	TARGETS HyperFsBroker Hypertable
+	TARGETS Hypertable HyperFsBroker
 )
 
 # htRangeServer
-add_executable(htRangeServer main.cc)
-target_link_libraries(htRangeServer HyperRanger)
+ADD_EXEC_TARGET(
+	NAME htRangeServer
+	SRCS  main.cc
+	TARGETS HyperRanger
+)
 
 # ht_csdump
-add_executable(ht_csdump csdump.cc)
-target_link_libraries(ht_csdump HyperRanger)
-
+ADD_UTIL_TARGET(
+	NAME ht_csdump
+	SRCS csdump.cc
+	TARGETS HyperRanger
+)
 # ht_csvalidate
-add_executable(ht_csvalidate csvalidate.cc)
-target_link_libraries(ht_csvalidate HyperRanger)
+ADD_UTIL_TARGET(
+	NAME ht_csvalidate
+	SRCS csvalidate.cc
+	TARGETS HyperRanger
+)
+# ht_count_stored
+ADD_UTIL_TARGET(
+	NAME ht_count_stored
+	SRCS count_stored.cc
+	TARGETS HyperRanger
+)
 
-# ht_count_stored - program to diff two sorted files
-add_executable(ht_count_stored count_stored.cc)
-target_link_libraries(ht_count_stored HyperRanger)
+
+add_subdirectory(tests)
+
 
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)
@@ -180,9 +193,5 @@ if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS Response/Callback/*.h)
   install(FILES ${HEADERS}
           DESTINATION include/Hypertable/RangeServer/Response/Callback)
-  install(TARGETS HyperRanger htRangeServer ht_csdump ht_csvalidate ht_count_stored
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
 endif ()
 

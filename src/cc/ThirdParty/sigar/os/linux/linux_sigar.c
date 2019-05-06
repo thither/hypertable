@@ -603,7 +603,10 @@ int sigar_os_proc_list_get(sigar_t *sigar,
                            sigar_proc_list_t *proclist)
 {
     DIR *dirp = opendir(PROCP_FS_ROOT);
-    struct dirent *ent, dbuf;
+    struct dirent *ent;
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
+    struct dirent dbuf;
+#endif
     register const int threadbadhack = !sigar->has_nptl;
 
     if (!dirp) {
@@ -614,10 +617,13 @@ int sigar_os_proc_list_get(sigar_t *sigar,
         sigar->proc_signal_offset = get_proc_signal_offset();
     }
 
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
     while (readdir_r(dirp, &dbuf, &ent) == 0) {
-        if (!ent) {
+#else
+    while ((ent = readdir(dirp))) {
+#endif
+        if (ent == NULL) 
             break;
-        }
 
         if (!sigar_isdigit(*ent->d_name)) {
             continue;
@@ -2239,7 +2245,10 @@ int sigar_proc_port_get(sigar_t *sigar, int protocol,
     int status;
     sigar_net_connection_t netconn;
     DIR *dirp;
-    struct dirent *ent, dbuf;
+    struct dirent *ent;
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
+    struct dirent dbuf;
+#endif
 
     SIGAR_ZERO(&netconn);
     *pid = 0;
@@ -2259,16 +2268,25 @@ int sigar_proc_port_get(sigar_t *sigar, int protocol,
         return errno;
     }
 
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
     while (readdir_r(dirp, &dbuf, &ent) == 0) {
+#else
+    while ((ent = readdir(dirp))) {
+#endif
+
         DIR *fd_dirp;
-        struct dirent *fd_ent, fd_dbuf;
+        struct dirent *fd_ent;
+
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
+    struct dirent fd_dbuf;
+#endif
+
         struct stat sb;
         char fd_name[BUFSIZ], pid_name[BUFSIZ];
         int len, slen;
 
-        if (ent == NULL) {
+        if (ent == NULL)
             break;
-        }
 
         if (!sigar_isdigit(*ent->d_name)) {
             continue;
@@ -2299,17 +2317,18 @@ int sigar_proc_port_get(sigar_t *sigar, int protocol,
         if (!(fd_dirp = opendir(fd_name))) {
             continue;
         }
-
+#if defined(HAVE_READDIR_R) && USE_READDIR_R
         while (readdir_r(fd_dirp, &fd_dbuf, &fd_ent) == 0) {
-            char fd_ent_name[BUFSIZ];
-
-            if (fd_ent == NULL) {
+#else
+        while ((fd_ent = readdir(fd_dirp))) {
+#endif
+            if (fd_ent == NULL) 
                 break;
-            }
-
-            if (!sigar_isdigit(*fd_ent->d_name)) {
+                
+            if (!sigar_isdigit(*fd_ent->d_name))
                 continue;
-            }
+            
+            char fd_ent_name[BUFSIZ];
 
             /* sprintf(fd_ent_name, "%s/%s", fd_name, fd_ent->d_name) */
             slen = strlen(fd_ent->d_name);

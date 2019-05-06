@@ -18,7 +18,8 @@
 #
 
 # htFsBrokerLocal
-add_executable(htFsBrokerLocal main.cc LocalBroker.cc)
-target_link_libraries(htFsBrokerLocal HyperFsBroker)
-
-install(TARGETS htFsBrokerLocal RUNTIME DESTINATION bin)
+ADD_EXEC_TARGET(
+	NAME htFsBrokerLocal
+	SRCS  main.cc LocalBroker.cc
+	TARGETS HyperFsBroker 
+)

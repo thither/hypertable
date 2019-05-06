@@ -174,6 +174,39 @@ ConnectionManager::wait_for_connection(const CommAddress &addr,
   return wait_for_connection(conn_state_ptr, timer);
 }
 
+bool
+ConnectionManager::is_connection_state(const CommAddress &addr, State state) {
+  lock_guard<mutex> lock(m_impl->mutex);
+  if (addr.is_inet()) {
+    SockAddrMap<ConnectionStatePtr>::iterator iter =
+	  m_impl->conn_map.find(addr.inet);
+    if (iter == m_impl->conn_map.end())
+	    return false;
+    return (*iter).second->state == state;
+  }
+  else if (addr.is_proxy()) {
+    auto iter = m_impl->conn_map_proxy.find(addr.proxy);
+    if (iter == m_impl->conn_map_proxy.end())
+	    return false;
+    return (*iter).second->state == state;
+  }
+  return false;
+}
+
+bool
+ConnectionManager::is_addr_exists(const CommAddress &addr) {
+  lock_guard<mutex> lock(m_impl->mutex);
+  if (addr.is_inet()) {
+    SockAddrMap<ConnectionStatePtr>::iterator iter =
+	  m_impl->conn_map.find(addr.inet);
+    return iter != m_impl->conn_map.end();
+  }
+  else if (addr.is_proxy()) {
+    auto iter = m_impl->conn_map_proxy.find(addr.proxy);
+    return iter != m_impl->conn_map_proxy.end();
+  }
+  return false;
+}
 
 bool ConnectionManager::wait_for_connection(ConnectionStatePtr &conn_state,
 					    Timer &timer) {

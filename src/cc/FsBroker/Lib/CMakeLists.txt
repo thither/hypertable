@@ -80,11 +80,11 @@ Utility.cc
 )
 
 # lib HyperFsBroker
-HT_ADD_LIBS(
-	TARGET HyperFsBroker 
+ADD_LIB_TARGET(
+	NAME HyperFsBroker 
 	SRCS ${FsBroker_SRCS}
-	TARGETS HyperCommon HyperComm)
-add_dependencies(HyperFsBroker HyperCommon HyperComm)
+	TARGETS HyperCommon HyperComm
+)
 
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)
@@ -101,8 +101,5 @@ if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS Response/Parameters/*.h)
   install(FILES ${HEADERS}
           DESTINATION include/FsBroker/Lib/Response/Parameters)
-  install(TARGETS HyperFsBroker
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
+
 endif ()

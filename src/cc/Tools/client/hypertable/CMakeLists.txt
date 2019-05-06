@@ -22,8 +22,12 @@ hypertable.cc
 )
 
 # ht_hypertable - command interpreter
-add_executable(ht_hypertable ${hypertable_SRCS})
-target_link_libraries(ht_hypertable Hypertable)
+ADD_UTIL_TARGET(
+	NAME ht_hypertable
+	SRCS ${hypertable_SRCS}
+  TARGETS Hypertable
+)
+
 
 
 set(SRC_DIR "${HYPERTABLE_SOURCE_DIR}/src/cc/Tools/client/hypertable/test")
@@ -34,7 +38,7 @@ configure_file(${HYPERTABLE_SOURCE_DIR}/conf/hypertable.cfg
 
 
 # hypertable_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Hypertable-shell
 	SRCS test/hypertable_test.cc
 	TARGETS Hypertable HyperComm
@@ -75,7 +79,7 @@ configure_file(${SRC_DIR}/timeorder_test.hql
 
 
 # hypertable_ldi_select_test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Hypertable-shell-ldi-select 
 	SRCS test/hypertable_ldi_select_test.cc
 	TARGETS Hypertable HyperFsBroker HyperComm
@@ -105,9 +109,3 @@ configure_file(${SRC_DIR}/delete_test.tsv
                ${DST_DIR}/delete_test.tsv COPYONLY)
 add_test(Delete-tsv-test env INSTALL_DIR=${INSTALL_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/test/delete_test.sh)
-
-
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_hypertable RUNTIME DESTINATION bin)
-endif ()

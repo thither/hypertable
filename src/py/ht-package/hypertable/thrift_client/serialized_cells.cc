@@ -50,9 +50,9 @@ PYBIND11_MODULE(serialized_cells, m) {
     .def_readwrite("flag", &Cell::flag)//.def(py::self::str(py::self))
     ;
 
-  py::class_<SerializedCellsReader, std::unique_ptr<SerializedCellsReader>> (m, "Reader")
+  py::class_<SerializedCellsReader, std::shared_ptr<SerializedCellsReader>> (m, "Reader")
     .def(py::init<py::bytes , uint32_t>())
-    .def("has_next", &SerializedCellsReader::next)
+    .def("has_next", &SerializedCellsReader::next) 
     .def("get_cell", &SerializedCellsReader::get_cell)
     .def("row", []( SerializedCellsReader &scr) {
       return py::bytes(scr.row());
@@ -74,7 +74,7 @@ PYBIND11_MODULE(serialized_cells, m) {
     .def("eos", &SerializedCellsReader::eos)
   ;
 
-  py::class_<SerializedCellsWriter, std::unique_ptr<SerializedCellsWriter>>(m, "Writer")
+  py::class_<SerializedCellsWriter, std::shared_ptr<SerializedCellsWriter>>(m, "Writer")
     .def(py::init<int32_t, bool>())
     .def("add", afn)
     .def("finalize", &SerializedCellsWriter::finalize)
@@ -85,7 +85,7 @@ PYBIND11_MODULE(serialized_cells, m) {
       return py::bytes(String((const char *)scw.get_buffer(), (const int32_t)scw.get_buffer_length()));
     })
 	 
-     //.def_buffer("get", &get_buffer)  // std::unique_ptr<SerializedCellsWriter>
+     //.def_buffer("get", &get_buffer)  // std::shared_ptr<SerializedCellsWriter>
   ;
 }
 

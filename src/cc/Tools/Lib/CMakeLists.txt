@@ -23,18 +23,17 @@ CommandInterpreter.cc
 )
 
 # lib HyperTools
-HT_ADD_LIBS(
-	TARGET HyperTools 
+ADD_LIB_TARGET(
+	NAME HyperTools 
 	SRCS ${Hypertools_SRCS}
 	TARGETS HyperComm
-	DEPENDENCIES ${EDITLINE_LIBRARIES})
+	SHARED ${EDITLINE_LIBRARIES_SHARED}
+	STATIC ${EDITLINE_LIBRARIES_STATIC}
+)
+
 
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)
-
   install(FILES ${HEADERS} DESTINATION include/Tools/Lib)
 
-  install(TARGETS HyperTools
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
 endif ()

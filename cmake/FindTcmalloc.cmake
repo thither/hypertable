@@ -23,9 +23,10 @@
 #  TCMALLOC_LIBRARIES   - List of libraries when using Tcmalloc.
 #  Tcmalloc_FOUND       - True if Tcmalloc found.
 
+
 set(Tcmalloc_NAMES tcmalloc)
 set(Tcmalloc_static_NAMES libtcmalloc.a)
-set(Tcmalloc_header_NAMES google/tcmalloc.h )
+set(Tcmalloc_header_NAMES gperftools/tcmalloc.h )
 
 if (NOT USE_TCMALLOC OR NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(Tcmalloc_NAMES tcmalloc_minimal)
@@ -37,9 +38,9 @@ elseif (CMAKE_SYSTEM_PROCESSOR_x86 AND ${CMAKE_SYSTEM_PROCESSOR_x86} EQUAL 64)
 endif ()
 
 # 
-HT_FASTLIB_SET(
+SET_DEPS(
 	NAME "TCMALLOC" 
-	REQUIRED FALSE 
+	REQUIRED TRUE 
 	LIB_PATHS 
 	INC_PATHS 
 	STATIC ${Tcmalloc_static_NAMES}
@@ -47,13 +48,14 @@ HT_FASTLIB_SET(
 	INCLUDE ${Tcmalloc_header_NAMES}
 )
 
+
 if (TCMALLOC_FOUND)
   try_run(TC_CHECK TC_CHECK_BUILD
           ${HYPERTABLE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp
           ${HYPERTABLE_SOURCE_DIR}/cmake/CheckTcmalloc.cc
           CMAKE_FLAGS
-		  INCLUDE_DIRECTORIES ${TCMALLOC_INCLUDE_DIRS}
-          LINK_LIBRARIES ${TCMALLOC_LIBRARIES}
+		  INCLUDE_DIRECTORIES ${TCMALLOC_INCLUDE_PATHS}
+          LINK_LIBRARIES ${TCMALLOC_LIBRARIES_SHARED}
           RUN_OUTPUT_VARIABLE TC_TRY_OUT)
   #message("tc_check build: ${TC_CHECK_BUILD}")
   #message("tc_check: ${TC_CHECK}")
@@ -72,3 +74,7 @@ if (TCMALLOC_FOUND)
   message("       version: ${TC_VERSION}")
 endif ()
 
+
+if(TCMALLOC_LIBRARIES_SHARED)
+	HT_INSTALL_LIBS(lib ${TCMALLOC_LIBRARIES_SHARED})
+endif()

@@ -20,23 +20,13 @@
 # This module defines
 #  PHPTHRIFT_FOUND, If false, do not try to use ant
 
-if (THRIFT_SOURCE_DIR AND EXISTS ${THRIFT_SOURCE_DIR}/lib/php/src/Thrift.php)
-    set(PHPTHRIFT_FOUND TRUE)
-else ()
-	set(PHPTHRIFT_FOUND FALSE)
+
+if (THRIFT_SOURCE_DIR AND EXISTS ${THRIFT_SOURCE_DIR}/lib/php/lib/Base/TBase.php) 
+  message(STATUS "Found thrift PHP")
+  set(PHPTHRIFT_FOUND TRUE)
+  
+elseif(LANG_PHP)
+  message(FATAL_ERROR "Thrift PHP lib files not found, Looked for ${THRIFT_SOURCE_DIR}/lib/php/lib/Base/TBase.php")
 endif ()
 
-if (PHPTHRIFT_FOUND)
-  if (NOT PHPTHRIFT_FIND_QUIETLY)
-    message(STATUS "Found thrift for PHP, Copying PHP files into installation")
-  endif ()
-  
-  file(GLOB PHPFILES ${HYPERTABLE_SOURCE_DIR}/src/php/*.php)
-  install(FILES ${PHPFILES} DESTINATION lib/php)
-  install(DIRECTORY ${THRIFT_SOURCE_DIR}/lib/php/lib/Thrift
-		  DESTINATION lib/php USE_SOURCE_PERMISSIONS)
-else ()
-  message(STATUS "PHP Thrift files not found. "
-                 "ThriftBroker support for php will be disabled")
-endif ()
 

@@ -9,3 +9,8 @@ endif ()
 #  add_subdirectory(cc/MapReduce)
 #endif ()
 #add_subdirectory(cc/PythonBinding)
+
+
+if(PAM_FOUND)
+  add_subdirectory(cc/pam_hypertable)
+endif ()

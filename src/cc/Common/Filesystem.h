@@ -55,7 +55,7 @@ using namespace std;
     (HT_DIRECT_IO_ALIGNMENT - ((size) % HT_DIRECT_IO_ALIGNMENT))
 
 namespace Hypertable {
-
+  
   /// @addtogroup Common
   /// @{
 
@@ -71,6 +71,58 @@ namespace Hypertable {
    */
   class Filesystem {
   public:
+
+    /// Smart FileDescriptor 
+    struct SmartFd;
+    typedef std::shared_ptr<SmartFd> SmartFdPtr;
+
+    struct SmartFd : std::enable_shared_from_this<SmartFd>{
+      public:
+        static SmartFdPtr make_ptr(const String &filepath, uint32_t flags){
+          return std::make_shared<SmartFd>(filepath, flags);
+        }
+        static SmartFdPtr make_ptr(const String &filepath, uint32_t flags, 
+                            int32_t fd, uint64_t pos){
+          return std::make_shared<SmartFd>(filepath, flags, fd, pos);
+        }
+
+        SmartFd(const String &filepath, uint32_t flags):
+          m_filepath(filepath), m_flags(flags) {
+        }
+
+        SmartFd(const String &filepath, uint32_t flags, int32_t fd, uint64_t pos): 
+           m_filepath(filepath), m_flags(flags) , m_fd(fd), m_pos(pos) {
+        }
+
+        operator SmartFdPtr(){ return shared_from_this(); }
+
+        virtual ~SmartFd(){}
+
+        const String& filepath() { return m_filepath; }
+
+        void flags(uint32_t flags){ m_flags = flags; }
+        uint32_t flags(){ return m_flags; }
+
+        void fd(int32_t fd){ m_fd = fd; }
+        int32_t fd(){ return m_fd; }
+
+        void pos(uint64_t pos){ m_pos = pos; }
+        uint64_t pos(){ return m_pos; }
+
+        bool valid() { return m_fd != -1; }
+
+        const String to_str(){
+          return format("SmartFd(filepath=%s, flags=%u, fd=%d, pos=%lu)", 
+                        m_filepath.c_str(), m_flags, m_fd, m_pos);
+        }
+
+      private:
+        const String m_filepath;
+        uint32_t m_flags = 0;
+        int32_t m_fd = -1;
+        uint64_t m_pos = 0;
+    };
+    
 
     /// Enumeration type for append flags
     enum class Flags : uint8_t {
@@ -110,7 +162,7 @@ namespace Hypertable {
       void encode_internal(uint8_t **bufp) const override;
 
       void decode_internal(uint8_t version, const uint8_t **bufp,
-			   size_t *remainp) override;
+         size_t *remainp) override;
       
     };
 
@@ -126,7 +178,7 @@ namespace Hypertable {
      * @param handler The dispatch handler which will handle the reply
      */
     virtual void open(const String &name, uint32_t flags,
-            DispatchHandler *handler) = 0;
+      DispatchHandler *handler) = 0;
 
     /** Opens a file.  Issues an open file request and waits for it to complete.
      *
@@ -149,8 +201,8 @@ namespace Hypertable {
      * @return The new file handle
      */
     virtual int open_buffered(const String &name, uint32_t flags,
-            uint32_t buf_size, uint32_t outstanding, uint64_t start_offset = 0,
-            uint64_t end_offset = 0) = 0;
+      uint32_t buf_size, uint32_t outstanding, uint64_t start_offset = 0,
+      uint64_t end_offset = 0) = 0;
 
     /// Decodes the response from an open request.
     /// @param event reference to response event
@@ -171,7 +223,7 @@ namespace Hypertable {
      * @param handler The dispatch handler which will handle the reply
      */
     virtual void create(const String &name, uint32_t flags, int32_t bufsz,
-            int32_t replication, int64_t blksz, DispatchHandler *handler) = 0;
+      int32_t replication, int64_t blksz, DispatchHandler *handler) = 0;
 
     /** Creates a file.  Issues a create file request and waits for completion
      *
@@ -183,7 +235,7 @@ namespace Hypertable {
      * @return The new file handle
      */
     virtual int create(const String &name, uint32_t flags, int32_t bufsz,
-            int32_t replication, int64_t blksz) = 0;
+      int32_t replication, int64_t blksz) = 0;
 
     /// Decodes the response from a create request.
     /// @param event reference to response event
@@ -241,7 +293,7 @@ namespace Hypertable {
     /// @param offset Address of offset variable
     /// @param length Address of length variable
     virtual void decode_response_read(EventPtr &event, const void **buffer,
-                                      uint64_t *offset, uint32_t *length) = 0;
+              uint64_t *offset, uint32_t *length) = 0;
 
     /** Appends data to a file asynchronously.  Issues an append request.
      * The caller will get notified of successful completion or error via the
@@ -254,7 +306,7 @@ namespace Hypertable {
      * @param handler The dispatch handler
      */
     virtual void append(int fd, StaticBuffer &buffer, Flags flags,
-            DispatchHandler *handler) = 0;
+      DispatchHandler *handler) = 0;
 
     /**
      * Appends data to a file.  Issues an append request and waits for it to
@@ -275,7 +327,7 @@ namespace Hypertable {
      * @param length Address of length variable
      */
     virtual void decode_response_append(EventPtr &event, uint64_t *offset,
-                                        uint32_t *length) = 0;
+          uint32_t *length) = 0;
 
     /** Seeks current file position asynchronously.  Issues a seek request.
      * The caller will get notified of successful completion or error via the
@@ -325,7 +377,7 @@ namespace Hypertable {
      * @param handler The dispatch handler
      */
     virtual void length(const String &name, bool accurate,
-            DispatchHandler *handler) = 0;
+      DispatchHandler *handler) = 0;
 
     /** Gets the length of a file.  Issues a length request and waits for it
      * to complete.
@@ -354,7 +406,7 @@ namespace Hypertable {
      * @param handler The dispatch handler
      */
     virtual void pread(int fd, size_t amount, uint64_t offset,
-                       bool verify_checksum, DispatchHandler *handler) = 0;
+           bool verify_checksum, DispatchHandler *handler) = 0;
 
     /** Reads data from a file at the specified position.  Issues a pread
      * request and waits for it to complete, returning the read data.
@@ -370,7 +422,7 @@ namespace Hypertable {
      * @return The amount of data read (in bytes)
      */
     virtual size_t pread(int fd, void *dst, size_t len, uint64_t offset,
-            bool verify_checksum = true) = 0;
+      bool verify_checksum = true) = 0;
 
     /// Decodes the response from a pread request.
     /// @param event A reference to the response event
@@ -378,7 +430,7 @@ namespace Hypertable {
     /// @param offset Address of offset variable
     /// @param length Address of length variable
     virtual void decode_response_pread(EventPtr &event, const void **buffer,
-                                       uint64_t *offset, uint32_t *length) = 0;
+               uint64_t *offset, uint32_t *length) = 0;
 
     /** Creates a directory asynchronously.  Issues a mkdirs request which
      * creates a directory, including all its missing parents.  The caller
@@ -435,7 +487,7 @@ namespace Hypertable {
     /// @param event A reference to the response event
     /// @param listing Reference to output vector of Dirent objects
     virtual void decode_response_readdir(EventPtr &event,
-                                         std::vector<Dirent> &listing) = 0;
+           std::vector<Dirent> &listing) = 0;
 
     /** Flushes a file asynchronously.  Isues a flush command which causes all
      * buffered writes to get persisted to disk.  The caller will get notified
@@ -498,7 +550,7 @@ namespace Hypertable {
      * @param handler The dispatch/callback handler
      */
     virtual void rename(const String &src, const String &dst,
-            DispatchHandler *handler) = 0;
+      DispatchHandler *handler) = 0;
 
     /** Rename a path
      *
@@ -531,7 +583,7 @@ namespace Hypertable {
      * @param serialized_parameters command specific serialized parameters
      */
     virtual void debug(int32_t command,
-            StaticBuffer &serialized_parameters) = 0;
+      StaticBuffer &serialized_parameters) = 0;
 
     /** Invokes debug request
      *
@@ -540,7 +592,7 @@ namespace Hypertable {
      * @param handler The dispatch/callback handler
      */
     virtual void debug(int32_t command, StaticBuffer &serialized_parameters,
-            DispatchHandler *handler) = 0;
+      DispatchHandler *handler) = 0;
 
     /** 
      * A posix-compliant dirname() which strips the last component from a
@@ -566,18 +618,89 @@ namespace Hypertable {
      * @return The basename
      */
     static String basename(String name, char separator = '/');
+
+
+    // Methods based on SmartFd
+
+    virtual	void open(SmartFdPtr fd_obj, DispatchHandler *handler) = 0;
+    virtual	void open(SmartFdPtr fd_obj) = 0;
+    virtual	void open_buffered(SmartFdPtr &fd_obj, 
+      uint32_t buf_size, uint32_t outstanding,
+      uint64_t start_offset = 0, uint64_t end_offset = 0) = 0;
+    virtual	void decode_response_open(SmartFdPtr fd_obj, EventPtr &event) = 0;
+        
+    virtual	void create(SmartFdPtr fd_obj, int32_t bufsz, 
+      int32_t replication, int64_t blksz, DispatchHandler *handler) = 0;
+    virtual	void create(SmartFdPtr fd_obj, int32_t bufsz, 
+      int32_t replication, int64_t blksz) = 0;
+    virtual	void decode_response_create(SmartFdPtr fd_obj, 
+      EventPtr &event) = 0;
+
+    virtual	void close(SmartFdPtr fd_obj, DispatchHandler *handler) = 0;
+    virtual	void close(SmartFdPtr fd_obj) = 0;
+
+    virtual	void read(SmartFdPtr fd_obj, size_t amount, 
+      DispatchHandler *handler) = 0;
+    virtual	size_t read(SmartFdPtr fd_obj, void *dst,	size_t amount) = 0;
+    virtual	void decode_response_read(SmartFdPtr fd_obj, 
+      EventPtr &event, const void **buffer, 
+      uint64_t *offset, uint32_t *length) = 0;
+
+    virtual	void pread(SmartFdPtr fd_obj, size_t len, 
+      uint64_t offset,bool verify_checksum, DispatchHandler *handler) = 0;
+    virtual	size_t pread(SmartFdPtr fd_obj, void *dst, 
+      size_t len, uint64_t offset, bool verify_checksum) = 0;
+    virtual	void decode_response_pread(SmartFdPtr fd_obj, 
+      EventPtr &event, const void **buffer, uint64_t *offset, 
+      uint32_t *length) = 0;
+
+    virtual	void append(SmartFdPtr fd_obj, 
+      StaticBuffer &buffer,	Flags flags, DispatchHandler *handler) = 0;
+    virtual	size_t append(SmartFdPtr fd_obj, StaticBuffer &buffer, 
+                          Flags flags = Flags::NONE) = 0;
+    virtual	void decode_response_append(SmartFdPtr fd_obj, 
+      EventPtr &event, uint64_t *offset, uint32_t *length) = 0;
+
+    virtual	void seek(SmartFdPtr fd_obj, uint64_t offset, 
+      DispatchHandler *handler) = 0;
+    virtual	void seek(SmartFdPtr fd_obj, uint64_t offset) = 0;
+
+    virtual	void flush(SmartFdPtr fd_obj, DispatchHandler *handler) = 0;
+    virtual	void flush(SmartFdPtr fd_obj) = 0;
+
+    virtual	void sync(SmartFdPtr fd_obj) = 0;
+
+  
+    virtual	Filesystem::SmartFdPtr create_local_temp(const String &for_filename) = 0;
+    virtual	void append_to_temp(Filesystem::SmartFdPtr smartfd_ptr, 
+      StaticBuffer &buffer) = 0;
+    virtual	void commit_temp(Filesystem::SmartFdPtr &smartfd_ptr, 
+      Filesystem::SmartFdPtr to_smartfd_ptr, int32_t replication)  = 0;
+
+    /** Determines if it is OK to retry write.
+     *
+     * @param smartfd_ptr the SmartFdPtr 
+     * @param e_code Exception code
+     * @param tries_count pointer to write_count
+     * @return true if OK, otherwise false
+     */
+    virtual bool retry_write_ok(SmartFdPtr smartfd_ptr, 
+			int32_t e_code, int32_t *tries_count, bool del_old=true) = 0;
+
+    virtual	int32_t get_retry_write_limit() = 0;
+
   };
 
   /// Smart pointer to Filesystem
   typedef std::shared_ptr<Filesystem> FilesystemPtr;
 
   inline bool operator< (const Filesystem::Dirent& lhs,
-			 const Filesystem::Dirent& rhs) {
+       const Filesystem::Dirent& rhs) {
     return lhs.name.compare(rhs.name) < 0;
   }
 
   /// Converts string mnemonic to corresponding Filesystem::Flags value.
-  /// @param str String mnemonic for append flag ("NONE", "FLUSH", or "SYNC")
+  /// @param str String mnemonic for append flag ("NONE", "FLUSH", or "SYNC")  
   /// @return Append flag corresponding to string mnemonic
   /// @throws Exception with code equal to Error::INVALID_ARGUMENT if string
   /// mnemonic is not recognized

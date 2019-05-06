@@ -17,14 +17,12 @@
 # 02110-1301, USA.
 #
 
+# ht_get_property - program for outputting the value of a property
 set(get_property_SRCS
 get_property.cc
 )
-
-# ht_get_property - program for outputting the value of a property
-add_executable(ht_get_property ${get_property_SRCS})
-target_link_libraries(ht_get_property HyperCommon HyperComm)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_get_property RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_get_property
+	SRCS ${get_property_SRCS}
+  TARGETS HyperCommon HyperComm
+)

@@ -9,7 +9,7 @@ Hypertable.Config.OnFileChange.file=@INSTALL_DIR@/conf/hypertable-dyn.cfg
 # The following property should be set to the absolute path to the
 # directory containing the Hadoop configuration.  The Hadoop broker
 # uses this property to locate core-site.xml and hdfs-site.xml files
-#FsBroker.Hdfs.Hadoop.ConfDir=/etc/hadoop/conf
+FsBroker.Hdfs.Hadoop.ConfDir=/etc/hadoop/conf
 
 # Ceph Broker specific properties
 #FsBroker.Ceph.MonAddr=10.0.1.245:6789
@@ -19,6 +19,7 @@ Hypertable.Config.OnFileChange.file=@INSTALL_DIR@/conf/hypertable-dyn.cfg
 # to write Hypertable state.  If it is a relative path, the path is
 # relative to the Hypertable installation.
 FsBroker.Local.Root=fs/local
+FsBroker.Timeout=30000
 
 # Qfs Broker specific properties
 #FsBroker.Qfs.MetaServer.Name=localhost
@@ -45,3 +46,4 @@ Hypertable.RangeServer.Location.AutoReInitiate=True
 
 
 
+Hyperspace.Session.Reconnect=true

@@ -24,39 +24,33 @@
 #  SIGAR_FOUND       - True if SIGAR found.
 
 
-if (SIGAR_INCLUDE_DIR)
-  # Already in cache, be silent
-  set(SIGAR_FIND_QUIETLY TRUE)
-endif ()
 
-find_path(SIGAR_INCLUDE_DIR sigar.h
-  /opt/local/include
-  /usr/local/include
-  /usr/include
+SET_DEPS(
+	NAME "SIGAR" 
+	REQUIRED TRUE 
+	LIB_PATHS 
+	INC_PATHS 
+	SHARED sigar-x86-linux
+         sigar-x86_64-linux
+         sigar-amd64-linux
+         sigar-universal64-macosx
+         sigar-universal-macosx
+         sigar-x86-solaris
+	INCLUDE sigar.h
 )
+# SIGAR support a lot more platforms than listed here. / cf. sigar.hyperic.com
 
-# SIGAR support a lot more platforms than listed here.
-# cf. sigar.hyperic.com
-set(SIGAR_NAMES sigar-x86-linux
-                sigar-x86_64-linux
-                sigar-amd64-linux
-		sigar-universal64-macosx
-                sigar-universal-macosx
-		sigar-x86-solaris
-                sigar)
-find_library(SIGAR_LIBRARY
-  NAMES ${SIGAR_NAMES}
-  PATHS /usr/lib /usr/local/lib /opt/local/lib
-)
 
-if (SIGAR_INCLUDE_DIR AND SIGAR_LIBRARY)
-  set(SIGAR_FOUND TRUE)
-  string(STRIP "${SIGAR_LIBRARY}" SIGAR_LIBRARY)
-  set(SIGAR_LIBRARIES ${SIGAR_LIBRARY} ${CMAKE_DL_LIBS})
+
+if(LIBS_LINKING_CHECKING_SHARED AND SIGAR_INCLUDE_PATHS AND SIGAR_LIBRARIES_SHARED)
+  
+  string(STRIP "${SIGAR_LIBRARIES_SHARED}" SIGAR_LIBRARIES_SHARED)
+  set(SIGAR_LIBRARIES_SHARED ${SIGAR_LIBRARIES_SHARED} ${CMAKE_DL_LIBS})
+  
   if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(SYSTEM_VERSION_LINK_LIBS ${CMAKE_DL_LIBS}\ ${SIGAR_LIBRARY}\ -l${CMAKE_DL_LIBS})
+    set(SYSTEM_VERSION_LINK_LIBS ${CMAKE_DL_LIBS}\ ${SIGAR_LIBRARIES_SHARED}\ -l${CMAKE_DL_LIBS})
   else ()
-    set(SYSTEM_VERSION_LINK_LIBS ${SIGAR_LIBRARY})
+    set(SYSTEM_VERSION_LINK_LIBS ${SIGAR_LIBRARIES_SHARED})
   endif ()
 
   try_compile(SYSTEMVERSION_CHECK_BUILD
@@ -64,37 +58,31 @@ if (SIGAR_INCLUDE_DIR AND SIGAR_LIBRARY)
               ${HYPERTABLE_SOURCE_DIR}/cmake/SystemVersion.cc
               COPY_FILE ./system_version
               OUTPUT_VARIABLE FOO
-              CMAKE_FLAGS -DINCLUDE_DIRECTORIES=${SIGAR_INCLUDE_DIR}
+              CMAKE_FLAGS -DINCLUDE_DIRECTORIES=${SIGAR_INCLUDE_PATHS}
                           -DLINK_LIBRARIES=${SYSTEM_VERSION_LINK_LIBS})
 		
     set(SYSTEM_VERSION_LINK_LIBS "")				  
-    set(SIGAR_LIBRARIES "")				  
+    set(SIGAR_LIBRARIES_SHARED "")		
+
   message(STATUS "cb=${SYSTEMVERSION_CHECK_BUILD} c=${SYSTEMVERSION_CHECK} val=${SYSTEMVERSION_TRY_OUT} foo=${FOO}")
   if (NOT SYSTEMVERSION_CHECK_BUILD)
     message(FATAL_ERROR "Unable to determine OS vendor/version")
   endif ()
+
   execute_process(COMMAND env DYLD_LIBRARY_PATH=/opt/local/lib LD_LIBRARY_PATH=/opt/local/lib ./system_version
                   RESULT_VARIABLE RUN_RESULT
                   OUTPUT_VARIABLE RUN_OUTPUT)
   if (RUN_RESULT STREQUAL "0")
     string(STRIP "${RUN_OUTPUT}" OS_VERSION)
+    message("       Operating System: ${OS_VERSION}")
   else ()
     message(FATAL_ERROR "Unable to determine OS vendor/version")
   endif ()
-else ()
-  set(SIGAR_FOUND FALSE)
 endif ()
 
-if (SIGAR_FOUND)
-  message(STATUS "Found SIGAR: ${SIGAR_LIBRARY}")
-  message(STATUS "Operating System: ${OS_VERSION}")
   
-  HT_INSTALL_LIBS(lib ${SIGAR_LIBRARY})
-else ()
-  message(STATUS "Not Found SIGAR: ${SIGAR_LIBRARY}")
-  if (SIGAR_FIND_REQUIRED)
-    message(STATUS "Looked for SIGAR libraries named ${SIGAR_NAMES}.")
-    message(FATAL_ERROR "Could NOT find SIGAR library")
-  endif ()
-endif ()
+if(SIGAR_LIBRARIES_SHARED)
+  HT_INSTALL_LIBS(lib ${SIGAR_LIBRARIES_SHARED})
+endif()
+
 

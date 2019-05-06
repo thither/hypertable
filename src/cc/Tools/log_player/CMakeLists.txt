@@ -20,9 +20,8 @@
 set(log_player_SRCS ht_log_player.cc EmitterStdout.cc EmitterTsv.cc)
 
 # log_player - Tool for playing a commit log
-add_executable(ht_log_player ${log_player_SRCS})
-target_link_libraries(ht_log_player Hypertable)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_log_player RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_log_player
+	SRCS ${log_player_SRCS}
+  TARGETS Hypertable 
+)

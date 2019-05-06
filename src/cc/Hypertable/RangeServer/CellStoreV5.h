@@ -82,6 +82,9 @@ namespace Hypertable {
     void open(const String &fname, const String &start_row,
                       const String &end_row, int32_t fd, int64_t file_length,
                       CellStoreTrailer *trailer) override;
+    void open(Filesystem::SmartFdPtr smartfd_ptr, const String &start_row,
+              const String &end_row, int64_t file_length,
+              CellStoreTrailer *trailer) override {/* unused */};
     int64_t get_blocksize() override { return m_trailer.blocksize; }
     bool may_contain(const void *ptr, size_t len);
     bool may_contain(const String &key) {
@@ -105,6 +108,8 @@ namespace Hypertable {
     uint64_t purge_indexes() override;
     bool restricted_range() override { return m_restricted_range; }
     const std::vector<String> &get_replaced_files() override;
+    
+    Filesystem::SmartFdPtr get_smartfd_ptr() override {/* unused */ return nullptr; };
 
     int32_t get_fd() override {
       std::lock_guard<std::mutex> lock(m_mutex);

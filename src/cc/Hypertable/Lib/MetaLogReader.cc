@@ -100,9 +100,9 @@ void Reader::reload() {
 namespace {
   const uint32_t READAHEAD_BUFSZ = 1024 * 1024;
   const uint32_t OUTSTANDING_READS = 1;
-  void close_descriptor(FilesystemPtr fs, int *fdp) {
+  void close_descriptor(FilesystemPtr fs, Filesystem::SmartFdPtr smartfd_ptr) {
     try {
-      fs->close(*fdp);
+      fs->close(smartfd_ptr);
     }
     catch (Exception &e) {
       HT_ERRORF("Problem closing MetaLog: %s - %s",
@@ -132,7 +132,10 @@ void Reader::verify_backup(int32_t file_num) {
 
 void Reader::load_file(const string &fname) {
   int64_t file_length = m_fs->length(fname);
-  int fd = m_fs->open_buffered(fname, 0, READAHEAD_BUFSZ, OUTSTANDING_READS);
+  
+  Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(fname, 0);
+  m_fs->open_buffered(smartfd_ptr, READAHEAD_BUFSZ, OUTSTANDING_READS);
+
   bool found_recover_entry = false;
   int64_t cur_offset = 0;
 
@@ -140,9 +143,9 @@ void Reader::load_file(const string &fname) {
 
   m_entity_map.clear();
 
-  HT_ON_SCOPE_EXIT(&close_descriptor, m_fs, &fd);
+  HT_ON_SCOPE_EXIT(&close_descriptor, m_fs, smartfd_ptr);
 
-  read_header(fd, &cur_offset);
+  read_header(smartfd_ptr, &cur_offset);
 
   try {
     size_t remaining;
@@ -155,7 +158,7 @@ void Reader::load_file(const string &fname) {
 
       buf.clear();
 
-      size_t nread = m_fs->read(fd, buf.base, EntityHeader::LENGTH);
+      size_t nread = m_fs->read(smartfd_ptr, buf.base, EntityHeader::LENGTH);
 
       if (nread != EntityHeader::LENGTH)
         HT_THROW(Error::METALOG_ENTRY_TRUNCATED, "reading entity header");
@@ -182,7 +185,7 @@ void Reader::load_file(const string &fname) {
       buf.clear();
       buf.ensure(header.length);
 
-      nread = m_fs->read(fd, buf.base, header.length);
+      nread = m_fs->read(smartfd_ptr, buf.base, header.length);
 
       if (nread != (size_t)header.length)
         HT_THROW(Error::METALOG_ENTRY_TRUNCATED, "reading entity payload");
@@ -211,7 +214,7 @@ void Reader::load_file(const string &fname) {
   }
   catch (Exception &e) {
     HT_THROW2F(e.code(), e, "Error reading metalog file: %s: read %llu/%llu",
-               fname.c_str(), (Llu)cur_offset, (Llu)file_length);
+            smartfd_ptr->to_str().c_str(), (Llu)cur_offset, (Llu)file_length);
   }
 
   if (!found_recover_entry)
@@ -220,18 +223,19 @@ void Reader::load_file(const string &fname) {
 }
 
 
-void Reader::read_header(int fd, int64_t *offsetp) {
+void Reader::read_header(Filesystem::SmartFdPtr smartfd_ptr, int64_t *offsetp) {
   MetaLog::Header header;
   uint8_t buf[Header::LENGTH];
   const uint8_t *ptr = buf;
   size_t remaining = Header::LENGTH;
 
-  size_t nread = m_fs->read(fd, buf, Header::LENGTH);
+  size_t nread = m_fs->read(smartfd_ptr, buf, Header::LENGTH);
 
   if (nread != Header::LENGTH)
     HT_THROWF(Error::METALOG_BAD_HEADER,
-              "Short read of %s header (expected %d, got %d)",
-              m_definition->name(), (int)Header::LENGTH, (int)nread);
+              "Short read of %s header (expected %d, got %d) FS %s",
+              m_definition->name(), (int)Header::LENGTH, (int)nread, 
+              smartfd_ptr->to_str().c_str());
 
   *offsetp += nread;
 

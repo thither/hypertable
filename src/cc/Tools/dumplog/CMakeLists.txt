@@ -18,9 +18,8 @@
 #
 
 # ht_dumplog - program to display a commit log
-add_executable(ht_dumplog dumplog.cc)
-target_link_libraries(ht_dumplog HyperFsBroker Hypertable)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_dumplog RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_dumplog
+	SRCS dumplog.cc
+  TARGETS HyperFsBroker Hypertable
+)

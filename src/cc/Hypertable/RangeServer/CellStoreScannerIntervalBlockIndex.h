@@ -71,8 +71,8 @@ namespace Hypertable {
     const char *          m_end_row {};
     DynamicBuffer         m_key_buf;
     BlockCompressionCodec *m_zcodec {};
-    KeyDecompressor      *m_key_decompressor {};
-    int32_t               m_fd {-1};
+    KeyDecompressor       *m_key_decompressor {};
+    Filesystem::SmartFdPtr m_smartfd_ptr;
     bool                  m_cached {};
     bool                  m_check_for_range_end {};
     int                   m_file_id {};

@@ -37,19 +37,14 @@ set(ThirdParty_SRCS
 )
 
 # lib HyperThirdParty
-HT_ADD_LIBS(
-	TARGET HyperThirdParty 
+ADD_LIB_TARGET(
+	NAME HyperThirdParty 
 	SRCS ${ThirdParty_SRCS}
-	)	
+	SHARED ${MALLOC_LIBRARIES_SHARED}
+	STATIC ${MALLOC_LIBRARIES_STATIC}
+)	
 
 if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h)
-
   install(FILES ${HEADERS} ${VERSION_H} DESTINATION include/ThirdParty)
-
-  install(TARGETS HyperThirdParty
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
-
 endif ()

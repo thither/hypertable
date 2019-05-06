@@ -26,9 +26,8 @@ MasterCommandInterpreter.cc
 )
 
 # ht_master - Master client command interpreter
-add_executable(ht_master ${master_SRCS})
-target_link_libraries(ht_master Hypertable)
-
-if (NOT HT_COMPONENT_INSTALL)
-  install(TARGETS ht_master RUNTIME DESTINATION bin)
-endif ()
+ADD_UTIL_TARGET(
+	NAME ht_master
+	SRCS ${master_SRCS}
+	TARGETS Hypertable
+)

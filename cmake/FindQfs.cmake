@@ -19,59 +19,26 @@
 # - Find Qfs
 # Find the native Qfs includes and library
 #
-#  Qfs_INCLUDE_DIR - where to find Kfs.h, etc.
-#  Qfs_LIBRARIES   - List of libraries when using Kfs.
-#  Qfs_FOUND       - True if Kfs found.
+#  QFS_INCLUDE_DIR - where to find Kfs.h, etc.
+#  QFS_LIBRARIES_SHARED   - List of libraries when using Kfs.
+#  QFS_FOUND       - True if Kfs found.
 
 
-if (Qfs_INCLUDE_DIR)
-  # Already in cache, be silent
-  set(Qfs_FIND_QUIETLY TRUE)
-endif ()
-
-find_path(Qfs_INCLUDE_DIR kfs/KfsClient.h
-  /opt/qfs/include
-  /opt/local/include
-  /usr/local/include
-  $ENV{HOME}/src/qfs/build/include
+SET_DEPS(
+	NAME "QFS" 
+	REQUIRED FALSE
+	LIB_PATHS /opt/qfs/lib/static /opt/qfs/lib $ENV{HOME}/src/qfs/build/lib/static
+	INC_PATHS /opt/qfs/include /opt/local/include $ENV{HOME}/src/qfs/build/include
+	SHARED qfs_client qfs_io qfs_common qfs_qcdio qfs_qcrs qfskrb Jerasure gf_complete
+	INCLUDE kfs/KfsClient.h
 )
 
-macro(FIND_QFS_LIB lib)
-  find_library(${lib}_LIB NAMES ${lib}
-    PATHS /opt/qfs/lib/static /opt/qfs/lib /opt/local/lib /usr/local/lib
-          $ENV{HOME}/src/qfs/build/lib/static
-  )
-  
-  if(${${lib}_LIB})
-	mark_as_advanced(${lib}_LIB)
-	set(Qfs_LIBRARIES ${Qfs_LIBRARIES} ${${lib}_LIB}})
-  endif ()
-endmacro(FIND_QFS_LIB lib libname)
 
-FIND_QFS_LIB(qfs_client)
-FIND_QFS_LIB(qfs_io)
-FIND_QFS_LIB(qfs_common)
-FIND_QFS_LIB(qfs_qcdio)
-FIND_QFS_LIB(qfs_qcrs)
-FIND_QFS_LIB(qfskrb)
-FIND_QFS_LIB(Jerasure)
-FIND_QFS_LIB(gf_complete)
-
-find_library(Crypto_LIB NAMES crypto PATHS /opt/local/lib /usr/local/lib)
-
-if (Qfs_INCLUDE_DIR AND qfs_client_LIB)
-  set(Qfs_FOUND TRUE)
-  mark_as_advanced(
-    Qfs_INCLUDE_DIR
-  )
-  message(STATUS "Found QFS: ${Qfs_LIBRARIES}")
-else ()
-   if (FSBROKER_QFS)
-      message(FATAL_ERROR "Could NOT find QFS libraries")
-   endif ()
-   set(Qfs_FOUND FALSE)
-   set(Qfs_LIBRARIES)
+if(NOT QFS_FOUND AND FSBROKER_QFS)
+    message(FATAL_ERROR "Could NOT find QFS libraries")
 endif ()
 
 
-
+if(QFS_LIBRARIES_SHARED)
+	HT_INSTALL_LIBS(lib ${QFS_LIBRARIES_SHARED})
+endif()

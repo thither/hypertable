@@ -14,7 +14,7 @@ install(TARGETS pyht
 
 
 
-if (Pybind11_FOUND AND PyPy_FOUND)
+if (PYBIND11_FOUND AND PyPy_FOUND)
 	add_library(pypyht MODULE HypertableBindings.cc)
 	target_link_libraries(pypyht HyperCommon Hypertable ${PYPY_LIBDIR})
 	target_compile_options(pypyht PRIVATE
@@ -23,7 +23,7 @@ if (Pybind11_FOUND AND PyPy_FOUND)
 					  -DPYPY_VERSION=1
 					  -DWITH_THREAD
 					  )
-	 target_include_directories(pypyht PRIVATE ${Pybind11_INCLUDE_DIR} ${PYPY_INCLUDE_DIR})
+	 target_include_directories(pypyht PRIVATE ${PYBIND11_INCLUDE_PATHS} ${PYPY_INCLUDE_DIR})
 	
 	install(TARGETS pypyht
         RUNTIME DESTINATION bin

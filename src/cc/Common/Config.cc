@@ -322,6 +322,11 @@ void DefaultPolicy::init_options() {
     ("FsBroker.Timeout", i32(), "Length of time, "
         "in milliseconds, to wait before timing out FS Broker requests. This "
         "takes precedence over Hypertable.Request.Timeout")
+    ("FsBroker.RetryLimit", g_i32(100), "Retry limit for a Client "
+        "in establishing connection, total time before throw Timeout X RetryLimit, " 
+        "counter undergo reset on successful connection ")
+    ("FsBroker.WriteRetryLimit", g_i32(100), "Write retry limit for Client "
+        "in creating new descriptor and do write before Throw, Zero for skip")
     ("FsBroker.DisableFileRemoval", boo(false),
         "Rename files with .deleted extension instead of removing (for testing)")
     /*("FsBroker.Hdfs.NameNode.Host", str("default"),
@@ -497,6 +502,8 @@ void DefaultPolicy::init_options() {
         str("snappy"), "Default compressor for cell stores")
     ("Hypertable.RangeServer.CellStore.DefaultBloomFilter",
         str("rows"), "Default bloom filter for cell stores")
+    ("Hypertable.RangeServer.CellStore.CreateWithTemp",
+        g_boo(false), "Create CellStore with a temp on local, possible for write tries")
     ("Hypertable.RangeServer.CellStore.SkipBad",
         boo(false), "Skip over cell stores that are corrupt")
     ("Hypertable.RangeServer.CellStore.SkipNotFound",

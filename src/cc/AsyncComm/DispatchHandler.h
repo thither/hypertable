@@ -56,7 +56,12 @@ namespace Hypertable {
      *
      * @param event_ptr smart pointer to Event object
      */
-    virtual void handle(EventPtr &event_ptr) = 0;
+    virtual void handle(EventPtr &event_ptr) { 
+      // Not a pure method,
+      // instead of wait and keep a handler method for outstanding events in parent
+      // do a discard
+      return;
+    }
 
   };
 

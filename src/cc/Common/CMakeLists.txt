@@ -84,21 +84,37 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   link_libraries(socket)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 
-HT_ADD_LIBS(
-	TARGET HyperCommon 
+ADD_LIB_TARGET(
+	NAME HyperCommon 
 	SRCS ${Common_SRCS} ${Fmemopen_SRCS}
 	TARGETS HyperThirdParty
-	DEPENDENCIES ${MATH_LIBRARIES} ${THREAD_LIBRARIES}
-				 ${MALLOC_LIBRARY} ${BOOST_LIBRARIES} 
-				 ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${LZMA_LIBRARIES}
-				 ${TINFOW_LIBRARIES} 
-				 ${RE2_LIBRARIES} ${SSL_LIBRARIES})
+	SHARED ${MATH_LIBRARIES_SHARED} ${THREAD_LIBRARIES_SHARED}
+				 ${MALLOC_LIBRARY_SHARED} ${BOOST_LIBRARIES_SHARED} 
+				 ${ZLIB_LIBRARIES_SHARED} ${BZIP2_LIBRARIES_SHARED} ${LZMA_LIBRARIES_SHARED}
+				 ${TINFOW_LIBRARIES_SHARED} 
+				 ${RE2_LIBRARIES_SHARED} ${EXPAT_LIBRARIES_SHARED}
+				 ${SSL_LIBRARIES_SHARED}
+	STATIC ${MATH_LIBRARIES_STATIC} ${THREAD_LIBRARIES_STATIC}
+				 ${MALLOC_LIBRARY_STATIC} ${BOOST_LIBRARIES_STATIC} 
+				 ${ZLIB_LIBRARIES_STATIC} ${BZIP2_LIBRARIES_STATIC} ${LZMA_LIBRARIES_STATIC}
+				 ${TINFOW_LIBRARIES_STATIC} 
+				 ${RE2_LIBRARIES_STATIC} ${EXPAT_LIBRARIES_STATIC}
+				 ${SSL_LIBRARIES_STATIC}
+)
 
-add_executable(ht_system_info system_info.cc)
-target_link_libraries(ht_system_info HyperCommon)
 
-add_executable(ht_wordstream ht_wordstream.cc)
-target_link_libraries(ht_wordstream HyperCommon)
+ADD_UTIL_TARGET(
+	NAME ht_system_info
+	SRCS system_info.cc
+	TARGETS HyperCommon
+)
+
+ADD_TEST_EXEC(
+	NAME ht_wordstream
+	SRCS ht_wordstream.cc
+	TARGETS HyperCommon 
+)
+
 configure_file(${HYPERTABLE_SOURCE_DIR}/tests/data/words.gz
                ${HYPERTABLE_BINARY_DIR}/src/cc/Common/words.gz COPYONLY)
 
@@ -106,192 +122,211 @@ configure_file(${HYPERTABLE_SOURCE_DIR}/tests/data/words.gz
 set(SRC_DIR "${HYPERTABLE_SOURCE_DIR}/src/cc/Common")
 set(DST_DIR "${HYPERTABLE_BINARY_DIR}/src/cc/Common")
 
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-Base64
 	SRCS tests/Base64_test.cc
-	TARGETS  Hypertable
+	TARGETS HyperCommon
 )
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-Crypto
 	SRCS tests/Crypto_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-Exception
 	SRCS tests/exception_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-directory
 	SRCS tests/directory_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 	ARGS ${CMAKE_CURRENT_SOURCE_DIR}/tests/directory_test.golden
 )
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-Escaper
 	SRCS tests/escaper_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 configure_file(${SRC_DIR}/tests/HostSpecification_test.golden
                ${DST_DIR}/HostSpecification_test.golden)
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-HostSpecification
 	SRCS tests/HostSpecification_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
+
+
 # ClusterDefinition tests
 configure_file(${SRC_DIR}/tests/ClusterDefinition_test.golden
                ${DST_DIR}/ClusterDefinition_test.golden)
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-ClusterDefinition
 	SRCS tests/ClusterDefinition_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 add_subdirectory(ClusterDefinitionFile)
-HT_ADD_TEST(
+
+ADD_TEST_TARGET(
 	NAME Common-Logging
 	SRCS tests/logging_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 # serialization tests
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-Serializable
 	SRCS tests/Serializable_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 	ARGS ${CMAKE_CURRENT_SOURCE_DIR}/tests/Serializable_test.golden
 )
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-Serialization
 	SRCS tests/sertest.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 # scope guard tests
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-ScopeGuard
 	SRCS tests/scope_guard_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
+
 # inetaddr tests
 set(ext_deps )
 if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(ext_deps nsl resolv)
 endif ()
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-InetAddr
 	SRCS tests/inetaddr_test.cc
-	TARGETS Hypertable 
-	EXT_DEPS ${ext_deps}
+	TARGETS HyperCommon 
+	SHARED ${ext_deps}
 )
 
 # pagearena tests
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-PageArena
 	SRCS tests/pagearena_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 # config tests
-#HT_ADD_TEST(
+#ADD_TEST_TARGET(
 #	NAME Common-Config
 #	SRCS tests/config_test.cc
-#	TARGETS Hypertable 
+#	TARGETS HyperCommon 
 #)
 
 # crontab tests
-add_executable(crontab_test tests/crontab_test.cc)
-target_link_libraries(crontab_test HyperCommon)
+ADD_TEST_EXEC(
+	NAME crontab_test
+	SRCS tests/crontab_test.cc
+	TARGETS HyperCommon 
+)
 add_test(Common-Crontab env 
 		 bash -c "${CMAKE_CURRENT_BINARY_DIR}/crontab_test > crontab_test.output; diff crontab_test.output ${CMAKE_CURRENT_SOURCE_DIR}/tests/crontab_test.golden")
 
 # properties tests
-add_executable(properties_test tests/properties_test.cc)
-target_link_libraries(properties_test HyperCommon)
+ADD_TEST_EXEC(
+	NAME properties_test
+	SRCS tests/properties_test.cc
+	TARGETS HyperCommon 
+)
 add_test(Common-Properties ${TEST_DIFF}
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/properties_test.golden ./properties_test)
   
 # init tests
-add_executable(init_test tests/init_test.cc)
-target_link_libraries(init_test HyperCommon)
+ADD_TEST_EXEC(
+	NAME init_test
+	SRCS tests/init_test.cc
+	TARGETS HyperCommon 
+)
 add_test(Common-init ${TEST_DIFF}
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/init_test.golden
   ./init_test --i16 1k --i32 64K --i64 1G --boo --enum_ext two)
   
 # md5 base 64 test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME MD5-Base64
 	SRCS tests/md5_base64_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 # StatsSerializable test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-StatsSystem-serialize
 	SRCS tests/stats_serialize_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 # StringCompressor test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-StringCompressor
 	SRCS tests/string_compressor_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 # timeinline test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-TimeInline
 	SRCS tests/timeinline_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 # FailureInducer test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-FailureInducer
 	SRCS tests/failure_inducer_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 configure_file(${SRC_DIR}/tests/failure_inducer_test.golden
                ${DST_DIR}/failure_inducer_test.golden)
 # TimeWindow test
-add_executable(TimeWindowTest tests/TimeWindowTest.cc)
-target_link_libraries(TimeWindowTest HyperCommon)
+ADD_TEST_EXEC(
+	NAME TimeWindowTest
+	SRCS tests/TimeWindowTest.cc
+	TARGETS HyperCommon 
+)
 add_test(Common-TimeWindow env bash -c "${CMAKE_CURRENT_BINARY_DIR}/TimeWindowTest > TimeWindowTest.output; diff TimeWindowTest.output ${CMAKE_CURRENT_SOURCE_DIR}/tests/TimeWindowTest.golden")
 
 # bloom filter test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-BloomFilter
 	SRCS tests/bloom_filter_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 # hash test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-Hash
 	SRCS tests/hash_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 # mutex tests
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-Mutex
 	SRCS tests/mutex_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 # filesystem tests
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME Common-FileSystem
 	SRCS tests/filesystem_test.cc
-	TARGETS Hypertable 
+	TARGETS HyperCommon 
 )
 
 # config properties parser tests
-configure_file(${SRC_DIR}/tests/properties_parser_test.cfg ${DST_DIR}/properties_parser_test.cfg)
 
-add_executable(properties_parser_test tests/properties_parser_test.cc)
-target_link_libraries(properties_parser_test HyperCommon)
+ADD_TEST_EXEC(
+	NAME properties_parser_test
+	SRCS tests/properties_parser_test.cc
+	TARGETS HyperCommon 
+)
+configure_file(${SRC_DIR}/tests/properties_parser_test.cfg ${DST_DIR}/properties_parser_test.cfg)
 add_test(Common-Properties-Parser ${TEST_DIFF}
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/properties_parser_test.golden
   ./properties_parser_test argOne --i16 1k --i32 64K --i64 1G --boo true --strs=1 -strs 2 -strs 3 --strs 4 -strs=5 --strs=6 --b=1 --is_true
 )
   
 # container tests
-#HT_ADD_TEST(
+#ADD_TEST_TARGET(
 #	NAME Common-Container
 #	SRCS tests/container_test.cc
-#	TARGETS Hypertable 
+#	TARGETS HyperCommon 
 #)
 
 # macro expanded formatted sertest.cc for easy debugging
@@ -307,11 +342,5 @@ if (NOT HT_COMPONENT_INSTALL)
   file(GLOB HEADERS *.h metrics)
   install(FILES ${HEADERS} ${VERSION_H} DESTINATION include/Common)
 
-  install(TARGETS HyperCommon
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
 
-  install(TARGETS ht_system_info
-          RUNTIME DESTINATION bin)
 endif ()

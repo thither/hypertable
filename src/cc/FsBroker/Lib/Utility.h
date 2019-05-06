@@ -39,7 +39,16 @@ namespace Lib {
                    const std::string &to, int64_t offset=0);
 
   extern void copy_from_local(ClientPtr &client, const std::string &from,
-                              const std::string &to, int64_t offset=0);
+                              const std::string &to, 
+                              int64_t offset=0, int32_t replication=-1);
+
+  extern void copy_from_local(ClientPtr &client, const std::string &from,
+                              Filesystem::SmartFdPtr to_smartfd_ptr, 
+                              int64_t offset=0, int32_t replication=-1);
+
+  extern void copy_from_local(Client* client, const std::string &from,
+                              Filesystem::SmartFdPtr to_smartfd_ptr, 
+                              int64_t offset=0, int32_t replication=-1);
 
   extern void copy_to_local(ClientPtr &client, const std::string &from,
                             const std::string &to, int64_t offset=0);

@@ -162,8 +162,9 @@ namespace Hypertable {
      * expensive it is to keep this fragment around.
      *
      * @param cumulative_size_map reference to map of log fragment priority data
+     * return False if there is no active fragment of commitlog, else True 
      */
-    void load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map);
+    bool load_cumulative_size_map(CumulativeSizeMap &cumulative_size_map);
 
     /**
      * Returns the maximum size of each log fragment file
@@ -203,6 +204,7 @@ namespace Hypertable {
     void initialize(const std::string &log_dir,
                     PropertiesPtr &, CommitLogBase *init_log, bool is_meta);
     int roll(CommitLogFileInfo **clfip=0);
+    int create_next_log();
     int compress_and_write(DynamicBuffer &input, BlockHeader *header,
                            int64_t revision, Filesystem::Flags flags);
     void remove_file_info(CommitLogFileInfo *fi, StringSet &removed_logs);
@@ -210,11 +212,11 @@ namespace Hypertable {
     FilesystemPtr           m_fs;
     std::set<CommitLogFileInfo *> m_reap_set;
     std::unique_ptr<BlockCompressionCodec> m_compressor;
-    std::string                  m_cur_fragment_fname;
+    std::string             m_cur_fragment_fname;
     int64_t                 m_cur_fragment_length;
     int64_t                 m_max_fragment_size;
     uint32_t                m_cur_fragment_num;
-    int32_t                 m_fd;
+    Filesystem::SmartFdPtr  m_smartfd_ptr;
     int32_t                 m_replication;
     bool                    m_needs_roll;
   };

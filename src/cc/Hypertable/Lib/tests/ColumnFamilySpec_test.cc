@@ -29,10 +29,10 @@
 #include <Common/Usage.h>
 
 #if defined(TCMALLOC)
-#include <google/tcmalloc.h>
-#include <google/heap-checker.h>
-#include <google/heap-profiler.h>
-#include <google/malloc_extension.h>
+#include <gperftools/tcmalloc.h>
+#include <gperftools/heap-checker.h>
+#include <gperftools/heap-profiler.h>
+#include <gperftools/malloc_extension.h>
 #endif
 
 extern "C" {

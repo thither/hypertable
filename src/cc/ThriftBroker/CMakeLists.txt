@@ -33,69 +33,79 @@ if( NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/thriftgen-${THRIFT_VERSION}/gen-cpp)
 	                              ${CMAKE_CURRENT_SOURCE_DIR}/)			 
 endif ()
 
-# libHyperThrift
-HT_ADD_LIBS(
-	TARGET HyperThrift 
-	SRCS ThriftHelper.cc SerializedCellsReader.cc SerializedCellsWriter.cc 
-			gen-cpp/Client_constants.cpp 
-			gen-cpp/ClientService.cpp 
-			gen-cpp/Client_types.cpp
-			gen-cpp/Hql_constants.cpp 
-			gen-cpp/HqlService.cpp 
-			gen-cpp/Hql_types.cpp
-	DEPENDENCIES ${THRIFT_LIBRARIES} ${EVENT_LIBRARIES})
+# lib HyperThrift - no other hypertable libs dependencies
+ADD_LIB_TARGET(
+	NAME HyperThrift 
+	SRCS 	gen-cpp/Client_constants.cpp 
+				gen-cpp/ClientService.cpp 
+				gen-cpp/Client_types.cpp
+				gen-cpp/Hql_constants.cpp 
+				gen-cpp/HqlService.cpp 
+				gen-cpp/Hql_types.cpp
+	SHARED ${THRIFT_LIBRARIES_SHARED} ${EVENT_LIBRARIES_SHARED} ${SSL_LIBRARIES_SHARED}
+	STATIC ${THRIFT_LIBRARIES_STATIC} ${EVENT_LIBRARIES_STATIC} ${SSL_LIBRARIES_STATIC}
+)
 
-# libHyperThriftConfig
-HT_ADD_LIBS(
-	TARGET HyperThriftConfig 
+# lib HyperThriftExtentions
+ADD_LIB_TARGET(
+	NAME HyperThriftExtentions 
+	SRCS SerializedCellsReader.cc SerializedCellsWriter.cc ThriftHelper.cc
+	TARGETS Hypertable
+)
+
+# lib HyperThriftConfig
+ADD_LIB_TARGET(
+	NAME HyperThriftConfig 
 	SRCS Config.cc
-	TARGETS HyperThrift Hypertable)
+	TARGETS HyperThrift Hypertable
+)
 
+	
 # htThriftBroker
-set(ThriftBroker_SRCS ThriftBroker.cc MetricsHandler.cc)
-add_executable(htThriftBroker ${ThriftBroker_SRCS})
-target_link_libraries(htThriftBroker HyperThriftConfig HyperAppHelper)
+ADD_EXEC_TARGET(
+	NAME htThriftBroker
+	SRCS ThriftBroker.cc MetricsHandler.cc
+  TARGETS HyperThriftExtentions HyperThriftConfig HyperAppHelper
+  SHARED ${CEPH_LIBRARIES_SHARED}
+  STATIC ${CEPH_LIBRARIES_STATIC}
+)
 
 
 ### ZLIB TRANSPORT TESTS
 # Basic regression test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME ThriftClientZ-cpp
 	SRCS tests/client_test.cc
-	TARGETS HyperThrift HyperCommon Hypertable 
+	TARGETS HyperThrift HyperThriftExtentions HyperCommon Hypertable 
 	ARGS zlib
 	PRE_CMD env bash ${INSTALL_DIR}/bin/ht-start-test-servers.sh --clear --opt--thrift-transport=zlib
 )
 # regression test for SerializedCellsWriter/SerializedCellsReader
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME ThriftClientZ-cpp-Serialized
 	SRCS tests/client_test.cc
-	TARGETS HyperThrift HyperCommon Hypertable 	
+	TARGETS HyperThrift HyperThriftExtentions HyperCommon Hypertable 	
 	ARGS zlib
 	POST_CMD env bash ${INSTALL_DIR}/bin/ht-start-test-servers.sh --clear
 )
 
 ### FRAMED TRANSPORT TESTS
 # Basic regression test
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME ThriftClient-cpp
 	SRCS tests/client_test.cc
+	TARGETS HyperThrift HyperThriftExtentions HyperCommon Hypertable 
 	ARGS framed
-	TARGETS HyperThrift HyperCommon Hypertable 
 )
 # regression test for SerializedCellsWriter/SerializedCellsReader
-HT_ADD_TEST(
+ADD_TEST_TARGET(
 	NAME ThriftClient-cpp-Serialized
 	SRCS tests/serialized_test.cc
+	TARGETS HyperThrift HyperThriftExtentions HyperCommon Hypertable 
 	ARGS framed
-	TARGETS HyperThrift HyperCommon Hypertable 
 )
 
 if (NOT HT_COMPONENT_INSTALL OR PACKAGE_THRIFTBROKER)
-  install(TARGETS HyperThrift HyperThriftConfig htThriftBroker
-          RUNTIME DESTINATION bin
-          LIBRARY DESTINATION lib
-          ARCHIVE DESTINATION lib)
   install(FILES Client.h ThriftHelper.h SerializedCellsFlag.h SerializedCellsReader.h SerializedCellsWriter.h Client.thrift Hql.thrift
           DESTINATION include/ThriftBroker)
   install(DIRECTORY gen-cpp DESTINATION include/ThriftBroker)

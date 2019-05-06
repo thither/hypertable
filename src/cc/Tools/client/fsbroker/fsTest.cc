@@ -122,15 +122,18 @@ namespace {
     char buf[1024];
     string file_a = testdir +"/filename.a";
     string file_b = testdir +"/filename.b";
-    int fd = client->create(file_a, Filesystem::OPEN_FLAG_OVERWRITE, -1, -1, -1);
+    Filesystem::SmartFdPtr smartfd_ptr = Filesystem::SmartFd::make_ptr(
+      file_a, Filesystem::OPEN_FLAG_OVERWRITE);
+    client->create(smartfd_ptr, -1, -1, -1);
     StaticBuffer sbuf((char *)magic, strlen(magic) + 1, false);
-    client->append(fd, sbuf);
-    client->close(fd);
+    client->append(smartfd_ptr, sbuf);
+    client->close(smartfd_ptr);
     client->rename(file_a, file_b);
-    fd = client->open(file_b, 0);
-    client->read(fd, buf, sizeof(buf));
+    smartfd_ptr = Filesystem::SmartFd::make_ptr(file_b, 0);
+    client->open(smartfd_ptr);
+    client->read(smartfd_ptr, buf, sizeof(buf));
     HT_ASSERT(strcmp(buf, magic) == 0);
-    client->close(fd);
+    client->close(smartfd_ptr);
   }
 }
 

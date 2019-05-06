@@ -86,6 +86,9 @@ namespace Hypertable {
     void finalize(TableIdentifier *table_identifier) override;
     void open(const String &fname, const String &start_row,
               const String &end_row, int32_t fd, int64_t file_length,
+              CellStoreTrailer *trailer) override {/* unused */};
+    void open(Filesystem::SmartFdPtr smartfd_ptr, const String &start_row,
+              const String &end_row, int64_t file_length,
               CellStoreTrailer *trailer) override;
     void rescope(const String &start_row, const String &end_row) override;
     int64_t get_blocksize() override { return m_trailer.blocksize; }
@@ -133,17 +136,25 @@ namespace Hypertable {
     bool restricted_range() override { return m_restricted_range; }
     const std::vector<String> &get_replaced_files() override;
 
+    Filesystem::SmartFdPtr get_smartfd_ptr() override {
+      return m_smartfd_ptr;
+    };
+
+    // unused method
     int32_t get_fd() override {
       std::lock_guard<std::mutex> lock(m_mutex);
-      return m_fd;
+      return m_smartfd_ptr->fd();
     }
 
+    // unused method
     int32_t reopen_fd() override {
       std::lock_guard<std::mutex> lock(m_mutex);
-      if (m_fd != -1)
-        m_filesys->close(m_fd);
-      m_fd = m_filesys->open(m_filename, 0);
-      return m_fd;
+      if (m_smartfd_ptr && m_smartfd_ptr->valid())
+        m_filesys->close(m_smartfd_ptr);
+
+      m_smartfd_ptr->flags(0);
+      m_filesys->open(m_smartfd_ptr);
+      return m_smartfd_ptr->fd();
     }
 
     CellStoreTrailer *get_trailer() override { return &m_trailer; }
@@ -160,7 +171,8 @@ namespace Hypertable {
 
     Filesystem *m_filesys;
     SchemaPtr m_schema;
-    int32_t m_fd {-1};
+    Filesystem::SmartFdPtr m_smartfd_ptr;
+    bool m_create_cs_with_tmp;
     std::string m_filename;
     bool m_64bit_index {};
     CellStoreTrailerV7 m_trailer;
@@ -171,6 +183,7 @@ namespace Hypertable {
     uint32_t m_outstanding_appends {};
     int64_t m_offset {};
     int64_t m_file_length {};
+    int32_t m_replication {};
     int64_t m_disk_usage {};
     int m_file_id {};
     float m_uncompressed_data {};

@@ -46,9 +46,13 @@ void RangeServerConnectionManager::add_server(RangeServerConnectionPtr &rsc) {
                 rsc->to_str().c_str(), tmp_rsc->to_str().c_str());
   }
 
+  /*
+    to a different location public_addr can be not unique 
+    (the same RS came back online with different run/location)
+  */
   auto result = m_connections.push_back( RangeServerConnectionEntry(rsc) );
   if (!result.second)
-    HT_FATALF("Attempt to add %s which conflicts with previously added entry",
+    HT_WARNF("Attempt to add %s which conflicts with previously added entry",
               rsc->to_str().c_str());
 }
 
@@ -111,7 +115,8 @@ bool RangeServerConnectionManager::connect_server(RangeServerConnectionPtr &rsc,
       needs_reindex = true;
     }
 
-    if (public_addr != rsc->public_addr()) {
+    if (public_addr != rsc->public_addr()) { 
+      // It can't happen with remote been hashed_unique
       HT_INFOF("Changing public address for %s from '%s' to '%s'",
                rsc->location().c_str(), rsc->public_addr().format().c_str(),
                public_addr.format().c_str());

@@ -179,7 +179,7 @@ namespace Hypertable {
        * Error::METALOG_VERSION_MISMATCH, or one of the exceptions thrown by
        * Client::read()
        */
-      void read_header(int fd, int64_t *offsetp);
+      void read_header(Filesystem::SmartFdPtr smartfd, int64_t *offsetp);
 
       /// Smart pointer to Filesystem object
       FilesystemPtr m_fs;
